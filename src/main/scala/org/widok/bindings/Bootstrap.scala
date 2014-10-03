@@ -78,9 +78,11 @@ object Bootstrap {
     ).withCSS("alert alert-danger")
 
   object Input {
-    def Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true)(contents: Widget*) =
-      HTML.Input.Text(placeholder, autofocus, autocomplete)(contents: _*)
-        .withCSS("form-control")
+    def Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true) = {
+      val text = HTML.Input.Text(placeholder, autofocus, autocomplete)
+      text.withCSS("form-control")
+      text
+    }
 
     def Select(options: Seq[String], selected: Int = -1) =
       HTML.Input.Select(options, selected)

@@ -103,8 +103,8 @@ object HTML {
   }
 
   object Input {
-    def Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true)(contents: Widget*) = new Widget {
-      val rendered = tag("input", contents: _*)
+    case class Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true) extends Widget {
+      val rendered = tag("input")
         .asInstanceOf[HTMLInputElement]
 
       if (autofocus) rendered.setAttribute("autofocus", "")
