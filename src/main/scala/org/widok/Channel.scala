@@ -400,11 +400,12 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
 
   agg.attach(new Observer[T] {
     def append(ch: Channel[T]) {
-
+      values += ((ch, None))
+      ch.attach(cur => values(ch) = Some(cur))
     }
 
     def remove(ch: Channel[T]) {
-
+      values -= ch
     }
   })
 
@@ -414,7 +415,13 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
     this.aggregate
   }
 
-  def update(f: T => T): Unit = {
-
+  def update(f: T => T) {
+    values.foreach { case (key, value) =>
+      if (value.isDefined) {
+        val v = f(value.get)
+        values(key) = Some(v)
+        key := v
+      }
+    }
   }
 }

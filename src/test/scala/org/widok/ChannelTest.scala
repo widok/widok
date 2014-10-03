@@ -420,4 +420,28 @@ object ChannelTest extends JasmineTest {
       expect(gt1).toBe(true)
     }
   }
+
+  describe("CachedAggregate") {
+    it("should update()") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      var sum = 0
+      agg.sum.attach(value => sum = value)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(1 + 2 + 3)
+
+      cache.update(_ * 10)
+      cache.update(_ * 10)
+
+      expect(sum).toBe(100 + 200 + 300)
+
+      agg.remove(ch)
+      expect(sum).toBe(200 + 300)
+    }
+  }
 }
