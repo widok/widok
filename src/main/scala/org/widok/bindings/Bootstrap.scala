@@ -1,6 +1,7 @@
 package org.widok.bindings
 
 import org.widok._
+import org.widok.bindings.HTML.Input.Checkbox
 
 /**
  * Native widgets for Bootstrap 3 components
@@ -230,13 +231,21 @@ object Bootstrap {
         .withCSS("nav navbar-nav")
   }
 
-  def Checkbox(contents: Widget*) =
-    HTML.Container.Generic(
-      ControlLabel(
-        HTML.Input.Checkbox(),
-        HTML.Container.Inline(contents: _*)
-      )
-    ).withCSS("checkbox")
+  def Checkbox(contents: Widget*) = new Widget {
+    val checkbox = HTML.Input.Checkbox()
+
+    val rendered =
+      HTML.Container.Generic(
+        ControlLabel(
+          checkbox,
+          HTML.Container.Inline(contents: _*)
+        )
+      ).withCSS("checkbox")
+       .rendered
+
+    def bind(value: Channel[Boolean]) =
+      checkbox.bind(value)
+  }
 
   trait AlertType { val cssTag: String }
   object AlertType {
