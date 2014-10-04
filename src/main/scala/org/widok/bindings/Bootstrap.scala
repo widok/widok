@@ -89,6 +89,24 @@ object Bootstrap {
         .withCSS("form-control")
   }
 
+  object Text {
+    trait Alignment {
+      val cssTag: String
+    }
+    object Alignment {
+      case object None extends Alignment { val cssTag = "" }
+      case object Left extends Alignment { val cssTag = "text-left" }
+      case object Center extends Alignment { val cssTag = "text-center" }
+      case object Right extends Alignment { val cssTag = "text-right" }
+      case object Justify extends Alignment { val cssTag = "text-justify" }
+      case object NoWrap extends Alignment { val cssTag = "text-nowrap" }
+    }
+
+    def apply(contents: Widget*)(alignment: Alignment = Alignment.None) = {
+      HTML.Container.Generic(contents: _*).withCSS(alignment.cssTag)
+    }
+  }
+
   object Button {
     trait Size { val cssTag: String }
     object Size {
@@ -296,5 +314,4 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .withCSS("row")
   }
-
 }
