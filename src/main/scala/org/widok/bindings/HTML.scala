@@ -114,9 +114,17 @@ object HTML {
 
       var enter: () => Unit = null
 
-      // Provides two-way binding.
-      def bind(value: Channel[String]) = {
-        // TODO Add flag ``live`` to produce every single character
+      /**
+       * Provides two-way binding.
+       *
+       * @param value
+       *              The channel to listen to.
+       * @param live
+       *             Produce every single character if true, otherwise
+       *             produce only if enter was pressed.
+       * @return
+       */
+      def bind(value: Channel[String], live: Boolean = false) = {
         val producer = () =>
           Some(rendered.value)
         val observer = (text: String) =>
@@ -126,7 +134,7 @@ object HTML {
         value.attach(observer)
 
         rendered.onkeyup = (e: KeyboardEvent) =>
-          if (e.keyCode == 13) {
+          if (e.keyCode == 13 || live) {
             value.produce(rendered.value, observer)
             if (enter != null) enter()
           }
