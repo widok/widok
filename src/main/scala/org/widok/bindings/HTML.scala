@@ -62,6 +62,11 @@ object HTML {
     }
   }
 
+  case class Image(source: String) extends Widget {
+    val rendered = tag("img")
+    rendered.setAttribute("src", source)
+  }
+
   case class LineBreak() extends Widget {
     val rendered = tag("br")
   }
