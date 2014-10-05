@@ -422,6 +422,11 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
 
   def aggregate = agg
 
+  def flush() {
+    values.foreach(cur =>
+      if (cur._2.isDefined) cur._1 := cur._2.get)
+  }
+
   def filter(f: Channel[T => Boolean]): Aggregate[T] = {
     this.aggregate
   }
