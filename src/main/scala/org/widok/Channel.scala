@@ -303,13 +303,11 @@ case class Aggregate[T]() {
     ch
   }
 
-  def filter(f: T => Boolean): Aggregate[T] = {
+  def filter(f: T => Boolean, map: mutable.HashMap[Channel[T], Channel[T]] = mutable.HashMap.empty): Aggregate[T] = {
     val agg = Aggregate[T]()
 
     val that = this
     var aggObserver: Aggregate.Observer[T] = null
-
-    val map = new mutable.HashMap[Channel[T], Channel[T]]()
 
     val observer = new Aggregate.Observer[T] {
       def append(ch: Channel[T]) {
@@ -399,10 +397,10 @@ case class Aggregate[T]() {
   def cache: CachedAggregate[T] = CachedAggregate(this)
 }
 
-// TODO implement
 case class CachedAggregate[T](agg: Aggregate[T]) {
   import Aggregate.Observer
 
+  // TODO must be ordered
   private val values = new mutable.HashMap[Channel[T], Option[T]]()
 
   agg.attach(new Observer[T] {
@@ -428,7 +426,31 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
   }
 
   def filter(f: Channel[T => Boolean]): Aggregate[T] = {
-    this.aggregate
+    var currentFilter: (T => Boolean) = null
+
+    val map = mutable.HashMap[Channel[T], Channel[T]]()
+
+    val result = agg.filter(value =>
+      if (currentFilter == null) false
+      else currentFilter(value), map)
+
+    f.attach(filter => {
+      currentFilter = filter
+
+      result.clear()
+
+      values.foreach { case (key, value) =>
+        if (value.isDefined) {
+          if (filter(value.get)) {
+            map += ((key, result.append(value.get)))
+          } else {
+            map -= key
+          }
+        }
+      }
+    })
+
+    result
   }
 
   def update(f: T => T) {

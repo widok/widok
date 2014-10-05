@@ -518,5 +518,112 @@ object ChannelTest extends JasmineTest {
       agg.remove(ch)
       expect(sum).toBe(200 + 300)
     }
+
+    it("should update() with filter()") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      var sum = 0
+      agg.filter(_ > 1).sum.attach(value => sum = value)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(2 + 3)
+
+      cache.update(_ * 10)
+      cache.update(_ * 10)
+
+      expect(sum).toBe(100 + 200 + 300)
+
+      agg.remove(ch)
+      expect(sum).toBe(200 + 300)
+    }
+
+    it("should filter()") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filter(filter)
+
+      var sum = 0
+      agg2.sum.attach(value => sum = value)
+
+      expect(sum).toBe(0)
+
+      filter := (_ > 1)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(2 + 3)
+
+      agg.remove(ch2)
+      expect(sum).toBe(3)
+    }
+
+    it("should filter() already existing items") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filter(filter)
+
+      var sum = 0
+      agg2.sum.attach(value => sum = value)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(0)
+
+      filter := (_ > 0)
+      expect(sum).toBe(1 + 2 + 3)
+
+      filter := (_ > 1)
+      expect(sum).toBe(2 + 3)
+
+      ch := 10
+      ch2 := 20
+      ch3 := 30
+
+      expect(sum).toBe(10 + 20 + 30)
+
+      agg.remove(ch)
+      expect(sum).toBe(20 + 30)
+    }
+
+    it("should filter() already existing items with update()") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filter(filter)
+
+      var sum = 0
+      agg2.sum.attach(value => sum = value)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(0)
+
+      filter := (_ > 0)
+      expect(sum).toBe(1 + 2 + 3)
+
+      filter := (_ > 1)
+      expect(sum).toBe(2 + 3)
+
+      cache.update(_ * 10)
+      expect(sum).toBe(10 + 20 + 30)
+
+      agg.remove(ch)
+      expect(sum).toBe(20 + 30)
+    }
   }
 }
