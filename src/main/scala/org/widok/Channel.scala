@@ -238,6 +238,11 @@ case class Aggregate[T]() {
     observers.diff(ignore).foreach(_.append(elements.last))
   }
 
+  def append(ignore: Observer[T]*): Channel[T] = {
+    append(Channel[T](), ignore: _*)
+    elements.last
+  }
+
   def append(value: T, ignore: Observer[T]*): Channel[T] = {
     append(Channel[T](), ignore: _*)
     elements.last := value

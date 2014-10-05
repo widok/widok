@@ -419,6 +419,78 @@ object ChannelTest extends JasmineTest {
       zero := 2
       expect(gt1).toBe(true)
     }
+
+    it("should update()") {
+      val agg = Aggregate[Int]()
+
+      var appends = 0
+      var removes = 0
+
+      agg.attach(new Aggregate.Observer[Int] {
+        def append(cur: Channel[Int]) {
+          appends += 1
+        }
+
+        def remove(cur: Channel[Int]) {
+          removes += 1
+        }
+      })
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      val chCache = ch.cache
+      val chCache2 = ch2.cache
+      val chCache3 = ch3.cache
+
+      expect(appends).toBe(3)
+
+      chCache.update(_ * 100)
+      chCache2.update(_ * 100)
+      chCache3.update(_ * 100)
+
+      expect(appends).toBe(3)
+      expect(removes).toBe(0)
+
+      agg.remove(ch)
+      expect(removes).toBe(1)
+    }
+
+    it("should sum()") {
+      val agg = Aggregate[Int]()
+
+      var sum = 0
+      agg.sum.attach(value => sum = value)
+
+      val ch = agg.append()
+      val ch2 = agg.append()
+      val ch3 = agg.append()
+
+      val chCache = ch.cache
+      val chCache2 = ch2.cache
+      val chCache3 = ch3.cache
+
+      ch := 1
+      ch2 := 2
+      ch3 := 3
+
+      expect(sum).toBe(1 + 2 + 3)
+
+      chCache.update(_ * 100)
+      expect(chCache.get.get).toBe(100)
+
+      chCache2.update(_ * 100)
+      expect(chCache2.get.get).toBe(200)
+
+      chCache3.update(_ * 100)
+      expect(chCache3.get.get).toBe(300)
+
+      expect(sum).toBe(100 + 200 + 300)
+
+      agg.remove(ch)
+      expect(sum).toBe(200 + 300)
+    }
   }
 
   describe("CachedAggregate") {
