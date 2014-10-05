@@ -355,8 +355,10 @@ case class Aggregate[T]() {
 
     attach(new Aggregate.Observer[T] {
       def append(ch: Channel[T]) {
+        val target = agg.append()
+        
         ch.attach(value => {
-          val target = agg.append(f(value))
+          target := f(value)
           map += (ch -> target)
         })
       }
