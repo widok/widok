@@ -16,4 +16,19 @@ object Helpers {
   implicit class IterableWithAvg[T: Numeric](data: Iterable[T]) {
     def avg = average(data)
   }
+
+  // See https://github.com/scala-js/scala-js/issues/1027
+  trait Identity {
+    private[this] val hash: Int = Identity.nextID()
+    override def hashCode(): Int = hash
+    override def equals(other: Any) = this.hashCode() == other.hashCode()
+  }
+
+  object Identity {
+    private[this] var lastID: Int = 0
+    private def nextID(): Int = {
+      lastID += 1
+      lastID
+    }
+  }
 }

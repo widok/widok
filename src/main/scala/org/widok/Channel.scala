@@ -1,5 +1,7 @@
 package org.widok
 
+import org.widok.Helpers.Identity
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -15,13 +17,11 @@ object Channel {
   }
 }
 
-case class Channel[T]() {
+case class Channel[T]() extends Identity {
   import Channel.{Observer, Producer}
 
   private val producers = new ArrayBuffer[Producer[T]]() // TODO Restrict to one?
   private val observers = new ArrayBuffer[Observer[T]]()
-
-  override def equals(other: Any) = false
 
   // Finds the first non-empty value a producer returns.
   private def produced: Option[T] =
@@ -259,9 +259,11 @@ case class Aggregate[T]() {
   }
 
   def clear() {
-    elements.foreach(value =>
-      observers.foreach(_.remove(value)))
-    elements.clear()
+    while (elements.nonEmpty) {
+      val head = elements.head
+      elements -= head
+      observers.foreach(_.remove(head))
+    }
   }
 
   def isEmpty: Channel[Boolean] = {
@@ -303,8 +305,9 @@ case class Aggregate[T]() {
     ch
   }
 
-  def filter(f: T => Boolean, map: mutable.HashMap[Channel[T], Channel[T]] = mutable.HashMap.empty): Aggregate[T] = {
+  def filter(f: T => Boolean): Aggregate[T] = {
     val agg = Aggregate[T]()
+    val map = mutable.HashMap[Channel[T], Channel[T]]()
 
     val that = this
     var aggObserver: Aggregate.Observer[T] = null
@@ -314,7 +317,7 @@ case class Aggregate[T]() {
         ch.attach(value => if (f(value)) {
           if (map.contains(ch)) map(ch) := value
           else map += (ch -> agg.append(value, aggObserver))
-        } else if (map.contains(ch)) remove(ch))
+        } else remove(ch))
       }
 
       def remove(ch: Channel[T]) {
@@ -333,15 +336,14 @@ case class Aggregate[T]() {
       }
 
       def remove(ch: Channel[T]) {
-        that.remove(ch, observer)
-        map -= ch
+        val key = map.find(_._2 == ch).get._1
+        that.remove(key, observer)
+        map -= key
       }
     }
 
     attach(observer)
-
-    // TODO Not working properly.
-    // agg.attach(aggObserver)
+    agg.attach(aggObserver)
 
     agg
   }
@@ -354,7 +356,7 @@ case class Aggregate[T]() {
     attach(new Aggregate.Observer[T] {
       def append(ch: Channel[T]) {
         val target = agg.append()
-        
+
         ch.attach(value => {
           target := f(value)
           map += (ch -> target)
@@ -425,28 +427,40 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
       if (cur._2.isDefined) cur._1 := cur._2.get)
   }
 
+  // In contrast to Channel.filter() this method filters without back-propagation.
   def filter(f: Channel[T => Boolean]): Aggregate[T] = {
     var currentFilter: (T => Boolean) = null
 
     val map = mutable.HashMap[Channel[T], Channel[T]]()
+    val result = Aggregate[T]()
 
-    val result = agg.filter(value =>
-      if (currentFilter == null) false
-      else currentFilter(value), map)
+    agg.attach(new Aggregate.Observer[T] {
+      def append(ch: Channel[T]) {
+        ch.attach(value => if (currentFilter != null && currentFilter(value)) {
+          if (map.contains(ch)) map(ch) := value
+          else map += (ch -> result.append(value))
+        } else remove(ch))
+      }
+
+      def remove(ch: Channel[T]) {
+        if (map.contains(ch)) {
+          result.remove(map(ch))
+          map -= ch
+        }
+      }
+    })
 
     f.attach(filter => {
       currentFilter = filter
 
       result.clear()
+      map.clear() // TODO This should not be necessary.
+      assume(map.size == 0)
 
-      values.foreach { case (key, value) =>
-        if (value.isDefined) {
-          if (filter(value.get)) {
-            map += ((key, result.append(value.get)))
-          } else {
-            map -= key
-          }
-        }
+      values.foreach {
+        case (key, Some(value)) if filter(value) =>
+          map += ((key, result.append(value)))
+        case _ =>
       }
     })
 

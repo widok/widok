@@ -10,6 +10,7 @@ object ChannelTest extends JasmineTest {
       val b = Channel[Int]()
 
       expect(a == b).toBe(false)
+      expect(a == a).toBe(true)
     }
 
     it("should be usable as key in HashMap") {
@@ -239,6 +240,31 @@ object ChannelTest extends JasmineTest {
       expect(count).toBe(1)
     }
 
+    it("should filter() with back-propagation") {
+      val agg = Aggregate[Int]()
+
+      val filter = agg.filter(_ % 2 == 0)
+
+      var count = 0
+      filter.size.attach(value => count = value)
+
+      val three = agg.append(3)
+      val four = agg.append(4)
+      val five = agg.append(5)
+      val six = agg.append(6)
+
+      filter.clear()
+
+      expect(count).toBe(0)
+      expect(agg.contains(three)).toBe(true)
+      expect(agg.contains(four)).toBe(false)
+      expect(agg.contains(five)).toBe(true)
+      expect(agg.contains(six)).toBe(false)
+
+      val ten = filter.append(10)
+      expect(agg.contains(ten)).toBe(true)
+    }
+
     it("should filter() with size() and populate()") {
       val agg = Aggregate[Int]()
 
@@ -311,26 +337,6 @@ object ChannelTest extends JasmineTest {
       agg.clear()
 
       expect(sum).toBe(0)
-    }
-
-    it("should clear() on filtered aggregate without back-propagation") {
-      val agg = Aggregate[Int]()
-
-      var size = 0
-      agg.size.attach(value => size = value)
-
-      val multTwo = agg.filter(_ % 2 == 0)
-
-      agg.append(1)
-      agg.append(2)
-      agg.append(3)
-      agg.append(4)
-
-      expect(size).toBe(4)
-
-      multTwo.clear()
-
-      expect(size).toBe(4)
     }
 
     it("should clear() on mapped aggregate without back-propagation") {
@@ -587,7 +593,10 @@ object ChannelTest extends JasmineTest {
       filter := (_ > 1)
       expect(sum).toBe(2 + 3)
 
+      expect(agg.contains(ch)).toBe(true)
       ch := 10
+      expect(agg.contains(ch)).toBe(true)
+
       ch2 := 20
       ch3 := 30
 
