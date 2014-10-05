@@ -263,16 +263,27 @@ object HTML {
         fromSeq(list, f)
       })
 
+      value.populate()
       this
     }
 
-    // Binds using toString.
-    def bind[T](value: Channel[T]) = {
+    def bind[T <: Widget](value: Channel[T]): Widget = {
       value.attach(cur => {
-        DOM.clear(rendered)
-        rendered.appendChild(dom.document.createTextNode(cur.toString))
+        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
+        rendered.appendChild(cur.rendered)
       })
 
+      value.populate()
+      this
+    }
+
+    def bindOpt[T <: Option[Widget]](value: Channel[T]): Widget = {
+      value.attach(cur => {
+        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
+        if (cur.isDefined) rendered.appendChild(cur.get.rendered)
+      })
+
+      value.populate()
       this
     }
 
@@ -282,17 +293,7 @@ object HTML {
         rendered.innerHTML = cur
       })
 
-      this
-    }
-
-    // Binds using a custom formatter, may construct complex widgets.
-    def bind[T](value: Channel[T], f: PartialFunction[T, Widget]) = {
-      value.attach(cur => {
-        DOM.clear(rendered)
-        val res = f.lift(cur)
-        if (res.isDefined) rendered.appendChild(res.get.rendered)
-      })
-
+      value.populate()
       this
     }
   }

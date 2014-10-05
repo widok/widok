@@ -50,12 +50,9 @@ package object widok {
     value.populate()
   }
 
-  implicit def WidgetChannelToWidget[T <: Widget](value: Channel[T]) = new Widget {
-    val rendered = HTML.Container.Inline().rendered
-    value.attach(cur => {
-      if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
-      rendered.appendChild(cur.rendered)
-    })
-    value.populate()
-  }
+  implicit def WidgetChannelToWidget[T <: Widget](value: Channel[T]): Widget =
+    HTML.Container.Inline().bind(value)
+
+  implicit def OptWidgetChannelToWidget[T <: Option[Widget]](value: Channel[T]): Widget =
+    HTML.Container.Inline().bindOpt(value)
 }
