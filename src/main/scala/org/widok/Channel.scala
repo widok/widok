@@ -409,6 +409,10 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
     }
   })
 
+  /* Return immutable version of the value map. */
+  @deprecated("Leads to imperative style", "0.1")
+  def get = values.toMap
+
   def aggregate = agg
 
   def filter(f: Channel[T => Boolean]): Aggregate[T] = {
