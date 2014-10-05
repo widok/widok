@@ -59,11 +59,16 @@ trait Widget {
     this
   }
 
-  def show[T](value: Channel[Boolean]) = {
+  def show[T](value: Channel[Boolean], remove: Boolean = true) = {
     value.attach(cur =>
-      this.rendered.style.visibility =
-        if (cur) "visible"
-        else "hidden")
+      if (remove) {
+        this.rendered.style.display =
+          if (cur) "block" else "none"
+      } else {
+        this.rendered.style.visibility =
+          if (cur) "visible" else "hidden"
+      })
+
     value.populate()
     this
   }
