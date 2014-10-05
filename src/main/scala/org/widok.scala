@@ -41,9 +41,30 @@ package object widok {
       .asInstanceOf[org.scalajs.dom.HTMLElement]
   }
 
-  implicit def ChannelToWidget[T](value: Channel[T]) = new Widget {
+  implicit def StringChannelToWidget[T <: String](value: Channel[T]) = new Widget {
     val rendered = HTML.Container.Inline().rendered
     value.attach(cur => rendered.textContent = cur.toString)
+    value.populate()
+  }
+
+  implicit def IntChannelToWidget[T <: Int](value: Channel[T]) = new Widget {
+    val rendered = HTML.Container.Inline().rendered
+    value.attach(cur => rendered.textContent = cur.toString)
+    value.populate()
+  }
+
+  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]) = new Widget {
+    val rendered = HTML.Container.Inline().rendered
+    value.attach(cur => rendered.textContent = cur.toString)
+    value.populate()
+  }
+
+  implicit def WidgetChannelToWidget[T <: Widget](value: Channel[T]) = new Widget {
+    val rendered = HTML.Container.Inline().rendered
+    value.attach(cur => {
+      if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
+      rendered.appendChild(cur.rendered)
+    })
     value.populate()
   }
 }
