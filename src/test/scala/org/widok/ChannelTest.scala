@@ -364,8 +364,11 @@ object ChannelTest extends JasmineTest {
       val one = agg.append(1)
       expect(sum).toBe(100)
 
+      one := 2
+      expect(sum).toBe(200)
+
       agg.append(2)
-      expect(sum).toBe(300)
+      expect(sum).toBe(400)
 
       agg.remove(one)
       expect(sum).toBe(200)
