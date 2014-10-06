@@ -240,7 +240,7 @@ object ChannelTest extends JasmineTest {
       expect(count).toBe(1)
     }
 
-    it("should filter() with back-propagation") {
+    it("should filter() with back-propagation of added elements") {
       val agg = Aggregate[Int]()
 
       val filter = agg.filter(_ % 2 == 0)
@@ -263,6 +263,24 @@ object ChannelTest extends JasmineTest {
 
       val ten = filter.append(10)
       expect(agg.contains(ten)).toBe(true)
+    }
+
+    it("should filter() with back-propagation of changed elements") {
+      val agg = Aggregate[Int]()
+
+      val filter = agg.filter(_ % 2 == 0)
+      val cache = filter.cache
+
+      var sum = 0
+      agg.sum.attach(value => sum = value)
+
+      agg.append(4)
+      expect(sum).toBe(4)
+
+      filter.append(3)
+      cache.update(_ + 2)
+
+      expect(sum).toBe(4 + 5)
     }
 
     it("should filter() with size() and populate()") {
@@ -633,6 +651,54 @@ object ChannelTest extends JasmineTest {
 
       agg.remove(ch)
       expect(sum).toBe(20 + 30)
+    }
+
+    it("should filter() with back-propagation of added elements") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filter(filter)
+
+      var size = 0
+      agg.size.attach(value => size = value)
+
+      val ch = agg.append(1)
+      expect(size).toBe(1)
+
+      val ch2 = agg2.append(1)
+      expect(size).toBe(2)
+
+      agg2.remove(ch2)
+      expect(size).toBe(1)
+    }
+
+    it("should filter() with back-propagation of changed elements") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filter(filter)
+      val cache2 = agg2.cache
+
+      var sum = 0
+      agg.sum.attach(value => sum = value)
+
+      filter := (_ > 0)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+
+      expect(sum).toBe(1 + 2 + 3)
+
+      cache2.update(_ + 1)
+      expect(sum).toBe(2 + 3 + 4)
+      cache2.update(_ - 1)
+
+      filter := (_ > 1)
+      cache2.update(_ + 1)
+      expect(sum).toBe(1 + 3 + 4)
     }
   }
 }
