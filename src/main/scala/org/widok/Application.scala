@@ -4,10 +4,24 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExportDescendentObjects, JSExport}
 
 @JSExportDescendentObjects
-class Application(enabled: Set[Route], fallback: Route) extends js.JSApp {
+trait Application extends js.JSApp {
   @JSExport
+  def main()
+}
+
+class RoutingApplication(enabled: Set[Route], fallback: Route) extends Application {
   def main() {
     val router = Router(enabled, fallback = Some(fallback))
     router.listen()
+  }
+}
+
+trait PageApplication extends Application with BasePage {
+  def contents(): Seq[Widget]
+  def ready()
+
+  def main() {
+    render()
+    ready()
   }
 }

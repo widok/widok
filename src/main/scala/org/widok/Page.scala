@@ -1,11 +1,9 @@
 package org.widok
 
-trait Page {
+trait BasePage {
   def contents(): Seq[Widget]
 
-  def ready(route: InstantiatedRoute)
-
-  def render(route: InstantiatedRoute) {
+  def render() {
     (for {
       page <- DOM.element("page")
     } yield {
@@ -13,10 +11,17 @@ trait Page {
 
       contents().foreach(elem =>
         page.appendChild(elem.rendered))
-
-      this.ready(route)
     }).orElse {
       sys.error("DOM element not found. The JavaScript files must be loaded at the end of the HTML document.")
     }
+  }
+}
+
+trait Page extends BasePage {
+  def ready(route: InstantiatedRoute)
+
+  def render(route: InstantiatedRoute) {
+    render()
+    ready(route)
   }
 }
