@@ -117,40 +117,31 @@ object HTML {
       rendered.setAttribute("autocomplete", if (autocomplete) "on" else "off")
       rendered.setAttribute("type", "text")
 
-      var enter: () => Unit = null
-
       /**
        * Provides two-way binding.
        *
-       * @param value
-       *              The channel to listen to.
+       * @param readChannel
+       *              The channel to read from.
+       * @param writeChannel
+       *              The channel to write to.
        * @param live
        *             Produce every single character if true, otherwise
        *             produce only if enter was pressed.
        * @return
        */
-      def bind(value: Channel[String], live: Boolean = false) = {
-        val producer = () =>
-          Some(rendered.value)
-        val observer = (text: String) =>
-          rendered.value = text.toString
-
-        value.attach(producer)
-        value.attach(observer)
+      def bind(readChannel: Channel[String], writeChannel: Channel[String], live: Boolean): Text = {
+        readChannel.attach(() => Some(rendered.value)) // Producer
+        readChannel.attach((text: String) => rendered.value = text) // Observer
 
         rendered.onkeyup = (e: KeyboardEvent) =>
-          if (e.keyCode == 13 || live) {
-            value.produce(rendered.value, observer)
-            if (enter != null) enter()
-          }
+          if (e.keyCode == 13 || live)
+            writeChannel.produce(rendered.value)
 
         this
       }
 
-      def onEnter(f: () => Unit) = {
-        enter = f
-        this
-      }
+      def bind(readWriteChannel: Channel[String], live: Boolean = false): Text =
+        bind(readWriteChannel, (value: String) => readWriteChannel.produce(value), live)
     }
 
     case class Checkbox() extends Widget {
@@ -158,25 +149,18 @@ object HTML {
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
 
-      def bind(value: Channel[Boolean], f: (Boolean, Checkbox) => Unit): Checkbox = {
-        val producer = () =>
-          Some(rendered.checked)
-        val observer = (checked: Boolean) =>
-          rendered.checked = checked
+      def bind(readChannel: Channel[Boolean], writeChannel: Channel[Boolean]): Checkbox = {
+        readChannel.attach(() => Some(rendered.checked)) // Producer
+        readChannel.attach((checked: Boolean) => rendered.checked = checked) // Observer
 
-        value.attach(producer)
-        value.attach(observer)
-
-        rendered.onchange = (e: dom.Event) => {
-          f(rendered.checked, this)
-          value.produce(rendered.checked, observer)
-        }
+        rendered.onchange = (e: dom.Event) =>
+          writeChannel.produce(rendered.checked)
 
         this
       }
 
-      def bind(value: Channel[Boolean]): Checkbox =
-        bind(value, (a, b) => ())
+      def bind(readWriteChannel: Channel[Boolean]): Checkbox =
+        bind(readWriteChannel, (value: Boolean) => readWriteChannel.produce(value))
     }
 
     case class Select(options: Seq[String], selected: Int = -1) extends Widget {
@@ -193,33 +177,30 @@ object HTML {
   }
 
   trait List extends Widget {
-    def bind[T, U <: Seq[T]](channel: Channel[U], f: (T, List.Item) => Widget) = {
+    def bind[T, U <: Seq[T]](channel: Channel[U], f: T => Widget) = {
       channel.attach(list => {
         DOM.clear(rendered)
 
         list.foreach { cur =>
-          val li = List.Item()
-          li.rendered.appendChild(f(cur, li).rendered)
-          rendered.appendChild(li.rendered)
+          rendered.appendChild(f(cur).rendered)
         }
       })
 
       this
     }
 
-    def bind[T](aggregate: Aggregate[T], f: (Channel[T], List.Item) => Widget) = {
-      var map = mutable.Map[Channel[T], dom.Node]()
+    def bind[T](aggregate: Aggregate[T])(f: Channel[T] => Widget) = {
+      var map = mutable.Map[Channel[T], Widget]()
 
       aggregate.attach(new Aggregate.Observer[T] {
         def append(cur: Channel[T]) {
-          val li = List.Item()
-          li.rendered.appendChild(f(cur, li).rendered)
+          val li = f(cur)
           rendered.appendChild(li.rendered)
-          map += (cur -> li.rendered)
+          map += (cur -> li)
         }
 
         def remove(cur: Channel[T]) {
-          rendered.removeChild(map(cur))
+          rendered.removeChild(map(cur).rendered)
           map -= cur
         }
       })
