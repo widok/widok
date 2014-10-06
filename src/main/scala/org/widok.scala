@@ -32,6 +32,12 @@ package object widok {
       .asInstanceOf[org.scalajs.dom.HTMLElement]
   }
 
+  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]) = new Widget {
+    val rendered = HTML.Container.Inline().rendered
+    value.attach(cur => rendered.textContent = cur.toString)
+    value.populate()
+  }
+
   implicit def StringChannelToWidget[T <: String](value: Channel[T]) = new Widget {
     val rendered = HTML.Container.Inline().rendered
     value.attach(cur => rendered.textContent = cur.toString)
