@@ -61,4 +61,10 @@ package object widok {
 
   implicit def OptWidgetChannelToWidget[T <: Option[Widget]](value: Channel[T]): Widget =
     HTML.Container.Inline().bindOpt(value)
+
+  implicit def FunctionToChannel[T](f: T => Unit): Channel[T] = {
+    val ch = Channel[T]()
+    ch.attach(f)
+    ch
+  }
 }
