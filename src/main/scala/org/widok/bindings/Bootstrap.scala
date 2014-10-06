@@ -1,5 +1,6 @@
 package org.widok.bindings
 
+import org.scalajs.dom
 import org.widok._
 import org.widok.bindings.HTML.Input.Checkbox
 
@@ -140,7 +141,7 @@ object Bootstrap {
     def renderTabs(tabs: Seq[Tab], currentTab: Channel[Tab]) = {
       val renderedTabs = tabs.map(tab =>
         Bootstrap.Navigation.Item(currentTab.map(_ == tab))(
-          HTML.Anchor()(tab.name).onClick(() => currentTab := tab)))
+          HTML.Anchor()(tab.name).bindMouse(Event.Mouse.Click, (e: dom.MouseEvent) => currentTab := tab)))
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
