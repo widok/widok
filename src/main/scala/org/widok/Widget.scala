@@ -44,6 +44,11 @@ trait Widget {
     this
   }
 
+  def withCSS(state: Channel[Boolean], cssTags: String*) = {
+    state.attach(value => cssTags.foreach(cssTag => setCSS(cssTag, value)))
+    this
+  }
+
   def setCSS(cssTag: String, state: Boolean) {
     val tags = this.rendered.className.split(" ").toSet
 
