@@ -164,20 +164,30 @@ object Bootstrap {
   }
 
   object NavigationBar {
-    def apply(fixed: NavigationBar.Fixed = FixedTop)(contents: Widget*) =
-      HTML.Navigation(contents: _*)
-        .withCSS(s"navbar navbar-default ${fixed.cssTag}")
-        .withAttribute("role", "navigation")
+    trait Position {
+      def cssTag(fixed: Boolean): String
+    }
 
-    trait Fixed {
-      val cssTag: String
+    object Position {
+      case object Top extends Position {
+        def cssTag(fixed: Boolean) = {
+          val scrollingBehaviour = if (fixed == true) "fixed" else "static"
+          s"navbar navbar-default navbar-${scrollingBehaviour}-top"
+        }
+      }
+
+      case object Bottom extends Position {
+        def cssTag(fixed: Boolean) = {
+          val scrollingBehaviour = if (fixed) "fixed" else "static"
+          s"navbar navbar-default navbar-${scrollingBehaviour}-bottom"
+        }
+      }
     }
-    case object FixedTop extends Fixed {
-      val cssTag = "navbar-fixed-top"
-    }
-    case object FixedBottom extends Fixed {
-      val cssTag = "navbar-fixed-bottom"
-    }
+    
+    def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: Widget*) =
+      HTML.Navigation(contents: _*)
+        .withCSS(position.cssTag(fixed))
+        .withAttribute("role", "navigation")
 
     def Toggle() =
        HTML.Button(
