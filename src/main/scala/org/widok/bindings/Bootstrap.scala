@@ -2,12 +2,38 @@ package org.widok.bindings
 
 import org.scalajs.dom
 import org.widok._
-import org.widok.bindings.HTML.Input.Checkbox
 
 /**
  * Native widgets for Bootstrap 3 components
  */
 object Bootstrap {
+  object TextContainer {
+    trait Style { val cssTag: String }
+    object Style {
+      case object Small extends Style { val cssTag = "small" }
+      case object Mark extends Style { val cssTag = "mark" }
+      case object Left extends Style { val cssTag = "text-left" }
+      case object Right extends Style { val cssTag = "text-right" }
+      case object Center extends Style { val cssTag = "text-center" }
+      case object Justify extends Style { val cssTag = "text-justify" }
+      case object NoWrap extends Style { val cssTag = "text-nowrap" }
+      case object Lowercase extends Style { val cssTag = "text-lowercase" }
+      case object Uppercase extends Style { val cssTag = "text-uppercase" }
+      case object Capitalise extends Style { val cssTag = "text-capitalize" }
+      case object Muted extends Style { val cssTag = "text-muted" }
+      case object Primary extends Style { val cssTag = "text-primary" }
+      case object Success extends Style { val cssTag = "text-success" }
+      case object Info extends Style { val cssTag = "text-info" }
+      case object Warning extends Style { val cssTag = "text-warning" }
+      case object Danger extends Style { val cssTag = "text-danger" }
+    }
+  }
+
+  case class TextContainer(styles: TextContainer.Style*)(contents: Widget*) extends Widget {
+    val rendered = tag("div", contents: _*)
+    this.rendered.className = styles.map(_.cssTag).mkString(" ")
+  }
+
   // TODO Add missing ones.
   trait Glyphicon { val cssTag: String }
   object Glyphicon {
@@ -203,7 +229,7 @@ object Bootstrap {
 
     def Brand(contents: Widget*) =
       HTML.Anchor()(contents: _*)
-          .withCSS("navbar-brand")
+        .withCSS("navbar-brand")
 
     def Collapse(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
