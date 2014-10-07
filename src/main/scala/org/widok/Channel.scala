@@ -76,6 +76,11 @@ case class Channel[T]() extends Identity {
     producers -= producer
   }
 
+  def destroy() {
+    producers.clear()
+    observers.clear()
+  }
+
   def take(count: Int): Channel[T] = {
     assume(count > 0)
 
