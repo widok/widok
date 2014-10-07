@@ -565,12 +565,12 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(200 + 300)
     }
 
-    it("should filter()") {
+    it("should filterCh()") {
       val agg = Aggregate[Int]()
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
-      val agg2 = cache.filter(filter)
+      val agg2 = cache.filterCh(filter)
 
       var sum = 0
       agg2.sum.attach(value => sum = value)
@@ -589,12 +589,12 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(3)
     }
 
-    it("should filter() already existing items") {
+    it("should filterCh() already existing items") {
       val agg = Aggregate[Int]()
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
-      val agg2 = cache.filter(filter)
+      val agg2 = cache.filterCh(filter)
 
       var sum = 0
       agg2.sum.attach(value => sum = value)
@@ -624,12 +624,12 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(20 + 30)
     }
 
-    it("should filter() already existing items with update()") {
+    it("should filterCh() already existing items with update()") {
       val agg = Aggregate[Int]()
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
-      val agg2 = cache.filter(filter)
+      val agg2 = cache.filterCh(filter)
 
       var sum = 0
       agg2.sum.attach(value => sum = value)
@@ -653,12 +653,12 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(20 + 30)
     }
 
-    it("should filter() with back-propagation of added elements") {
+    it("should filterCh() with back-propagation of added elements") {
       val agg = Aggregate[Int]()
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
-      val agg2 = cache.filter(filter)
+      val agg2 = cache.filterCh(filter)
 
       var size = 0
       agg.size.attach(value => size = value)
@@ -673,12 +673,12 @@ object ChannelTest extends JasmineTest {
       expect(size).toBe(1)
     }
 
-    it("should filter() with back-propagation of changed elements") {
+    it("should filterCh() with back-propagation of changed elements") {
       val agg = Aggregate[Int]()
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
-      val agg2 = cache.filter(filter)
+      val agg2 = cache.filterCh(filter)
       val cache2 = agg2.cache
 
       var sum = 0

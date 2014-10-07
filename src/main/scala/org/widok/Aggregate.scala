@@ -253,7 +253,7 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   }
 
   // TODO Implement this in terms of Channel.filter() in order to prevent code duplication.
-  def filter(f: Channel[T => Boolean]): Aggregate[T] = {
+  def filterCh(f: Channel[T => Boolean]): Aggregate[T] = {
     var currentFilter: (T => Boolean) = null
 
     val observers = mutable.HashMap[Channel[T], Channel.Observer[T]]()
