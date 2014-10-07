@@ -484,6 +484,35 @@ object ChannelTest extends JasmineTest {
       expect(removes).toBe(1)
     }
 
+    it("should update() preserve order") {
+      val agg = Aggregate[Int]()
+      val aggCache = agg.cache
+
+      var allTrue = false
+      var last = 0
+      aggCache.map(cur => {
+        val res = cur > last
+        last = cur
+        res
+      }).forall(_ == true).attach(value => allTrue = value)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+      val ch4 = agg.append(4)
+      val ch5 = agg.append(5)
+
+      expect(allTrue).toBe(true)
+      expect(last).toBe(5)
+
+      allTrue = false
+      last = 0
+      aggCache.update(_ * 2)
+
+      expect(allTrue).toBe(true)
+      expect(last).toBe(10)
+    }
+
     it("should sum()") {
       val agg = Aggregate[Int]()
 
@@ -587,6 +616,39 @@ object ChannelTest extends JasmineTest {
 
       agg.remove(ch2)
       expect(sum).toBe(3)
+    }
+
+    it("should filterCh() preserve order") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
+      val agg2 = cache.filterCh(filter)
+
+      var allTrue = false
+      var last = 0
+      agg2.map(cur => {
+        val res = cur > last
+        last = cur
+        res
+      }).forall(_ == true).attach(value => allTrue = value)
+
+      filter := (_ > 1)
+
+      val ch = agg.append(1)
+      val ch2 = agg.append(2)
+      val ch3 = agg.append(3)
+      val ch4 = agg.append(4)
+      val ch5 = agg.append(5)
+
+      expect(allTrue).toBe(true)
+      expect(last).toBe(5)
+
+      last = 0
+      allTrue = false
+      filter := (_ > 0)
+      expect(allTrue).toBe(true)
+      expect(last).toBe(5)
     }
 
     it("should filterCh() already existing items") {

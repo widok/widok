@@ -47,7 +47,7 @@ object Aggregate {
 case class Aggregate[T]() {
   import Aggregate.Observer
 
-  private val elements = new ArrayBuffer[Channel[T]]()
+  private[widok] val elements = new ArrayBuffer[Channel[T]]()
   private val observers = new ArrayBuffer[Observer[T]]()
 
   def cache: CachedAggregate[T] = CachedAggregate(this)
@@ -229,13 +229,11 @@ case class Aggregate[T]() {
 case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   import Aggregate.Observer
 
-  // TODO must be ordered
-  private val values = new mutable.HashMap[Channel[T], Option[T]]()
+  private val values = new mutable.HashMap[Channel[T], T]()
 
   agg.attach(new Observer[T] {
     def append(ch: Channel[T]) {
-      values += ((ch, None))
-      ch.attach(cur => values(ch) = Some(cur))
+      ch.attach(cur => values += (ch -> cur))
     }
 
     def remove(ch: Channel[T]) {
@@ -248,8 +246,8 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   def get = values.toMap
 
   def flush() {
-    values.foreach(cur =>
-      if (cur._2.isDefined) cur._1 := cur._2.get)
+    agg.elements.foreach(ch =>
+      if (values.contains(ch)) ch := values(ch))
   }
 
   // TODO Implement this in terms of Channel.filter() in order to prevent code duplication.
@@ -321,9 +319,9 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
       map.clear() // TODO This should not be necessary.
       assume(map.size == 0)
 
-      values.foreach {
-        case (key, Some(value)) if filter(value) => add(key, value)
-        case _ =>
+      agg.elements.foreach { ch =>
+        if (values.contains(ch) && filter(values(ch)))
+          add(ch, values(ch))
       }
     })
 
@@ -331,11 +329,11 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   }
 
   def update(f: T => T) {
-    values.foreach { case (key, value) =>
-      if (value.isDefined) {
-        val v = f(value.get)
-        values(key) = Some(v)
-        key := v
+    agg.elements.foreach { ch =>
+      if (values.contains(ch)) {
+        val value = f(values(ch))
+        values += (ch -> value)
+        ch := value
       }
     }
   }
