@@ -32,6 +32,8 @@ case class Channel[T]() extends Identity {
       }
     }
 
+  def cache: CachedChannel[T] = CachedChannel(this)
+
   def produce(v: T) {
     observers.foreach(_(v))
   }
@@ -121,7 +123,6 @@ case class Channel[T]() extends Identity {
 
   def head: Channel[T] = take(1)
   def tail: Channel[T] = skip(1)
-  def cache: Cache[T] = Cache(this)
 
   // Maps each value change of ``other`` to a change of ``this``.
   def zip[U](other: Channel[U]): Channel[(T, U)] = {
@@ -163,12 +164,12 @@ case class Channel[T]() extends Identity {
   }
 }
 
-case class Cache[T](ch: Channel[T]) {
+case class CachedChannel[T](ch: Channel[T] = Channel[T]()) {
+  import Channel.{Producer, Observer}
+
   private var value: Option[T] = None
 
   ch.attach(t => value = Some(t))
-
-  def channel = ch
 
   @deprecated("Leads to imperative style", "0.1")
   def get = value
@@ -179,6 +180,26 @@ case class Cache[T](ch: Channel[T]) {
 
   override def toString =
     value.map(_.toString).getOrElse("<undefined>")
+
+  /* Inherit all public methods manually from Channel except for cache(). */
+  def produce(v: T) = ch.produce(v)
+  def produce(v: T, ignore: Observer[T]*) = ch.produce(v, ignore: _*)
+  def flatProduce(v: Option[T]) = ch.flatProduce(v)
+  def flatProduce(v: Option[T], ignore: Observer[T]*) = ch.flatProduce(v, ignore: _*)
+  def :=(v: T) = ch := v
+  def populate() = ch.populate()
+  def attach(observer: Observer[T]) = ch.attach(observer)
+  def attach(producer: Producer[T]) = ch.attach(producer)
+  def detach(observer: Observer[T]) = ch.detach(observer)
+  def detach(producer: Producer[T]) = ch.detach(producer)
+  def take(count: Int): Channel[T] = ch.take(count)
+  def skip(count: Int): Channel[T] = ch.skip(count)
+  def unique: Channel[T] = ch.unique
+  def head: Channel[T] = ch.head
+  def tail: Channel[T] = ch.tail
+  def zip[U](other: Channel[U]): Channel[(T, U)] = ch.zip(other)
+  def map[U](f: T => U): Channel[U] = ch.map(f)
+  def lens[U](get: T => U, set: (T, U) => T): Channel[U] = ch.lens(get, set)
 }
 
 object Aggregate {
@@ -195,7 +216,7 @@ object Aggregate {
       var sum = 0
       val map = new mutable.HashMap[Channel[Int], Int]()
 
-      agg.attach(new Aggregate.Observer[Int] {
+      agg.attach(new Observer[Int] {
         def append(cur: Channel[Int]) {
           cur.attach(value => {
             if (map.get(cur).isDefined) {
@@ -227,6 +248,8 @@ case class Aggregate[T]() {
 
   private val elements = new ArrayBuffer[Channel[T]]()
   private val observers = new ArrayBuffer[Observer[T]]()
+
+  def cache: CachedAggregate[T] = CachedAggregate(this)
 
   def attach(observer: Observer[T]) {
     assume(!observers.contains(observer))
@@ -400,11 +423,9 @@ case class Aggregate[T]() {
 
     ch
   }
-
-  def cache: CachedAggregate[T] = CachedAggregate(this)
 }
 
-case class CachedAggregate[T](agg: Aggregate[T]) {
+case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   import Aggregate.Observer
 
   // TODO must be ordered
@@ -424,8 +445,6 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
   /* Return immutable version of the value map. */
   @deprecated("Leads to imperative style", "0.1")
   def get = values.toMap
-
-  def aggregate = agg
 
   def flush() {
     values.foreach(cur =>
@@ -457,7 +476,7 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
       })
     }
 
-    val observer = new Aggregate.Observer[T] {
+    val observer = new Observer[T] {
       def append(ch: Channel[T]) {
         val observer: Channel.Observer[T] = value =>
           if (currentFilter != null && currentFilter(value)) {
@@ -478,7 +497,7 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
     }
 
     // Back-propagate changes.
-    resultObserver = new Aggregate.Observer[T] {
+    resultObserver = new Observer[T] {
       def append(ch: Channel[T]) {
         that.agg.append(ch, observer)
         map += (ch -> ch)
@@ -519,4 +538,20 @@ case class CachedAggregate[T](agg: Aggregate[T]) {
       }
     }
   }
+
+  /* Inherit all public methods manually from Aggregate except for cache(). */
+  def attach(observer: Observer[T]) = agg.attach(observer)
+  def append(value: Channel[T], ignore: Observer[T]*) = agg.append(value, ignore: _*)
+  def append(ignore: Observer[T]*): Channel[T] = agg.append(ignore: _*)
+  def detach(observer: Observer[T]) = agg.detach(observer)
+  def append(value: T, ignore: Observer[T]*): Channel[T] = agg.append(value, ignore: _*)
+  def contains(value: Channel[T]) = agg.contains(value)
+  def remove(value: Channel[T], ignore: Observer[T]*) = agg.remove(value, ignore: _*)
+  def clear(ignore: Observer[T]*) = agg.clear(ignore: _*)
+  def isEmpty: Channel[Boolean] = agg.isEmpty
+  def nonEmpty: Channel[Boolean] = agg.nonEmpty
+  def size: Channel[Int] = agg.size
+  def filter(f: T => Boolean): Aggregate[T] = agg.filter(f)
+  def map[U](f: T => U): Aggregate[U] = agg.map(f)
+  def forall[U](f: T => Boolean): Channel[Boolean] = agg.forall(f)
 }
