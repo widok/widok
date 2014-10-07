@@ -238,17 +238,31 @@ object HTML {
       this
     }
 
-    def bindMany[T](value: Channel[Seq[T]], f: T => Widget) = {
-      value.attach(list => {
-        DOM.clear(rendered)
-        fromSeq(list, f)
-      })
-
+    def bindString[T <: String](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
       value.populate()
       this
     }
 
-    def bind[T <: Widget](value: Channel[T]): Widget = {
+    def bindInt[T <: Int](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindDouble[T <: Double](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindBoolean[T <: Boolean](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindWidget[T <: Widget](value: Channel[T]) = {
       value.attach(cur => {
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         rendered.appendChild(cur.rendered)
@@ -258,7 +272,7 @@ object HTML {
       this
     }
 
-    def bindOpt[T <: Option[Widget]](value: Channel[T]): Widget = {
+    def bindOptWidget[T <: Option[Widget]](value: Channel[T]) = {
       value.attach(cur => {
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         if (cur.isDefined) rendered.appendChild(cur.get.rendered)
@@ -272,6 +286,16 @@ object HTML {
     def bindRaw[T](value: Channel[String]) = {
       value.attach(cur => {
         rendered.innerHTML = cur
+      })
+
+      value.populate()
+      this
+    }
+
+    def bindMany[T](value: Channel[Seq[T]], f: T => Widget) = {
+      value.attach(list => {
+        DOM.clear(rendered)
+        fromSeq(list, f)
       })
 
       value.populate()

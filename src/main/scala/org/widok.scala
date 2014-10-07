@@ -32,35 +32,23 @@ package object widok {
       .asInstanceOf[org.scalajs.dom.HTMLElement]
   }
 
-  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]) = new Widget {
-    val rendered = HTML.Container.Inline().rendered
-    value.attach(cur => rendered.textContent = cur.toString)
-    value.populate()
-  }
+  implicit def StringChannelToWidget[T <: String](value: Channel[T]): Widget =
+    HTML.Container.Inline().bindString(value)
 
-  implicit def StringChannelToWidget[T <: String](value: Channel[T]) = new Widget {
-    val rendered = HTML.Container.Inline().rendered
-    value.attach(cur => rendered.textContent = cur.toString)
-    value.populate()
-  }
+  implicit def IntChannelToWidget[T <: Int](value: Channel[T]): Widget =
+    HTML.Container.Inline().bindInt(value)
 
-  implicit def IntChannelToWidget[T <: Int](value: Channel[T]) = new Widget {
-    val rendered = HTML.Container.Inline().rendered
-    value.attach(cur => rendered.textContent = cur.toString)
-    value.populate()
-  }
+  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]): Widget =
+    HTML.Container.Inline().bindDouble(value)
 
-  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]) = new Widget {
-    val rendered = HTML.Container.Inline().rendered
-    value.attach(cur => rendered.textContent = cur.toString)
-    value.populate()
-  }
+  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]): Widget =
+    HTML.Container.Inline().bindBoolean(value)
 
   implicit def WidgetChannelToWidget[T <: Widget](value: Channel[T]): Widget =
-    HTML.Container.Inline().bind(value)
+    HTML.Container.Inline().bindWidget(value)
 
   implicit def OptWidgetChannelToWidget[T <: Option[Widget]](value: Channel[T]): Widget =
-    HTML.Container.Inline().bindOpt(value)
+    HTML.Container.Inline().bindOptWidget(value)
 
   implicit def FunctionToChannel[T](f: T => Unit): Channel[T] = {
     val ch = Channel[T]()
