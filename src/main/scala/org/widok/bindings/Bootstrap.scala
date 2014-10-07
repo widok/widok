@@ -171,22 +171,22 @@ object Bootstrap {
     object Position {
       case object Top extends Position {
         def cssTag(fixed: Boolean) = {
-          val scrollingBehaviour = if (fixed == true) "fixed" else "static"
-          s"navbar navbar-default navbar-${scrollingBehaviour}-top"
+          val scrollingBehaviour = if (fixed) "fixed" else "static"
+          s"navbar-$scrollingBehaviour-top"
         }
       }
 
       case object Bottom extends Position {
         def cssTag(fixed: Boolean) = {
           val scrollingBehaviour = if (fixed) "fixed" else "static"
-          s"navbar navbar-default navbar-${scrollingBehaviour}-bottom"
+          s"navbar-$scrollingBehaviour-bottom"
         }
       }
     }
-    
+
     def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: Widget*) =
       HTML.Navigation(contents: _*)
-        .withCSS(position.cssTag(fixed))
+        .withCSS("navbar navbar-default " + position.cssTag(fixed))
         .withAttribute("role", "navigation")
 
     def Toggle() =
