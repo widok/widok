@@ -629,6 +629,48 @@ object AggregateTest extends JasmineTest {
       val cache = agg.cache
 
       val filter = Channel[Int => Boolean]()
+      val filtered = cache.filterCh(filter)
+
+      var size = 0
+      filtered.size.attach(value => size = value)
+
+      val ch = agg.append(1)
+      val chCache = ch.cache
+
+      filter := (_ > 0)
+      expect(size).toBe(1)
+
+      // Change first produced value to -1.
+      // TODO Shorten this.
+      filtered.attach(new Aggregate.Observer[Int] {
+        def append(cur: Channel[Int]) {
+          var changed = false
+          cur.attach(_ => {
+            if (!changed) {
+              changed = true
+              cur := -1
+            }
+          })
+        }
+
+        def remove(cur: Channel[Int]) {
+
+        }
+      })
+      filter := (_ > 0)
+
+      expect(chCache.get.get).toBe(-1)
+      expect(size).toBe(0)
+
+      filter := (_ > -2)
+      expect(size).toBe(1)
+    }
+
+    it("should filterCh() with back-propagation of changed elements (2)") {
+      val agg = Aggregate[Int]()
+      val cache = agg.cache
+
+      val filter = Channel[Int => Boolean]()
       val agg2 = cache.filterCh(filter)
       val cache2 = agg2.cache
 

@@ -260,19 +260,29 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
     val result = Aggregate[T]()
 
     val that = this
-    var resultObserver: Aggregate.Observer[T] = null
+    var resultObserver: Observer[T] = null
 
-    def add(key: Channel[T], value: T) {
+    def add(parent: Channel[T], value: T) {
       val ch = Channel[T]()
-      result.append(ch, resultObserver)
-      ch := value
-      map += ((key, ch))
+      map += ((parent, ch))
 
       ch.attach(value => {
-        key.detach(observers(key)) // TODO Find a better way.
-        key.produce(value)
-        key.attach(observers(key))
+        parent.detach(observers(parent)) // TODO Find a better way.
+        parent.produce(value)
+        parent.attach(observers(parent))
+
+        if (!currentFilter(value)) delete(parent)
       })
+
+      result.append(ch, resultObserver)
+      ch := value
+    }
+
+    def delete(ch: Channel[T]) {
+      if (map.contains(ch)) {
+        result.remove(map(ch), resultObserver)
+        map -= ch
+      }
     }
 
     val observer = new Observer[T] {
@@ -281,17 +291,15 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
           if (currentFilter != null && currentFilter(value)) {
             if (map.contains(ch)) map(ch) := value
             else add(ch, value)
-          } else remove(ch)
+          } else delete(ch)
+
         observers += (ch -> observer)
         ch.attach(observer)
       }
 
       def remove(ch: Channel[T]) {
-        if (map.contains(ch)) {
-          result.remove(map(ch), resultObserver)
-          map -= ch
-          observers -= ch
-        }
+        delete(ch)
+        observers -= ch
       }
     }
 
