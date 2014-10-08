@@ -215,11 +215,11 @@ object HTML {
 
   object List {
 
-    case class Unordered(contents: Widget*) extends List {
+    case class Unordered(contents: List.Item*) extends List {
       val rendered = tag("ul", contents: _*)
     }
 
-    case class Ordered(contents: Widget*) extends List {
+    case class Ordered(contents: List.Item*) extends List {
       val rendered = tag("ol", contents: _*)
     }
 

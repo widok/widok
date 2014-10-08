@@ -145,12 +145,12 @@ object Bootstrap {
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
-    def Tabs(contents: Widget*) =
+    def Tabs(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav nav-tabs")
         .withAttribute("role", "tablist")
 
-    def Pills(contents: Widget*) =
+    def Pills(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav nav-pills")
         .withAttribute("role", "tablist")
@@ -214,7 +214,7 @@ object Bootstrap {
       HTML.List.Item(
         Widget.Page(route)(contents: _*).withCSS("active"))
 
-    def Branch(contentsCaption: Widget*)(contents: Widget*) =
+    def Branch(contentsCaption: Widget*)(contents: HTML.List.Item*) =
         HTML.List.Item(
           HTML.Anchor()(
             HTML.Container.Inline(contentsCaption: _*),
@@ -225,7 +225,7 @@ object Bootstrap {
             .withAttribute("role", "menu")
         ).withCSS("dropdown")
 
-    def Elements(contents: Widget*) =
+    def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav navbar-nav")
 
