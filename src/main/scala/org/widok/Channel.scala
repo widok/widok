@@ -1,8 +1,10 @@
 package org.widok
 
-import org.widok.Helpers.Identity
-
 import scala.collection.mutable.ArrayBuffer
+
+import shapeless._
+
+import org.widok.Helpers.Identity
 
 object Channel {
   type Producer[T] = () => Option[T]
@@ -146,19 +148,22 @@ case class Channel[T]() extends Identity {
     res
   }
 
+  def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
+    lens(f(shapeless.lens[T]))
+
   /* Two-way lens that propagates back changes. */
-  def lens[U](get: T => U, set: (T, U) => T): Channel[U] = {
+  def lens[U](l: shapeless.Lens[T, U]): Channel[U] = {
     val res = Channel[U]()
     var cache: Option[T] = None
 
     var observer: Observer[T] = null
 
     val propagateBack = (value: U) =>
-      cache.foreach(cur => produce(set(cur, value), observer))
+      cache.foreach(cur => produce(l.set(cur)(value), observer))
 
     observer = (value: T) => {
       cache = Some(value)
-      res.produce(get(value), propagateBack)
+      res.produce(l.get(value), propagateBack)
     }
 
     attach(observer)
@@ -203,5 +208,6 @@ case class CachedChannel[T](ch: Channel[T] = Channel[T]()) {
   def tail: Channel[T] = ch.tail
   def zip[U](other: Channel[U]): Channel[(T, U)] = ch.zip(other)
   def map[U](f: T => U): Channel[U] = ch.map(f)
-  def lens[U](get: T => U, set: (T, U) => T): Channel[U] = ch.lens(get, set)
+  def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) = ch.value(f)
+  def lens[U](l: shapeless.Lens[T, U]): Channel[U] = ch.lens(l)
 }

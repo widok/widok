@@ -3,6 +3,10 @@ package org.widok
 import scala.collection.mutable
 import scala.scalajs.test.JasmineTest
 
+import shapeless._
+
+case class Test(a: Int, b: Boolean)
+
 object ChannelTest extends JasmineTest {
   describe("Channel") {
     it("should never be equal to some other Channel") {
@@ -74,12 +78,10 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(3 + 4)
     }
 
-    case class Test(a: Int, b: Boolean)
-
-    it("should lens()") {
+    it("should value()") {
       val ch = Channel[Test]()
 
-      val a = ch.lens(_.a, (subject, value: Int) => subject.copy(a = value))
+      val a = ch.value[Int](_ >> 'a)
 
       var sum = 0
       a.attach(cur => sum += cur)
