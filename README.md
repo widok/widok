@@ -34,3 +34,9 @@ Widok is licensed under the terms of the GPLv3.
 
 ## Authors
 Tim Nieradzik <tim@kognit.io>
+
+## Links
+* [User manual](https://github.com/widok/widok/wiki)
+* [Project page](https://widok.github.io/)
+* [API documentation](http://widok.github.io/api/index.html)
+* [Source code](https://github.com/widok/widok)
