@@ -37,6 +37,11 @@ Widok is licensed under the terms of the GPLv3.
 ## Authors
 Tim Nieradzik <tim@kognit.io>
 
+## Similar projects
+* [scala.rx](https://github.com/lihaoyi/scala.rx)
+* [scalatags](https://github.com/lihaoyi/scalatags)
+* [monifu](https://github.com/monifu/monifu)
+
 ## Links
 * [User manual](https://github.com/widok/widok/wiki)
 * [Project page](https://widok.github.io/)
