@@ -1,12 +1,107 @@
 package org.widok.bindings
 
 import org.widok._
+import org.widok.{Widget => VanillaWidget, InstantiatedRoute, Channel}
 import org.widok.bindings.HTML.Input.Checkbox
 
 /**
  * Native widgets for Bootstrap 3 components
  */
 object Bootstrap {
+
+  trait TextContainerWidget extends VanillaWidget {
+    def withSmall(value: Boolean = true) = {
+      setCSS("small", value)
+      this
+    }
+
+    def withMark(value: Boolean = true) = {
+      setCSS("mark", value)
+      this
+    }
+
+    def withTextLeft(value: Boolean = true) = {
+      setCSS("text-left", value)
+      this
+    }
+
+    def withTextRight(value: Boolean = true) = {
+      setCSS("text-right", value)
+      this
+    }
+
+    def withTextCenter(value: Boolean = true) = {
+      setCSS("text-center", value)
+      this
+    }
+
+    def withTextJustify(value: Boolean = true) = {
+      setCSS("text-justify", value)
+      this
+    }
+
+    def withTextNoWrap(value: Boolean = true) = {
+      setCSS("text-nowrap", value)
+      this
+    }
+
+    def withTextLowerCase(value: Boolean = true) = {
+      setCSS("text-lowercase", value)
+      this
+    }
+
+    def withTextUpperCase(value: Boolean = true) = {
+      setCSS("text-uppercase", value)
+      this
+    }
+
+    def withTextCapitalize(value: Boolean = true) = {
+      setCSS("text-capitalize", value)
+      this
+    }
+
+    def withTextMuted(value: Boolean = true) = {
+      setCSS("text-muted", value)
+      this
+    }
+
+    def withTextPrimary(value: Boolean = true) = {
+      setCSS("text-primary", value)
+      this
+    }
+
+    def withTextSuccess(value: Boolean = true, hover: Boolean = false) = {
+      setCSS("text-success", value)
+      this
+    }
+
+    def withTextInfo(value: Boolean = true, hover: Boolean = false) = {
+      setCSS("text-info", value)
+      this
+    }
+
+    def withTextWarning(value: Boolean = true, hover: Boolean = false) = {
+      setCSS("text-warning", value)
+      this
+    }
+
+    def withTextDanger(value: Boolean = true, hover: Boolean = false) = {
+      setCSS("text-danger", value)
+      this
+    }
+  }
+
+  def apply(contents: VanillaWidget*) = {
+
+    contents.map(vanillaWidget => new TextContainerWidget {
+      override val rendered = vanillaWidget.rendered
+    })
+  }
+
+  case class TextContainer(contents: VanillaWidget*) extends Widget {
+    val rendered = tag("div", contents: _*)
+  }
+
   // TODO Add missing ones.
   trait Glyphicon { val cssTag: String }
   object Glyphicon {
@@ -49,12 +144,12 @@ object Bootstrap {
       .withCSS("glyphicon", glyphicon.cssTag)
       .withAttribute("title", caption)
 
-  def HorizontalForm(contents: Widget*) =
+  def HorizontalForm(contents: VanillaWidget*) =
     HTML.Form(contents: _*)
       .withCSS("form-horizontal")
       .withAttribute("role", "form")
 
-  def FormGroup(role: Role = Role.None)(contents: Widget*) = {
+  def FormGroup(role: Role = Role.None)(contents: VanillaWidget*) = {
     val res = HTML.Container.Generic(contents: _*)
       .withCSS("form-group")
 
@@ -62,16 +157,16 @@ object Bootstrap {
     else res.withAttribute("role", role.value)
   }
 
-  def InputGroup(contents: Widget*) =
+  def InputGroup(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("input-group")
 
-  def ControlLabel(contents: Widget*) =
+  def ControlLabel(contents: VanillaWidget*) =
     HTML.Label()(contents: _*)
       .withCSS("control-label")
 
   // TODO Improve design.
-  def Fix(contents: Widget*) =
+  def Fix(contents: VanillaWidget*) =
     HTML.Container.Generic(
       HTML.Container.Inline("Fix")
         .withCSS("label label-warning"),
@@ -99,7 +194,7 @@ object Bootstrap {
 
     // For better usability all buttons should have icons. Therefore
     // None is not the default value.
-    def apply(icon: Glyphicon, size: Size = Size.Normal)(contents: Widget*) = {
+    def apply(icon: Glyphicon, size: Size = Size.Normal)(contents: VanillaWidget*) = {
       val btn =
         if (icon == Glyphicon.None)
           HTML.Button(contents: _*)
@@ -110,27 +205,27 @@ object Bootstrap {
     }
   }
 
-  def Footer(contents: Widget*) =
+  def Footer(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("footer")
 
-  def Container(contents: Widget*) =
+  def Container(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("container")
 
-  def PageHeader(contents: Widget*) =
+  def PageHeader(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("page-header")
 
-  def Lead(contents: Widget*) =
+  def Lead(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("lead")
 
-  def PullRight(contents: Widget*) =
+  def PullRight(contents: VanillaWidget*) =
     HTML.Container.Inline(contents: _*)
       .withCSS("pull-right")
 
-  def MutedText(contents: Widget*) =
+  def MutedText(contents: VanillaWidget*) =
     HTML.Paragraph(contents: _*)
       .withCSS("text-muted")
 
@@ -144,17 +239,17 @@ object Bootstrap {
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
-    def Tabs(contents: Widget*) =
+    def Tabs(contents: VanillaWidget*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav nav-tabs")
         .withAttribute("role", "tablist")
 
-    def Pills(contents: Widget*) =
+    def Pills(contents: VanillaWidget*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav nav-pills")
         .withAttribute("role", "tablist")
 
-    def Item(active: Channel[Boolean])(contents: Widget*) = {
+    def Item(active: Channel[Boolean])(contents: VanillaWidget*) = {
       val elem = HTML.List.Item(contents: _*)
       active.attach(value =>
         elem.rendered.className = if (value) "active" else "")
@@ -186,52 +281,52 @@ object Bootstrap {
        ).withCSS("navbar-toggle collapsed")
         .withAttribute("type", "button")
 
-    def Header(contents: Widget*) =
+    def Header(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("navbar-header")
 
-    def Brand(contents: Widget*) =
+    def Brand(contents: VanillaWidget*) =
       HTML.Anchor()(contents: _*)
-          .withCSS("navbar-brand")
+        .withCSS("navbar-brand")
 
-    def Collapse(contents: Widget*) =
+    def Collapse(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("collapse navbar-collapse")
 
     // TODO Add channel parameter to toggle if not active.
-    def Leaf(route: InstantiatedRoute)(contents: Widget*) =
+    def Leaf(route: InstantiatedRoute)(contents: VanillaWidget*) =
       HTML.List.Item(
-        Widget.Page(route)(contents: _*).withCSS("active"))
+        VanillaWidget.Page(route)(contents: _*).withCSS("active"))
 
-    def Branch(contentsCaption: Widget*)(contents: Widget*) =
-        HTML.List.Item(
-          HTML.Anchor()(
-            HTML.Container.Inline(contentsCaption: _*),
-            HTML.Container.Inline().withCSS("caret")
-          ).withCSS("dropdown-toggle"),
-          HTML.List.Unordered(contents: _*)
-            .withCSS("dropdown-menu")
-            .withAttribute("role", "menu")
-        ).withCSS("dropdown")
+    def Branch(contentsCaption: VanillaWidget*)(contents: VanillaWidget*) =
+      HTML.List.Item(
+        HTML.Anchor()(
+          HTML.Container.Inline(contentsCaption: _*),
+          HTML.Container.Inline().withCSS("caret")
+        ).withCSS("dropdown-toggle"),
+        HTML.List.Unordered(contents: _*)
+          .withCSS("dropdown-menu")
+          .withAttribute("role", "menu")
+      ).withCSS("dropdown")
 
-    def Elements(contents: Widget*) =
+    def Elements(contents: VanillaWidget*) =
       HTML.List.Unordered(contents: _*)
         .withCSS("nav navbar-nav")
 
-    def Form(contents: Widget*) =
+    def Form(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("navbar-form")
 
-    def Right(contents: Widget*) =
+    def Right(contents: VanillaWidget*) =
     HTML.Container.Generic(contents: _*)
       .withCSS("navbar-right")
 
-    def Navigation(contents: Widget*) =
+    def Navigation(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("nav navbar-nav")
   }
 
-  def Checkbox(contents: Widget*) = new Widget {
+  def Checkbox(contents: VanillaWidget*) = new VanillaWidget {
     val checkbox = HTML.Input.Checkbox()
 
     val rendered =
@@ -258,7 +353,7 @@ object Bootstrap {
       .withCSS(s"alert ${alertType.cssTag}")
       .withAttribute("role", "alert")
 
-  def Panel(contents: Widget*) =
+  def Panel(contents: VanillaWidget*) =
     HTML.Container.Generic(
       HTML.Container.Generic(
       contents: _*
@@ -266,24 +361,24 @@ object Bootstrap {
     ) .withCSS(s"panel panel-default")
 
   object ListGroup {
-    def Group(contents: Widget*) =
+    def Group(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("list-group")
 
-    def PageItem(route: InstantiatedRoute, active: Boolean = false)(contents: Widget*) =
-      Widget.Page(route)(contents: _*)
+    def PageItem(route: InstantiatedRoute, active: Boolean = false)(contents: VanillaWidget*) =
+      VanillaWidget.Page(route)(contents: _*)
         .withCSS("list-group-item", if (active) " active" else "")
 
     // clearfix is needed in conjunction with PullRight()
-    def Item(active: Boolean = false)(contents: Widget*) =
+    def Item(active: Boolean = false)(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("list-group-item", "clearfix", if (active) "active" else "")
 
-    def ItemHeading(contents: Widget*) =
+    def ItemHeading(contents: VanillaWidget*) =
       HTML.Heading.Level4(contents: _*)
         .withCSS("list-group-item-heading")
 
-    def ItemText(contents: Widget*) =
+    def ItemText(contents: VanillaWidget*) =
       HTML.Paragraph(contents: _*)
         .withCSS("list-group-item-text")
   }
@@ -297,11 +392,11 @@ object Bootstrap {
       case object Large extends ColumnType { val cssTag = "col-lg" }
     }
 
-    def Column(columnType: ColumnType, level: Int)(contents: Widget*) =
+    def Column(columnType: ColumnType, level: Int)(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS(s"${columnType.cssTag}-$level")
 
-    def Row(contents: Widget*) =
+    def Row(contents: VanillaWidget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("row")
   }
