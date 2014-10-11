@@ -4,11 +4,6 @@ import org.scalajs.dom
 
 import org.widok.bindings._
 
-object Widget {
-  def Page(route: InstantiatedRoute)(contents: Widget*) =
-    HTML.Anchor(route.uri())(contents: _*)
-}
-
 object Event {
   trait Mouse
   object Mouse {

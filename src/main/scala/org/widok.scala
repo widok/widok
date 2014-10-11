@@ -50,6 +50,8 @@ package object widok {
   implicit def OptWidgetChannelToWidget[T <: Option[Widget]](value: Channel[T]): Widget =
     HTML.Container.Inline().bindOptWidget(value)
 
+  implicit def InstantiatedRouteToString(route: InstantiatedRoute): String = route.uri()
+
   implicit def FunctionToChannel[T](f: T => Unit): Channel[T] = {
     val ch = Channel[T]()
     ch.attach(f)

@@ -236,9 +236,9 @@ object Bootstrap {
         .withCSS("collapse navbar-collapse")
 
     // TODO Add channel parameter to toggle if not active.
-    def Leaf(route: InstantiatedRoute)(contents: Widget*) =
+    def Leaf(ref: String)(contents: Widget*) =
       HTML.List.Item(
-        Widget.Page(route)(contents: _*).withCSS("active"))
+        HTML.Anchor(ref)(contents: _*).withCSS("active"))
 
     def Branch(contentsCaption: Widget*)(contents: HTML.List.Item*) =
         HTML.List.Item(
@@ -298,18 +298,19 @@ object Bootstrap {
   def Panel(contents: Widget*) =
     HTML.Container.Generic(
       HTML.Container.Generic(
-      contents: _*
-      ) .withCSS(s"panel-body")
-    ) .withCSS(s"panel panel-default")
+        contents: _*
+      ) .withCSS("panel-body")
+    ) .withCSS("panel panel-default")
 
   object ListGroup {
     def Group(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
         .withCSS("list-group")
 
-    def PageItem(route: InstantiatedRoute, active: Boolean = false)(contents: Widget*) =
-      Widget.Page(route)(contents: _*)
-        .withCSS("list-group-item", if (active) " active" else "")
+    // TODO Add channel parameter to toggle if not active.
+    def PageItem(ref: String, active: Boolean = false)(contents: Widget*) =
+      HTML.Anchor(ref)(contents: _*)
+        .withCSS("list-group-item", if (active) "active" else "")
 
     // clearfix is needed in conjunction with PullRight()
     def Item(active: Boolean = false)(contents: Widget*) =
