@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/widok/widok.svg)](https://travis-ci.org/widok/widok)
+
 # Widok
 Widok is a reactive web framework for Scala.JS. Its key concepts are:
 
@@ -40,3 +42,4 @@ Tim Nieradzik <tim@kognit.io>
 * [Project page](https://widok.github.io/)
 * [API documentation](http://widok.github.io/api/index.html)
 * [Source code](https://github.com/widok/widok)
+* [Travis CI](https://travis-ci.org/widok/widok)
