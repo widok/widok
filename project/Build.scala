@@ -1,5 +1,6 @@
-import sbt.Keys._
 import sbt._
+import sbt.Keys._
+import scoverage.ScoverageSbtPlugin._
 import scala.scalajs.sbtplugin.ScalaJSPlugin._
 
 object Build extends sbt.Build {
@@ -12,6 +13,7 @@ object Build extends sbt.Build {
 
   lazy val main = Project(id = "widok", base = file("."))
     .settings(scalaJSSettings: _*)
+    .settings(instrumentSettings: _*)
     .settings(
       resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/content/alexander-myltsev/maven",
       libraryDependencies ++= Seq(
