@@ -177,7 +177,7 @@ object HTML {
   }
 
   trait List extends Widget {
-    def bind[T, U <: Seq[T]](channel: Channel[U], f: T => Widget) = {
+    def bind[T, U <: Seq[T]](channel: Channel[U], f: T => HTML.List.Item) = {
       channel.attach(list => {
         DOM.clear(rendered)
 
@@ -189,7 +189,7 @@ object HTML {
       this
     }
 
-    def bind[T](aggregate: Aggregate[T])(f: Channel[T] => Widget) = {
+    def bind[T](aggregate: Aggregate[T])(f: Channel[T] => HTML.List.Item) = {
       var map = mutable.Map[Channel[T], Widget]()
 
       aggregate.attach(new Aggregate.Observer[T] {
