@@ -300,20 +300,26 @@ object Bootstrap {
     ) .withCSS("panel panel-default")
 
   object ListGroup {
-    def Group(contents: Widget*) =
-      HTML.Container.Generic(contents: _*)
+    case class Group(contents: Widget.List.Item*) extends Widget.List {
+      val rendered = HTML.Container.Generic(contents: _*)
         .withCSS("list-group")
+        .rendered
+    }
 
-    def PageItem(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
-      HTML.Anchor(ref)(contents: _*)
+    def PageItem(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
+      val rendered = HTML.Anchor(ref)(contents: _*)
         .withCSS("list-group-item")
         .withCSS(active, "active")
+        .rendered
+    }
 
     // clearfix is needed in conjunction with PullRight()
-    def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
-      HTML.Container.Generic(contents: _*)
+    def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
+      val rendered = HTML.Container.Generic(contents: _*)
         .withCSS("list-group-item", "clearfix")
         .withCSS(active, "active")
+        .rendered
+    }
 
     def ItemHeading(contents: Widget*) =
       HTML.Heading.Level4(contents: _*)

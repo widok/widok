@@ -4,6 +4,121 @@ import org.scalajs.dom
 
 import org.widok.bindings._
 
+import scala.collection.mutable
+
+object Widget {
+  object List {
+    trait Item extends Widget
+  }
+
+  trait List extends Widget {
+    def bind[T, U <: Seq[T]](channel: Channel[U], f: T => List.Item) = {
+      channel.attach(list => {
+        DOM.clear(rendered)
+
+        list.foreach { cur =>
+          rendered.appendChild(f(cur).rendered)
+        }
+      })
+
+      this
+    }
+
+    def bind[T](aggregate: Aggregate[T])(f: Channel[T] => List.Item) = {
+      var map = mutable.Map[Channel[T], Widget]()
+
+      aggregate.attach(new Aggregate.Observer[T] {
+        def append(cur: Channel[T]) {
+          val li = f(cur)
+          rendered.appendChild(li.rendered)
+          map += (cur -> li)
+        }
+
+        def remove(cur: Channel[T]) {
+          rendered.removeChild(map(cur).rendered)
+          map -= cur
+        }
+      })
+
+      this
+    }
+  }
+
+  trait Container extends Widget {
+    def fromSeq[T](items: Seq[T], f: T => Widget) = {
+      items.foreach { cur =>
+        rendered.appendChild(f(cur).rendered)
+      }
+
+      this
+    }
+
+    def bindString[T <: String](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindInt[T <: Int](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindDouble[T <: Double](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindBoolean[T <: Boolean](value: Channel[T]) = {
+      value.attach(cur => rendered.textContent = cur.toString)
+      value.populate()
+      this
+    }
+
+    def bindWidget[T <: Widget](value: Channel[T]) = {
+      value.attach(cur => {
+        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
+        rendered.appendChild(cur.rendered)
+      })
+
+      value.populate()
+      this
+    }
+
+    def bindOptWidget[T <: Option[Widget]](value: Channel[T]) = {
+      value.attach(cur => {
+        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
+        if (cur.isDefined) rendered.appendChild(cur.get.rendered)
+      })
+
+      value.populate()
+      this
+    }
+
+    // Bind HTML.
+    def bindRaw[T](value: Channel[String]) = {
+      value.attach(cur => {
+        rendered.innerHTML = cur
+      })
+
+      value.populate()
+      this
+    }
+
+    def bindMany[T](value: Channel[Seq[T]], f: T => Widget) = {
+      value.attach(list => {
+        DOM.clear(rendered)
+        fromSeq(list, f)
+      })
+
+      value.populate()
+      this
+    }
+  }
+}
+
 object Event {
   trait Mouse
   object Mouse {
