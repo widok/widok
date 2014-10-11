@@ -99,7 +99,8 @@ trait Widget {
   }
 
   def withCSS(cssTags: String*) = {
-    this.rendered.className = cssTags.mkString(" ")
+    val tags = this.rendered.className.split(" ").toSet
+    this.rendered.className = (tags ++ cssTags).mkString(" ")
     this
   }
 
