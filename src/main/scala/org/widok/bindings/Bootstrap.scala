@@ -246,6 +246,7 @@ object Bootstrap {
             .withCSS("dropdown-menu")
             .withAttribute("role", "menu")
         ).withCSS("dropdown")
+         .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
