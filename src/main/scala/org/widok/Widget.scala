@@ -12,7 +12,7 @@ object Widget {
   }
 
   trait List extends Widget {
-    def bind[T, U <: Seq[T]](channel: Channel[U], f: T => List.Item) = {
+    def bind[T, U <: Seq[T]](channel: Channel[U])(f: T => List.Item) = {
       channel.attach(list => {
         DOM.clear(rendered)
 
@@ -45,14 +45,6 @@ object Widget {
   }
 
   trait Container extends Widget {
-    def fromSeq[T](items: Seq[T], f: T => Widget) = {
-      items.foreach { cur =>
-        rendered.appendChild(f(cur).rendered)
-      }
-
-      this
-    }
-
     def bindString[T <: String](value: Channel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       value.populate()
@@ -101,16 +93,6 @@ object Widget {
     def bindRaw[T](value: Channel[String]) = {
       value.attach(cur => {
         rendered.innerHTML = cur
-      })
-
-      value.populate()
-      this
-    }
-
-    def bindMany[T](value: Channel[Seq[T]], f: T => Widget) = {
-      value.attach(list => {
-        DOM.clear(rendered)
-        fromSeq(list, f)
       })
 
       value.populate()
