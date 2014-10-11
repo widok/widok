@@ -1,10 +1,7 @@
 package org.widok
 
-import monifu.concurrent.TrampolinedExecutionContext.Implicits.executionContext
-import monifu.reactive.channels.PublishChannel
-
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLElement, MouseEvent, TouchEvent}
+import org.scalajs.dom.{HTMLElement, MouseEvent}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.RawJSType
@@ -24,39 +21,11 @@ object DOM {
       .asInstanceOf[js.Array[HTMLElement]]
       .toList
 
-  def onMouseEnter(elem: HTMLElement) = {
-    val channel = PublishChannel[MouseEvent]()
-    elem.onmouseenter = (e: MouseEvent) => channel.pushNext(e)
-    channel
-  }
-
-  def onMouseLeave(elem: HTMLElement) = {
-    val channel = PublishChannel[MouseEvent]()
-    elem.onmouseleave = (e: MouseEvent) => channel.pushNext(e)
-    channel
-  }
-
-  def onTouchEnd() = {
-    val channel = PublishChannel[TouchEvent]()
-    dom.document.body.addEventListener(
-      "ontouchend",
-      (e: dom.Event) => channel.pushNext(e.asInstanceOf[TouchEvent]),
-      useCapture = false)
-    channel
-  }
-
   // TODO See also https://github.com/scala-js/scala-js-dom/issues/51
   @RawJSType
   class PimpedMouseEvent extends MouseEvent {
     val pageX: Int = -1
     val pageY: Int = -1
-  }
-
-  def onMouseMove() = {
-    val channel = PublishChannel[PimpedMouseEvent]()
-    dom.document.body.onmousemove = (e: MouseEvent) =>
-      channel.pushNext(e.asInstanceOf[PimpedMouseEvent])
-    channel
   }
 
   def screenCoordinates(elem: HTMLElement): Position = {
@@ -78,7 +47,6 @@ object DOM {
 
     pos
   }
-
 
   def clientCoordinates(element: HTMLElement) = {
     val boundingClientRect = element.getBoundingClientRect()

@@ -24,6 +24,13 @@ object Event {
     case object ContextMenu extends Mouse
   }
 
+  trait Touch
+  object Touch {
+    case object Start extends Touch
+    case object Move extends Touch
+    case object End extends Touch
+  }
+
   trait Key
   object Key {
     case object Down extends Key
@@ -66,6 +73,22 @@ trait Widget {
       case Down => this.rendered.onkeydown = (e: dom.KeyboardEvent) => writeChannel.produce(e)
       case Press => this.rendered.onkeypress = (e: dom.KeyboardEvent) => writeChannel.produce(e)
     }
+
+    this
+  }
+
+  def bindTouch(event: Event.Touch, writeChannel: Channel[dom.TouchEvent]) = {
+    import Event.Touch._
+    val ev = event match {
+      case Start => "ontouchstart"
+      case Move => "ontouchmove"
+      case End => "ontouchend"
+    }
+
+    this.rendered.addEventListener(
+      ev,
+      (e: dom.Event) => writeChannel.produce(e.asInstanceOf[dom.TouchEvent]),
+      useCapture = false)
 
     this
   }

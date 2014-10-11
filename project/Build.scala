@@ -19,7 +19,6 @@ object Build extends sbt.Build {
       libraryDependencies ++= Seq(
         "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
         "org.scala-lang.modules.scalajs" %% "scalajs-jasmine-test-framework" % scalaJSVersion % "test",
-        "org.monifu" %% "monifu-js" % "0.14.0.M5",
         "name.myltsev" %% "shapeless_sjs0.5" % "2.0.0"
       ),
       organization := buildOrganisation,
