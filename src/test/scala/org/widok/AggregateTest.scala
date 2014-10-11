@@ -169,7 +169,7 @@ object AggregateTest extends JasmineTest {
       filter.append(3)
       cache.update(_ + 2)
 
-      expect(sum).toBe(4 + 5)
+      expect(sum).toBe(6 + 5)
     }
 
     it("should filter() with size() and populate()") {
@@ -197,6 +197,40 @@ object AggregateTest extends JasmineTest {
 
       agg.remove(two)
       expect(count).toBe(1)
+    }
+
+    it("should filter() with back-propagation of changed elements") {
+      val agg = Aggregate[Int]()
+      val filtered = agg.filter(_ > 0)
+
+      var last: Option[Channel[Int]] = None
+      filtered.attach(new Aggregate.Observer[Int] {
+        def append(cur: Channel[Int]) {
+          last = Some(cur)
+        }
+
+        def remove(cur: Channel[Int]) {
+
+        }
+      })
+
+      var size = 0
+      filtered.size.attach(value => size = value)
+
+      val ch = agg.append(1)
+      expect(ch != last.get).toBe(true)
+
+      val chCache = ch.cache
+
+      ch := 2
+
+      expect(chCache.get.get).toBe(2)
+      expect(size).toBe(1)
+
+      last.get := -1
+
+      expect(chCache.get.get).toBe(-1)
+      expect(size).toBe(0)
     }
 
     it("should sum()") {

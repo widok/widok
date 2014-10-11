@@ -41,6 +41,74 @@ object Aggregate {
       ch
     }
   }
+
+  // Implemented as a class in order to prevent code duplication.
+  private[widok] class FilterImpl[T](parent: Aggregate[T]) {
+    var f: T => Boolean = null
+    val result = Aggregate[T]()
+    val map = mutable.HashMap[Channel[T], Channel[T]]()
+    var resultObserver: Observer[T] = null
+
+    private val observers = mutable.HashMap[Channel[T], Channel.Observer[T]]()
+
+    def add(parent: Channel[T], value: T) {
+      val ch = Channel[T]()
+      map += ((parent, ch))
+
+      ch.attach(value => {
+        parent.detach(observers(parent)) // TODO Find a better way.
+        parent.produce(value)
+        parent.attach(observers(parent))
+
+        if (!f(value)) delete(parent)
+      })
+
+      result.append(ch, resultObserver)
+      ch := value
+    }
+
+    def delete(ch: Channel[T]) {
+      if (map.contains(ch)) {
+        result.remove(map(ch), resultObserver)
+        map -= ch
+      }
+    }
+
+    val observer = new Observer[T] {
+      def append(ch: Channel[T]) {
+        val observer: Channel.Observer[T] = value =>
+          if (f != null && f(value)) {
+            if (map.contains(ch)) map(ch) := value
+            else add(ch, value)
+          } else delete(ch)
+
+        observers += (ch -> observer)
+        ch.attach(observer)
+      }
+
+      def remove(ch: Channel[T]) {
+        delete(ch)
+        observers -= ch
+      }
+    }
+
+    // Back-propagate changes.
+    resultObserver = new Observer[T] {
+      def append(ch: Channel[T]) {
+        parent.append(ch, observer)
+        map += (ch -> ch)
+      }
+
+      def remove(ch: Channel[T]) {
+        val key = map.find(_._2 == ch).get._1
+        parent.remove(key, observer)
+        map -= key
+      }
+    }
+
+    parent.attach(observer)
+    result.attach(resultObserver)
+  }
 }
 
 // TODO should implement Iterable
@@ -135,46 +203,9 @@ case class Aggregate[T]() {
   }
 
   def filter(f: T => Boolean): Aggregate[T] = {
-    val agg = Aggregate[T]()
-    val map = mutable.HashMap[Channel[T], Channel[T]]()
-
-    val that = this
-    var aggObserver: Aggregate.Observer[T] = null
-
-    val observer = new Aggregate.Observer[T] {
-      def append(ch: Channel[T]) {
-        ch.attach(value => if (f(value)) {
-          if (map.contains(ch)) map(ch) := value
-          else map += (ch -> agg.append(value, aggObserver))
-        } else remove(ch))
-      }
-
-      def remove(ch: Channel[T]) {
-        if (map.contains(ch)) {
-          agg.remove(map(ch), aggObserver)
-          map -= ch
-        }
-      }
-    }
-
-    // Back-propagate changes.
-    aggObserver = new Aggregate.Observer[T] {
-      def append(ch: Channel[T]) {
-        that.append(ch, observer)
-        map += (ch -> ch)
-      }
-
-      def remove(ch: Channel[T]) {
-        val key = map.find(_._2 == ch).get._1
-        that.remove(key, observer)
-        map -= key
-      }
-    }
-
-    attach(observer)
-    agg.attach(aggObserver)
-
-    agg
+    val impl = new Aggregate.FilterImpl(this)
+    impl.f = f
+    impl.result
   }
 
   def map[U](f: T => U): Aggregate[U] = {
@@ -250,90 +281,23 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
       if (values.contains(ch)) ch := values(ch))
   }
 
-  // TODO Implement this in terms of Channel.filter() in order to prevent code duplication.
   def filterCh(f: Channel[T => Boolean]): Aggregate[T] = {
-    var currentFilter: (T => Boolean) = null
-
-    val observers = mutable.HashMap[Channel[T], Channel.Observer[T]]()
-
-    val map = mutable.HashMap[Channel[T], Channel[T]]()
-    val result = Aggregate[T]()
-
-    val that = this
-    var resultObserver: Observer[T] = null
-
-    def add(parent: Channel[T], value: T) {
-      val ch = Channel[T]()
-      map += ((parent, ch))
-
-      ch.attach(value => {
-        parent.detach(observers(parent)) // TODO Find a better way.
-        parent.produce(value)
-        parent.attach(observers(parent))
-
-        if (!currentFilter(value)) delete(parent)
-      })
-
-      result.append(ch, resultObserver)
-      ch := value
-    }
-
-    def delete(ch: Channel[T]) {
-      if (map.contains(ch)) {
-        result.remove(map(ch), resultObserver)
-        map -= ch
-      }
-    }
-
-    val observer = new Observer[T] {
-      def append(ch: Channel[T]) {
-        val observer: Channel.Observer[T] = value =>
-          if (currentFilter != null && currentFilter(value)) {
-            if (map.contains(ch)) map(ch) := value
-            else add(ch, value)
-          } else delete(ch)
-
-        observers += (ch -> observer)
-        ch.attach(observer)
-      }
-
-      def remove(ch: Channel[T]) {
-        delete(ch)
-        observers -= ch
-      }
-    }
-
-    // Back-propagate changes.
-    resultObserver = new Observer[T] {
-      def append(ch: Channel[T]) {
-        that.agg.append(ch, observer)
-        map += (ch -> ch)
-      }
-
-      def remove(ch: Channel[T]) {
-        val key = map.find(_._2 == ch).get._1
-        that.agg.remove(key, observer)
-        map -= key
-      }
-    }
-
-    agg.attach(observer)
-    result.attach(resultObserver)
+    val impl = new Aggregate.FilterImpl(agg)
 
     f.attach(filter => {
-      currentFilter = filter
+      impl.f = filter
 
-      result.clear(resultObserver)
-      map.clear() // TODO This should not be necessary.
-      assume(map.size == 0)
+      impl.result.clear(impl.resultObserver)
+      impl.map.clear() // TODO This should not be necessary.
+      assume(impl.map.size == 0)
 
       agg.elements.foreach { ch =>
         if (values.contains(ch) && filter(values(ch)))
-          add(ch, values(ch))
+          impl.add(ch, values(ch))
       }
     })
 
-    result
+    impl.result
   }
 
   def update(f: T => T) {
