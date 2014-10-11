@@ -128,10 +128,8 @@ object Bootstrap {
     // None is not the default value.
     def apply(icon: Glyphicon, size: Size = Size.Normal)(contents: Widget*) = {
       val btn =
-        if (icon == Glyphicon.None)
-          HTML.Button(contents: _*)
-        else
-          HTML.Button(Glyphicon(icon) :: contents.toList: _*)
+        if (icon == Glyphicon.None) HTML.Button(contents: _*)
+        else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
 
       btn.withCSS("btn btn-default")
     }
@@ -181,12 +179,10 @@ object Bootstrap {
         .withCSS("nav nav-pills")
         .withAttribute("role", "tablist")
 
-    def Item(active: Channel[Boolean])(contents: Widget*) = {
-      val elem = HTML.List.Item(contents: _*)
-      active.attach(value =>
-        elem.rendered.className = if (value) "active" else "")
-      elem
-    }
+    def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
+      HTML.List.Item(contents: _*)
+        .withCSS(active, "active")
+        .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
   }
 
   object NavigationBar {
@@ -212,7 +208,7 @@ object Bootstrap {
 
     def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: Widget*) =
       HTML.Navigation(contents: _*)
-        .withCSS("navbar navbar-default " + position.cssTag(fixed))
+        .withCSS("navbar", "navbar-default", position.cssTag(fixed))
         .withAttribute("role", "navigation")
 
     def Toggle() =
@@ -233,12 +229,12 @@ object Bootstrap {
 
     def Collapse(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("collapse navbar-collapse")
+        .withCSS("collapse", "navbar-collapse")
 
-    // TODO Add channel parameter to toggle if not active.
-    def Leaf(ref: String)(contents: Widget*) =
-      HTML.List.Item(
-        HTML.Anchor(ref)(contents: _*).withCSS("active"))
+    def Leaf(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
+      HTML.List.Item(HTML.Anchor(ref)(contents: _*))
+        .withCSS(active, "active")
+        .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
 
     def Branch(contentsCaption: Widget*)(contents: HTML.List.Item*) =
         HTML.List.Item(
@@ -253,7 +249,7 @@ object Bootstrap {
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
-        .withCSS("nav navbar-nav")
+        .withCSS("nav", "navbar-nav")
 
     def Form(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
@@ -265,7 +261,7 @@ object Bootstrap {
 
     def Navigation(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("nav navbar-nav")
+        .withCSS("nav", "navbar-nav")
   }
 
   def Checkbox(contents: Widget*) = new Widget {
@@ -307,15 +303,16 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .withCSS("list-group")
 
-    // TODO Add channel parameter to toggle if not active.
-    def PageItem(ref: String, active: Boolean = false)(contents: Widget*) =
+    def PageItem(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
       HTML.Anchor(ref)(contents: _*)
-        .withCSS("list-group-item", if (active) "active" else "")
+        .withCSS("list-group-item")
+        .withCSS(active, "active")
 
     // clearfix is needed in conjunction with PullRight()
-    def Item(active: Boolean = false)(contents: Widget*) =
+    def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("list-group-item", "clearfix", if (active) "active" else "")
+        .withCSS("list-group-item", "clearfix")
+        .withCSS(active, "active")
 
     def ItemHeading(contents: Widget*) =
       HTML.Heading.Level4(contents: _*)
