@@ -105,6 +105,7 @@ trait Widget {
 
   def withCSS(state: Channel[Boolean], cssTags: String*) = {
     state.attach(value => cssTags.foreach(cssTag => setCSS(cssTag, value)))
+    state.populate()
     this
   }
 
