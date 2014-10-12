@@ -271,7 +271,7 @@ trait Widget {
     tag.attach(value => {
       val tags = rendered.className.split(" ").toSet
       val changed =
-        if (cur.isDefined) tags + value - cur.get
+        if (cur.isDefined) tags - cur.get + value
         else tags + value
       cur = Some(value)
 
