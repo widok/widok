@@ -265,12 +265,26 @@ trait Widget {
     this
   }
 
+  def withCSS(tag: Channel[String]) {
+    var cur: Option[String] = None
+
+    tag.attach(value => {
+      val tags = rendered.className.split(" ").toSet
+      val changed =
+        if (cur.isDefined) tags + value - cur.get
+        else tags + value
+      cur = Some(value)
+
+      rendered.className = changed.mkString(" ")
+    })
+  }
+
   def setCSS(cssTag: String, state: Boolean) {
     val tags = rendered.className.split(" ").toSet
 
     val changed =
       if (state) tags + cssTag
-      else tags.diff(Set(cssTag))
+      else tags - cssTag
 
     rendered.className = changed.mkString(" ")
   }
