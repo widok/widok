@@ -250,7 +250,7 @@ trait Widget {
   }
 
   def withCursor(cursor: HTML.Cursor) = {
-    rendered.setAttribute("style", s"cursor: $cursor")
+    rendered.style.cursor = cursor.toString
     this
   }
 
