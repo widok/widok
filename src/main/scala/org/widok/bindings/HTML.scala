@@ -1,5 +1,6 @@
 package org.widok.bindings
 
+import org.scalajs.dom.extensions.KeyCode
 import org.widok._
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
@@ -53,11 +54,8 @@ object HTML {
   }
 
   case class Raw(html: String) extends Widget {
-    val rendered = {
-      val elem = tag("span")
-      elem.innerHTML = html
-      elem
-    }
+    val rendered = tag("span")
+    rendered.innerHTML = html
   }
 
   case class Image(source: String) extends Widget {
@@ -132,7 +130,7 @@ object HTML {
         flush.attach(_ => data := rendered.value)
 
         rendered.onkeyup = (e: KeyboardEvent) =>
-          if (e.keyCode == 13 || live)
+          if (e.keyCode == KeyCode.enter || live)
             data := rendered.value
 
         this
