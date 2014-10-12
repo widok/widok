@@ -63,7 +63,7 @@ object Widget {
        *             produce only if enter was pressed.
        * @return
        */
-      def bind(data: Channel[String], flush: Channel[Nothing] = Channel(), live: Boolean = false): Text = {
+      def bind(data: Channel[String], flush: Channel[Unit] = Channel(), live: Boolean = false): Text = {
         val obs = (text: String) => rendered.value = text
 
         data.attach(obs)
@@ -80,7 +80,7 @@ object Widget {
     trait Checkbox extends Widget {
       val rendered: HTMLInputElement
 
-      def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()): Checkbox = {
+      def bind(data: Channel[Boolean], flush: Channel[Unit] = Channel()): Checkbox = {
         val obs = (checked: Boolean) => rendered.checked = checked
 
         data.attach(obs)

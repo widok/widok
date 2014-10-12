@@ -279,7 +279,7 @@ object Bootstrap {
       ).withCSS("checkbox")
        .rendered
 
-    def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()) = {
+    def bind(data: Channel[Boolean], flush: Channel[Unit] = Channel()) = {
       checkbox.bind(data, flush)
       this
     }
