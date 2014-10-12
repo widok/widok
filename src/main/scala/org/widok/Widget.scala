@@ -86,15 +86,27 @@ object Widget {
         data.attach(obs)
         flush.attach(_ => data.produce(rendered.checked, obs))
 
-        rendered.onchange = (e: dom.Event) =>
-          data.produce(rendered.checked, obs)
-
+        rendered.onchange = (e: dom.Event) => data.produce(rendered.checked, obs)
         this
       }
     }
 
     trait Select extends Widget {
       // TODO define bind()
+    }
+  }
+
+  trait Button extends Widget {
+    def bind(data: Channel[Unit]): Button = {
+      rendered.onclick = (e: dom.Event) => data.produce(())
+      this
+    }
+  }
+
+  trait Anchor extends Widget {
+    def bind(data: Channel[Unit]): Anchor = {
+      rendered.onclick = (e: dom.Event) => data.produce(())
+      this
     }
   }
 

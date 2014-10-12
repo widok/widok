@@ -66,7 +66,7 @@ object HTML {
     val rendered = tag("br")
   }
 
-  case class Button(contents: Widget*) extends Widget {
+  case class Button(contents: Widget*) extends Widget.Button {
     val rendered = tag("button", contents: _*)
   }
 
@@ -86,7 +86,7 @@ object HTML {
     val rendered = tag("nav", contents: _*)
   }
 
-  def Anchor(ref: String = "")(contents: Widget*) = new Widget {
+  def Anchor(ref: String = "")(contents: Widget*) = new Widget.Anchor {
     val rendered = tag("a", contents: _*)
 
     if (ref == "") rendered.setAttribute("style", "cursor: pointer")
