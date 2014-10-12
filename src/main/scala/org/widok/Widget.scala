@@ -265,7 +265,7 @@ trait Widget {
     this
   }
 
-  def withCSS(tag: Channel[String]) {
+  def withCSS(tag: Channel[String]) = {
     var cur: Option[String] = None
 
     tag.attach(value => {
@@ -277,6 +277,8 @@ trait Widget {
 
       rendered.className = changed.mkString(" ")
     })
+
+    this
   }
 
   def setCSS(cssTag: String, state: Boolean) {
