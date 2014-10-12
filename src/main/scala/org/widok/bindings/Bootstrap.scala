@@ -131,7 +131,9 @@ object Bootstrap {
         if (icon == Glyphicon.None) HTML.Button(contents: _*)
         else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
 
-      btn.withCSS("btn btn-default")
+      btn
+        .withCSS("btn btn-default")
+        .asInstanceOf[HTML.Button]
     }
   }
 
