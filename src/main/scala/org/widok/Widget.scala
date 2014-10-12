@@ -1,6 +1,8 @@
 package org.widok
 
 import org.scalajs.dom
+import org.scalajs.dom.extensions.KeyCode
+import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
 
 import org.widok.bindings._
 
@@ -41,6 +43,58 @@ object Widget {
       })
 
       this
+    }
+  }
+
+  object Input {
+    trait Text extends Widget {
+      val rendered: HTMLInputElement
+
+      /**
+       * Provides two-way binding.
+       *
+       * @param data
+       *              The channel to read from and to.
+       * @param flush
+       *              If the channel produces data, this flushes the current
+       *              value of the input field.
+       * @param live
+       *             Produce every single character if true, otherwise
+       *             produce only if enter was pressed.
+       * @return
+       */
+      def bind(data: Channel[String], flush: Channel[Nothing] = Channel(), live: Boolean = false): Text = {
+        val obs = (text: String) => rendered.value = text
+
+        data.attach(obs)
+        flush.attach(_ => data.produce(rendered.value, obs))
+
+        rendered.onkeyup = (e: KeyboardEvent) =>
+          if (e.keyCode == KeyCode.enter || live)
+            data.produce(rendered.value, obs)
+
+        this
+      }
+    }
+
+    trait Checkbox extends Widget {
+      val rendered: HTMLInputElement
+
+      def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()): Checkbox = {
+        val obs = (checked: Boolean) => rendered.checked = checked
+
+        data.attach(obs)
+        flush.attach(_ => data.produce(rendered.checked, obs))
+
+        rendered.onchange = (e: dom.Event) =>
+          data.produce(rendered.checked, obs)
+
+        this
+      }
+    }
+
+    trait Select extends Widget {
+      // TODO define bind()
     }
   }
 

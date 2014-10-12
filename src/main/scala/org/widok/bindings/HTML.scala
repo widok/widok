@@ -1,9 +1,8 @@
 package org.widok.bindings
 
-import org.scalajs.dom.extensions.KeyCode
 import org.widok._
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
+import org.scalajs.dom.HTMLInputElement
 
 object HTML {
   trait Cursor
@@ -104,7 +103,9 @@ object HTML {
   }
 
   object Input {
-    case class Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true) extends Widget {
+    case class Text(placeholder: String = "",
+                    autofocus: Boolean = false,
+                    autocomplete: Boolean = true) extends Widget.Input.Text {
       val rendered = tag("input")
         .asInstanceOf[HTMLInputElement]
 
@@ -112,54 +113,15 @@ object HTML {
       rendered.setAttribute("placeholder", placeholder)
       rendered.setAttribute("autocomplete", if (autocomplete) "on" else "off")
       rendered.setAttribute("type", "text")
-
-      /**
-       * Provides two-way binding.
-       *
-       * @param data
-       *              The channel to read from and to.
-       * @param flush
-       *              If the channel produces data, this flushes the current
-       *              value of the input field.
-       * @param live
-       *             Produce every single character if true, otherwise
-       *             produce only if enter was pressed.
-       * @return
-       */
-      def bind(data: Channel[String], flush: Channel[Nothing] = Channel(), live: Boolean = false): Text = {
-        val obs = (text: String) => rendered.value = text
-
-        data.attach(obs)
-        flush.attach(_ => data.produce(rendered.value, obs))
-
-        rendered.onkeyup = (e: KeyboardEvent) =>
-          if (e.keyCode == KeyCode.enter || live)
-            data.produce(rendered.value, obs)
-
-        this
-      }
     }
 
-    case class Checkbox() extends Widget {
+    case class Checkbox() extends Widget.Input.Checkbox {
       val rendered = tag("input")
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
-
-      def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()): Checkbox = {
-        val obs = (checked: Boolean) => rendered.checked = checked
-
-        data.attach(obs)
-        flush.attach(_ => data.produce(rendered.checked, obs))
-
-        rendered.onchange = (e: dom.Event) =>
-          data.produce(rendered.checked, obs)
-
-        this
-      }
     }
 
-    case class Select(options: Seq[String], selected: Int = -1) extends Widget {
-      // TODO define bind()
+    case class Select(options: Seq[String], selected: Int = -1) extends Widget.Input.Select {
       val rendered = tag("select")
       options.zipWithIndex.foreach { case (cur, idx) =>
         val elem = dom.document.createElement("option")
