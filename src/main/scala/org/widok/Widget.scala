@@ -202,16 +202,16 @@ trait Widget {
   def bindMouse(event: Event.Mouse, writeChannel: Channel[dom.MouseEvent]) = {
     import Event.Mouse._
     event match {
-      case Click => this.rendered.onclick = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case DoubleClick => this.rendered.ondblclick = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Leave => this.rendered.onmouseleave = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Enter => this.rendered.onmouseenter = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Out => this.rendered.onmouseout = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Up => this.rendered.onmouseup = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Over => this.rendered.onmouseover = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Down => this.rendered.onmousedown = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Move => this.rendered.onmousemove = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case ContextMenu => this.rendered.oncontextmenu = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Click => rendered.onclick = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case DoubleClick => rendered.ondblclick = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Leave => rendered.onmouseleave = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Enter => rendered.onmouseenter = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Out => rendered.onmouseout = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Up => rendered.onmouseup = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Over => rendered.onmouseover = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Down => rendered.onmousedown = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case Move => rendered.onmousemove = (e: dom.MouseEvent) => writeChannel.produce(e)
+      case ContextMenu => rendered.oncontextmenu = (e: dom.MouseEvent) => writeChannel.produce(e)
     }
 
     this
@@ -220,9 +220,9 @@ trait Widget {
   def bindKey(event: Event.Key, writeChannel: Channel[dom.KeyboardEvent]) = {
     import Event.Key._
     event match {
-      case Up => this.rendered.onkeyup = (e: dom.KeyboardEvent) => writeChannel.produce(e)
-      case Down => this.rendered.onkeydown = (e: dom.KeyboardEvent) => writeChannel.produce(e)
-      case Press => this.rendered.onkeypress = (e: dom.KeyboardEvent) => writeChannel.produce(e)
+      case Up => rendered.onkeyup = (e: dom.KeyboardEvent) => writeChannel.produce(e)
+      case Down => rendered.onkeydown = (e: dom.KeyboardEvent) => writeChannel.produce(e)
+      case Press => rendered.onkeypress = (e: dom.KeyboardEvent) => writeChannel.produce(e)
     }
 
     this
@@ -236,7 +236,7 @@ trait Widget {
       case End => "ontouchend"
     }
 
-    this.rendered.addEventListener(
+    rendered.addEventListener(
       ev,
       (e: dom.Event) => writeChannel.produce(e.asInstanceOf[dom.TouchEvent]),
       useCapture = false)
@@ -245,18 +245,18 @@ trait Widget {
   }
 
   def withId(id: String) = {
-    this.rendered.id = id
+    rendered.id = id
     this
   }
 
   def withCursor(cursor: HTML.Cursor) = {
-    this.rendered.setAttribute("style", s"cursor: $cursor")
+    rendered.setAttribute("style", s"cursor: $cursor")
     this
   }
 
   def withCSS(cssTags: String*) = {
-    val tags = this.rendered.className.split(" ").toSet
-    this.rendered.className = (tags ++ cssTags).mkString(" ")
+    val tags = rendered.className.split(" ").toSet
+    rendered.className = (tags ++ cssTags).mkString(" ")
     this
   }
 
@@ -266,27 +266,27 @@ trait Widget {
   }
 
   def setCSS(cssTag: String, state: Boolean) {
-    val tags = this.rendered.className.split(" ").toSet
+    val tags = rendered.className.split(" ").toSet
 
     val changed =
       if (state) tags + cssTag
       else tags.diff(Set(cssTag))
 
-    this.rendered.className = changed.mkString(" ")
+    rendered.className = changed.mkString(" ")
   }
 
   def withAttribute(key: String, value: String) = {
-    this.rendered.setAttribute(key, value)
+    rendered.setAttribute(key, value)
     this
   }
 
   def show[T](value: Channel[Boolean], remove: Boolean = true) = {
     value.attach(cur =>
       if (remove) {
-        this.rendered.style.display =
+        rendered.style.display =
           if (cur) "block" else "none"
       } else {
-        this.rendered.style.visibility =
+        rendered.style.visibility =
           if (cur) "visible" else "hidden"
       })
 
