@@ -38,11 +38,6 @@ object AggregateTest extends JasmineTest {
         state = value
       })
 
-      expect(sets).toBe(0)
-      expect(state).toBe(false)
-
-      isEmpty.populate()
-
       expect(sets).toBe(1)
       expect(state).toBe(true)
 
@@ -65,11 +60,6 @@ object AggregateTest extends JasmineTest {
         state = value
       })
 
-      expect(sets).toBe(0)
-      expect(state).toBe(false)
-
-      nonEmpty.populate()
-
       expect(sets).toBe(1)
       expect(state).toBe(false)
 
@@ -86,10 +76,6 @@ object AggregateTest extends JasmineTest {
       val size = agg.size
 
       size.attach(value => currentSize = value)
-
-      expect(currentSize).toBe(-1)
-
-      size.populate()
 
       expect(currentSize).toBe(0)
 
@@ -172,7 +158,7 @@ object AggregateTest extends JasmineTest {
       expect(sum).toBe(6 + 5)
     }
 
-    it("should filter() with size() and populate()") {
+    it("should filter() with size()") {
       val agg = Aggregate[Int]()
 
       val filter = agg.filter(_ % 2 == 0)
@@ -180,8 +166,6 @@ object AggregateTest extends JasmineTest {
       var count = -1
       val size = filter.size
       size.attach(value => count = value)
-
-      size.populate()
 
       expect(count).toBe(0)
 
@@ -353,8 +337,6 @@ object AggregateTest extends JasmineTest {
       val forall = agg.forall(_ > 1)
       forall.attach(value => gt1 = value)
 
-      expect(gt1).toBe(false)
-      forall.populate()
       expect(gt1).toBe(true)
 
       val two = agg.append(2)
@@ -364,6 +346,9 @@ object AggregateTest extends JasmineTest {
       expect(gt1).toBe(true)
 
       val zero = agg.append(0)
+      expect(gt1).toBe(false)
+
+      forall.attach(value => gt1 = value)
       expect(gt1).toBe(false)
 
       zero := 2
@@ -418,6 +403,7 @@ object AggregateTest extends JasmineTest {
         last = cur
         res
       }).forall(_ == true).attach(value => allTrue = value)
+      expect(allTrue).toBe(true)
 
       val ch = agg.append(1)
       val ch2 = agg.append(2)

@@ -164,9 +164,7 @@ case class Aggregate[T]() {
   }
 
   def isEmpty: Channel[Boolean] = {
-    val ch = Channel[Boolean]()
-
-    ch.attach(() => Some(elements.isEmpty))
+    val ch = Channel.unit(elements.isEmpty)
 
     attach(new Aggregate.Observer[T] {
       def append(cur: Channel[T]) {
@@ -185,9 +183,7 @@ case class Aggregate[T]() {
     isEmpty.map(!_)
 
   def size: Channel[Int] = {
-    val ch = Channel[Int]()
-
-    ch.attach(() => Some(elements.size))
+    val ch = Channel.unit(elements.size)
 
     attach(new Aggregate.Observer[T] {
       def append(cur: Channel[T]) {
@@ -233,23 +229,24 @@ case class Aggregate[T]() {
   }
 
   def forall[U](f: T => Boolean): Channel[Boolean] = {
-    val ch = Channel[Boolean]()
+    var state = true
+    val ch = Channel.unit(state)
 
     val map = new mutable.HashMap[Channel[T], Boolean]()
-
-    ch.attach(() => Some(true))
 
     attach(new Aggregate.Observer[T] {
       def append(cur: Channel[T]) {
         cur.attach(value => {
           map += (cur -> f(value))
-          ch := map.forall(_._2)
+          state = map.forall(_._2)
+          ch := state
         })
       }
 
       def remove(cur: Channel[T]) {
         map -= cur
-        ch := map.forall(_._2)
+        state = map.forall(_._2)
+        ch := state
       }
     })
 

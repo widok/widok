@@ -118,28 +118,25 @@ object HTML {
       /**
        * Provides two-way binding.
        *
-       * @param readChannel
-       *              The channel to read from.
-       * @param writeChannel
-       *              The channel to write to.
+       * @param data
+       *              The channel to read from and to.
+       * @param flush
+       *              If the channel produces data, this flushes the data.
        * @param live
        *             Produce every single character if true, otherwise
        *             produce only if enter was pressed.
        * @return
        */
-      def bind(readChannel: Channel[String], writeChannel: Channel[String], live: Boolean): Text = {
-        readChannel.attach(() => Some(rendered.value)) // Producer
-        readChannel.attach((text: String) => rendered.value = text) // Observer
+      def bind(data: Channel[String], flush: Channel[Nothing] = Channel(), live: Boolean = false): Text = {
+        data.attach(text => rendered.value = text)
+        flush.attach(_ => data := rendered.value)
 
         rendered.onkeyup = (e: KeyboardEvent) =>
           if (e.keyCode == 13 || live)
-            writeChannel.produce(rendered.value)
+            data := rendered.value
 
         this
       }
-
-      def bind(readWriteChannel: Channel[String], live: Boolean = false): Text =
-        bind(readWriteChannel, (value: String) => readWriteChannel.produce(value), live)
     }
 
     case class Checkbox() extends Widget {
@@ -147,18 +144,15 @@ object HTML {
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
 
-      def bind(readChannel: Channel[Boolean], writeChannel: Channel[Boolean]): Checkbox = {
-        readChannel.attach(() => Some(rendered.checked)) // Producer
-        readChannel.attach((checked: Boolean) => rendered.checked = checked) // Observer
+      def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()): Checkbox = {
+        data.attach(checked => rendered.checked = checked)
+        flush.attach(_ => data := rendered.checked)
 
         rendered.onchange = (e: dom.Event) =>
-          writeChannel.produce(rendered.checked)
+          data := rendered.checked
 
         this
       }
-
-      def bind(readWriteChannel: Channel[Boolean]): Checkbox =
-        bind(readWriteChannel, (value: Boolean) => readWriteChannel.produce(value))
     }
 
     case class Select(options: Seq[String], selected: Int = -1) extends Widget {

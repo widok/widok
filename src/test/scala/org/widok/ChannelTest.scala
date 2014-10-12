@@ -3,8 +3,6 @@ package org.widok
 import scala.collection.mutable
 import scala.scalajs.test.JasmineTest
 
-import shapeless._
-
 case class Test(a: Int, b: Boolean)
 
 object ChannelTest extends JasmineTest {
@@ -30,7 +28,6 @@ object ChannelTest extends JasmineTest {
       expect(map(b)).toBe(2)
 
       a := 1
-      b.attach(() => None)
 
       expect(map(a)).toBe(1)
       expect(map(b)).toBe(2)
@@ -79,7 +76,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should value()") {
-      val ch = Channel[Test]()
+      val ch = Channel.unit[Test](Test(1, true))
 
       val a = ch.value[Int](_ >> 'a)
 
@@ -89,16 +86,19 @@ object ChannelTest extends JasmineTest {
       var sum2 = 0
       ch.attach(cur => sum2 += cur.a)
 
-      ch := Test(1, false)
-      ch := Test(2, true)
+      expect(sum).toBe(1)
+      expect(sum2).toBe(1)
 
-      expect(sum).toBe(1 + 2)
-      expect(sum2).toBe(1 + 2)
-
-      a := 3
+      ch := Test(2, false)
+      ch := Test(3, true)
 
       expect(sum).toBe(1 + 2 + 3)
       expect(sum2).toBe(1 + 2 + 3)
+
+      a := 4
+
+      expect(sum).toBe(1 + 2 + 3 + 4)
+      expect(sum2).toBe(1 + 2 + 3 + 4)
     }
 
     it("should unit()") {
@@ -106,13 +106,32 @@ object ChannelTest extends JasmineTest {
       var sum = 0
 
       ch.attach(value => sum += value)
-      expect(sum).toBe(0)
-
-      ch.populate()
       expect(sum).toBe(42)
 
-      ch.populate()
-      expect(sum).toBe(84)
+      ch.attach(value => sum += value + 1)
+      expect(sum).toBe(42 + 42 + 1)
+    }
+
+    it("should from()") {
+      val ch = Channel.from(Seq(1, 2, 3))
+
+      var sum = 0
+      ch.attach(value => sum += value)
+      expect(sum).toBe(1 + 2 + 3)
+
+      ch.attach(value => sum += value)
+      expect(sum).toBe(1 + 2 + 3 + 1 + 2 + 3)
+    }
+
+    it("should map()") {
+      val ch = Channel.unit(42).map(_ + 1)
+
+      var sum = 0
+      ch.attach(value => sum += value)
+      expect(sum).toBe(43)
+
+      ch.attach(value => sum += value + 1)
+      expect(sum).toBe(43 + 43 + 1)
     }
   }
 }

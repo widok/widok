@@ -2,36 +2,35 @@ package org.widok
 
 import scala.collection.mutable.ArrayBuffer
 
-import shapeless._
-
 import org.widok.Helpers.Identity
 
 object Channel {
-  type Producer[T] = () => Option[T]
   type Observer[T] = T => Unit
 
-  def unit[T](value: T): Channel[T] = {
-    val ch = Channel[T]()
-    val producer = () => Some(value)
-    ch.attach(producer)
-    ch
+  def apply[T]() = new Channel[T] {
+    def onAttach(observer: Observer[T]) {}
+    def onDetach(observer: Observer[T]) {}
+  }
+
+  /**
+   * Upon each subscription, emit ``v``. ``v`` is evaluated
+   * lazily. Channel.unit() can be considered a cold observable.
+   */
+  def unit[T](v: => T) = new Channel[T] {
+    def onAttach(observer: Observer[T]) { observer(v) }
+    def onDetach(observer: Observer[T]) {}
+  }
+
+  def from[T](elems: Seq[T]) = new Channel[T] {
+    def onAttach(observer: Observer[T]) { elems.foreach(observer) }
+    def onDetach(observer: Observer[T]) {}
   }
 }
 
-case class Channel[T]() extends Identity {
-  import Channel.{Observer, Producer}
+trait Channel[T] extends Identity {
+  import Channel.Observer
 
-  private val producers = new ArrayBuffer[Producer[T]]() // TODO Restrict to one?
-  private val observers = new ArrayBuffer[Observer[T]]()
-
-  // Finds the first non-empty value a producer returns.
-  private def produced: Option[T] =
-    producers.foldLeft(Option.empty[T]) { (acc, cur) =>
-      acc match {
-        case Some(_) => acc
-        case _ => cur()
-      }
-    }
+  private[widok] val observers = new ArrayBuffer[Observer[T]]()
 
   def cache: CachedChannel[T] = CachedChannel(this)
 
@@ -53,33 +52,30 @@ case class Channel[T]() extends Identity {
 
   def :=(v: T) = produce(v)
 
-  // Populate observers with a value obtained from a producer.
-  def populate() {
-    produced.foreach(produce)
-  }
+  def onAttach(observer: Observer[T])
+  def onDetach(observer: Observer[T])
 
-  def attach(observer: Observer[T]) {
+  def silentAttach(observer: Observer[T]) {
     assume(!observers.contains(observer))
     observers.append(observer)
   }
 
-  def attach(producer: Producer[T]) {
-    assume(!producers.contains(producer))
-    producers.append(producer)
+  def attach(observer: Observer[T]) {
+    silentAttach(observer)
+    onAttach(observer)
   }
 
-  def detach(observer: Observer[T]) = {
+  def silentDetach(observer: Observer[T]) {
     assume(observers.contains(observer))
     observers -= observer
   }
 
-  def detach(producer: Producer[T]) = {
-    assume(producers.contains(producer))
-    producers -= producer
+  def detach(observer: Observer[T]) = {
+    silentDetach(observer)
+    onDetach(observer)
   }
 
   def destroy() {
-    producers.clear()
     observers.clear()
   }
 
@@ -141,10 +137,23 @@ case class Channel[T]() extends Identity {
     res
   }
 
+  def create[U](f: T => U): Channel[U] = {
+    val that = this
+
+    val res = new Channel[U] {
+      def onAttach(observer: Observer[U]) {
+        that.onAttach(value => observer(f(value)))
+      }
+
+      def onDetach(observer: Observer[U]) {}
+    }
+
+    res
+  }
+
   def map[U](f: T => U): Channel[U] = {
-    val res = Channel[U]()
-    attach(value => res.produce(f(value)))
-    res.attach(() => produced.map(f))
+    val res = create(f)
+    silentAttach(value => res.produce(f(value)))
     res
   }
 
@@ -153,7 +162,7 @@ case class Channel[T]() extends Identity {
 
   /* Two-way lens that propagates back changes. */
   def lens[U](l: shapeless.Lens[T, U]): Channel[U] = {
-    val res = Channel[U]()
+    val res = create(l.get)
     var cache: Option[T] = None
 
     var observer: Observer[T] = null
@@ -166,7 +175,7 @@ case class Channel[T]() extends Identity {
       res.produce(l.get(value), propagateBack)
     }
 
-    attach(observer)
+    silentAttach(observer)
     res.attach(propagateBack)
 
     res
@@ -174,7 +183,7 @@ case class Channel[T]() extends Identity {
 }
 
 case class CachedChannel[T](ch: Channel[T] = Channel[T]()) {
-  import Channel.{Producer, Observer}
+  import Channel.Observer
 
   private var value: Option[T] = None
 
@@ -196,11 +205,8 @@ case class CachedChannel[T](ch: Channel[T] = Channel[T]()) {
   def flatProduce(v: Option[T]) = ch.flatProduce(v)
   def flatProduce(v: Option[T], ignore: Observer[T]*) = ch.flatProduce(v, ignore: _*)
   def :=(v: T) = ch := v
-  def populate() = ch.populate()
   def attach(observer: Observer[T]) = ch.attach(observer)
-  def attach(producer: Producer[T]) = ch.attach(producer)
   def detach(observer: Observer[T]) = ch.detach(observer)
-  def detach(producer: Producer[T]) = ch.detach(producer)
   def take(count: Int): Channel[T] = ch.take(count)
   def skip(count: Int): Channel[T] = ch.skip(count)
   def unique: Channel[T] = ch.unique

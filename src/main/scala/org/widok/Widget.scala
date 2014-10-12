@@ -47,25 +47,21 @@ object Widget {
   trait Container extends Widget {
     def bindString[T <: String](value: Channel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
-      value.populate()
       this
     }
 
     def bindInt[T <: Int](value: Channel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
-      value.populate()
       this
     }
 
     def bindDouble[T <: Double](value: Channel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
-      value.populate()
       this
     }
 
     def bindBoolean[T <: Boolean](value: Channel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
-      value.populate()
       this
     }
 
@@ -75,7 +71,6 @@ object Widget {
         rendered.appendChild(cur.rendered)
       })
 
-      value.populate()
       this
     }
 
@@ -85,7 +80,6 @@ object Widget {
         if (cur.isDefined) rendered.appendChild(cur.get.rendered)
       })
 
-      value.populate()
       this
     }
 
@@ -95,7 +89,6 @@ object Widget {
         rendered.innerHTML = cur
       })
 
-      value.populate()
       this
     }
   }
@@ -203,7 +196,6 @@ trait Widget {
 
   def withCSS(state: Channel[Boolean], cssTags: String*) = {
     state.attach(value => cssTags.foreach(cssTag => setCSS(cssTag, value)))
-    state.populate()
     this
   }
 
@@ -232,7 +224,6 @@ trait Widget {
           if (cur) "visible" else "hidden"
       })
 
-    value.populate()
     this
   }
 }
