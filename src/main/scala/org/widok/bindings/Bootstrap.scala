@@ -165,7 +165,7 @@ object Bootstrap {
     def renderTabs(tabs: Seq[Tab], currentTab: Channel[Tab]) = {
       val renderedTabs = tabs.map(tab =>
         Bootstrap.Navigation.Item(currentTab.map(_ == tab))(
-          HTML.Anchor()(tab.name).bindMouse(Event.Mouse.Click, (e: dom.MouseEvent) => currentTab := tab)))
+          HTML.Anchor()(tab.name).bind((_: Unit) => currentTab := tab)))
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
@@ -277,8 +277,10 @@ object Bootstrap {
       ).withCSS("checkbox")
        .rendered
 
-    def bind(value: Channel[Boolean]) =
-      checkbox.bind(value)
+    def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()) = {
+      checkbox.bind(data, flush)
+      this
+    }
   }
 
   trait AlertType { val cssTag: String }
