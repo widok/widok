@@ -119,19 +119,22 @@ object HTML {
        * @param data
        *              The channel to read from and to.
        * @param flush
-       *              If the channel produces data, this flushes the data.
+       *              If the channel produces data, this flushes the current
+       *              value of the input field.
        * @param live
        *             Produce every single character if true, otherwise
        *             produce only if enter was pressed.
        * @return
        */
       def bind(data: Channel[String], flush: Channel[Nothing] = Channel(), live: Boolean = false): Text = {
-        data.attach(text => rendered.value = text)
-        flush.attach(_ => data := rendered.value)
+        val obs = (text: String) => rendered.value = text
+
+        data.attach(obs)
+        flush.attach(_ => data.produce(rendered.value, obs))
 
         rendered.onkeyup = (e: KeyboardEvent) =>
           if (e.keyCode == KeyCode.enter || live)
-            data := rendered.value
+            data.produce(rendered.value, obs)
 
         this
       }
@@ -143,11 +146,13 @@ object HTML {
       rendered.setAttribute("type", "checkbox")
 
       def bind(data: Channel[Boolean], flush: Channel[Nothing] = Channel()): Checkbox = {
-        data.attach(checked => rendered.checked = checked)
-        flush.attach(_ => data := rendered.checked)
+        val obs = (checked: Boolean) => rendered.checked = checked
+
+        data.attach(obs)
+        flush.attach(_ => data.produce(rendered.checked, obs))
 
         rendered.onchange = (e: dom.Event) =>
-          data := rendered.checked
+          data.produce(rendered.checked, obs)
 
         this
       }
