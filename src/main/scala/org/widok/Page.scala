@@ -5,7 +5,7 @@ trait BasePage {
 
   def render() {
     (for {
-      page <- DOM.element("page")
+      page <- DOM.getElement("page")
     } yield {
       DOM.clear(page)
 

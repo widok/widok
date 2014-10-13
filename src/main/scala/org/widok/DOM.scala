@@ -7,7 +7,13 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.RawJSType
 
 object DOM {
-  def element(id: String): Option[HTMLElement] =
+  def createElement(tagName: String, contents: Widget*) = {
+    val elem = dom.document.createElement(tagName)
+    contents.foreach(cur => elem.appendChild(cur.rendered))
+    elem
+  }
+
+  def getElement(id: String): Option[HTMLElement] =
     Option(dom.document.getElementById(id))
 
   def clear(elem: HTMLElement) {

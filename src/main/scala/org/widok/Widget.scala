@@ -151,10 +151,7 @@ object Widget {
 
     // Bind HTML.
     def bindRaw[T](value: Channel[String]) = {
-      value.attach(cur => {
-        rendered.innerHTML = cur
-      })
-
+      value.attach(cur => rendered.innerHTML = cur)
       this
     }
   }
@@ -193,12 +190,8 @@ object Event {
 trait Widget {
   val rendered: dom.HTMLElement
 
-  def tag(tagName: String, contents: Widget*) = {
-    val elem = dom.document.createElement(tagName)
-    contents.foreach(cur => elem.appendChild(cur.rendered))
-    elem
-  }
-
+  // May only be used once.
+  // TODO Add assertions
   def bindMouse(event: Event.Mouse, writeChannel: Channel[dom.MouseEvent]) = {
     import Event.Mouse._
     event match {
@@ -217,6 +210,8 @@ trait Widget {
     this
   }
 
+  // May only be used once.
+  // TODO Add assertions
   def bindKey(event: Event.Key, writeChannel: Channel[dom.KeyboardEvent]) = {
     import Event.Key._
     event match {
@@ -228,6 +223,8 @@ trait Widget {
     this
   }
 
+  // May only be used once.
+  // TODO Add assertions
   def bindTouch(event: Event.Touch, writeChannel: Channel[dom.TouchEvent]) = {
     import Event.Touch._
     val ev = event match {
@@ -244,28 +241,34 @@ trait Widget {
     this
   }
 
-  def withId(id: String) = {
+  def id(id: String) = {
     rendered.id = id
     this
   }
 
-  def withCursor(cursor: HTML.Cursor) = {
+  def cursor(cursor: HTML.Cursor) = {
     rendered.style.cursor = cursor.toString
     this
   }
 
-  def withCSS(cssTags: String*) = {
+  def css(cssTags: String*) = {
     val tags = rendered.className.split(" ").toSet
     rendered.className = (tags ++ cssTags).mkString(" ")
     this
   }
 
-  def withCSS(state: Channel[Boolean], cssTags: String*) = {
-    state.attach(value => cssTags.foreach(cssTag => setCSS(cssTag, value)))
+  def css(state: Boolean, cssTags: String*) = {
+    val tags = rendered.className.split(" ").toSet
+
+    val changed =
+      if (state) tags ++ cssTags
+      else tags.diff(cssTags.toSet)
+
+    rendered.className = changed.mkString(" ")
     this
   }
 
-  def withCSS(tag: Channel[String]) = {
+  def cssCh(tag: Channel[String]) = {
     var cur: Option[String] = None
 
     tag.attach(value => {
@@ -281,17 +284,12 @@ trait Widget {
     this
   }
 
-  def setCSS(cssTag: String, state: Boolean) {
-    val tags = rendered.className.split(" ").toSet
-
-    val changed =
-      if (state) tags + cssTag
-      else tags - cssTag
-
-    rendered.className = changed.mkString(" ")
+  def cssCh(state: Channel[Boolean], cssTags: String*) = {
+    state.attach(value => css(value, cssTags: _*))
+    this
   }
 
-  def withAttribute(key: String, value: String) = {
+  def attribute(key: String, value: String) = {
     rendered.setAttribute(key, value)
     this
   }

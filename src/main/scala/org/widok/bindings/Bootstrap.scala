@@ -1,6 +1,5 @@
 package org.widok.bindings
 
-import org.scalajs.dom
 import org.widok._
 
 /**
@@ -30,7 +29,7 @@ object Bootstrap {
   }
 
   case class TextContainer(styles: TextContainer.Style*)(contents: Widget*) extends Widget {
-    val rendered = tag("div", contents: _*)
+    val rendered = DOM.createElement("div", contents: _*)
     this.rendered.className = styles.map(_.cssTag).mkString(" ")
   }
 
@@ -73,48 +72,48 @@ object Bootstrap {
 
   def Glyphicon(glyphicon: Glyphicon, caption: String = "") =
     HTML.Container.Inline()
-      .withCSS("glyphicon", glyphicon.cssTag)
-      .withAttribute("title", caption)
+      .css("glyphicon", glyphicon.cssTag)
+      .attribute("title", caption)
 
   def HorizontalForm(contents: Widget*) =
     HTML.Form(contents: _*)
-      .withCSS("form-horizontal")
-      .withAttribute("role", "form")
+      .css("form-horizontal")
+      .attribute("role", "form")
 
   def FormGroup(role: Role = Role.None)(contents: Widget*) = {
     val res = HTML.Container.Generic(contents: _*)
-      .withCSS("form-group")
+      .css("form-group")
 
     if (role == Role.None) res
-    else res.withAttribute("role", role.value)
+    else res.attribute("role", role.value)
   }
 
   def InputGroup(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("input-group")
+      .css("input-group")
 
   def ControlLabel(contents: Widget*) =
     HTML.Label()(contents: _*)
-      .withCSS("control-label")
+      .css("control-label")
 
   // TODO Improve design.
   def Fix(contents: Widget*) =
     HTML.Container.Generic(
       HTML.Container.Inline("Fix")
-        .withCSS("label label-warning"),
+        .css("label label-warning"),
       HTML.Container.Inline(contents: _*)
-    ).withCSS("alert alert-danger")
+    ).css("alert alert-danger")
 
   object Input {
     def Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true) = {
       val text = HTML.Input.Text(placeholder, autofocus, autocomplete)
-      text.withCSS("form-control")
+      text.css("form-control")
       text
     }
 
     def Select(options: Seq[String], selected: Int = -1) =
       HTML.Input.Select(options, selected)
-        .withCSS("form-control")
+        .css("form-control")
   }
 
   object Button {
@@ -132,34 +131,34 @@ object Bootstrap {
         else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
 
       btn
-        .withCSS("btn btn-default")
+        .css("btn btn-default")
         .asInstanceOf[HTML.Button]
     }
   }
 
   def Footer(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("footer")
+      .css("footer")
 
   def Container(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("container")
+      .css("container")
 
   def PageHeader(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("page-header")
+      .css("page-header")
 
   def Lead(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("lead")
+      .css("lead")
 
   def PullRight(contents: Widget*) =
     HTML.Container.Inline(contents: _*)
-      .withCSS("pull-right")
+      .css("pull-right")
 
   def MutedText(contents: Widget*) =
     HTML.Paragraph(contents: _*)
-      .withCSS("text-muted")
+      .css("text-muted")
 
   object Navigation {
     case class Tab(name: String)
@@ -173,17 +172,17 @@ object Bootstrap {
 
     def Tabs(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
-        .withCSS("nav nav-tabs")
-        .withAttribute("role", "tablist")
+        .css("nav nav-tabs")
+        .attribute("role", "tablist")
 
     def Pills(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
-        .withCSS("nav nav-pills")
-        .withAttribute("role", "tablist")
+        .css("nav nav-pills")
+        .attribute("role", "tablist")
 
     def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
       HTML.List.Item(contents: _*)
-        .withCSS(active, "active")
+        .cssCh(active, "active")
         .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
   }
 
@@ -210,61 +209,61 @@ object Bootstrap {
 
     def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: Widget*) =
       HTML.Navigation(contents: _*)
-        .withCSS("navbar", "navbar-default", position.cssTag(fixed))
-        .withAttribute("role", "navigation")
+        .css("navbar", "navbar-default", position.cssTag(fixed))
+        .attribute("role", "navigation")
 
     def Toggle() =
        HTML.Button(
-         HTML.Container.Inline().withCSS("icon-bar"),
-         HTML.Container.Inline().withCSS("icon-bar"),
-         HTML.Container.Inline().withCSS("icon-bar")
-       ).withCSS("navbar-toggle collapsed")
-        .withAttribute("type", "button")
+         HTML.Container.Inline().css("icon-bar"),
+         HTML.Container.Inline().css("icon-bar"),
+         HTML.Container.Inline().css("icon-bar")
+       ).css("navbar-toggle collapsed")
+        .attribute("type", "button")
 
     def Header(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("navbar-header")
+        .css("navbar-header")
 
     def Brand(contents: Widget*) =
       HTML.Anchor()(contents: _*)
-        .withCSS("navbar-brand")
+        .css("navbar-brand")
 
     def Collapse(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("collapse", "navbar-collapse")
+        .css("collapse", "navbar-collapse")
 
     def Leaf(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
       HTML.List.Item(HTML.Anchor(ref)(contents: _*))
-        .withCSS(active, "active")
+        .cssCh(active, "active")
         .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
 
     def Branch(contentsCaption: Widget*)(contents: HTML.List.Item*) =
         HTML.List.Item(
           HTML.Anchor()(
             HTML.Container.Inline(contentsCaption: _*),
-            HTML.Container.Inline().withCSS("caret")
-          ).withCSS("dropdown-toggle"),
+            HTML.Container.Inline().css("caret")
+          ).css("dropdown-toggle"),
           HTML.List.Unordered(contents: _*)
-            .withCSS("dropdown-menu")
-            .withAttribute("role", "menu")
-        ).withCSS("dropdown")
+            .css("dropdown-menu")
+            .attribute("role", "menu")
+        ).css("dropdown")
          .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
-        .withCSS("nav", "navbar-nav")
+        .css("nav", "navbar-nav")
 
     def Form(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("navbar-form")
+        .css("navbar-form")
 
     def Right(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS("navbar-right")
+      .css("navbar-right")
 
     def Navigation(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("nav", "navbar-nav")
+        .css("nav", "navbar-nav")
   }
 
   def Checkbox(contents: Widget*) = new Widget {
@@ -276,7 +275,7 @@ object Bootstrap {
           checkbox,
           HTML.Container.Inline(contents: _*)
         )
-      ).withCSS("checkbox")
+      ).css("checkbox")
        .rendered
 
     def bind(data: Channel[Boolean], flush: Channel[Unit] = Channel()) = {
@@ -293,45 +292,45 @@ object Bootstrap {
 
   def Alert(alertType: AlertType)(contents: Widget*) =
     HTML.Container.Generic(contents: _*)
-      .withCSS(s"alert ${alertType.cssTag}")
-      .withAttribute("role", "alert")
+      .css(s"alert ${alertType.cssTag}")
+      .attribute("role", "alert")
 
   def Panel(contents: Widget*) =
     HTML.Container.Generic(
       HTML.Container.Generic(
         contents: _*
-      ) .withCSS("panel-body")
-    ) .withCSS("panel panel-default")
+      ) .css("panel-body")
+    ) .css("panel panel-default")
 
   object ListGroup {
     case class Group(contents: Widget.List.Item*) extends Widget.List {
       val rendered = HTML.Container.Generic(contents: _*)
-        .withCSS("list-group")
+        .css("list-group")
         .rendered
     }
 
     def PageItem(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
       val rendered = HTML.Anchor(ref)(contents: _*)
-        .withCSS("list-group-item")
-        .withCSS(active, "active")
+        .css("list-group-item")
+        .cssCh(active, "active")
         .rendered
     }
 
     // clearfix is needed in conjunction with PullRight()
     def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
       val rendered = HTML.Container.Generic(contents: _*)
-        .withCSS("list-group-item", "clearfix")
-        .withCSS(active, "active")
+        .css("list-group-item", "clearfix")
+        .cssCh(active, "active")
         .rendered
     }
 
     def ItemHeading(contents: Widget*) =
       HTML.Heading.Level4(contents: _*)
-        .withCSS("list-group-item-heading")
+        .css("list-group-item-heading")
 
     def ItemText(contents: Widget*) =
       HTML.Paragraph(contents: _*)
-        .withCSS("list-group-item-text")
+        .css("list-group-item-text")
   }
 
   object Grid {
@@ -345,11 +344,11 @@ object Bootstrap {
 
     def Column(columnType: ColumnType, level: Int)(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS(s"${columnType.cssTag}-$level")
+        .css(s"${columnType.cssTag}-$level")
 
     def Row(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
-        .withCSS("row")
+        .css("row")
   }
 
 }

@@ -14,91 +14,91 @@ object HTML {
 
   object Heading {
     case class Level1(contents: Widget*) extends Widget {
-      val rendered = tag("h1", contents: _*)
+      val rendered = DOM.createElement("h1", contents: _*)
     }
 
     case class Level2(contents: Widget*) extends Widget {
-      val rendered = tag("h2", contents: _*)
+      val rendered = DOM.createElement("h2", contents: _*)
     }
 
     case class Level3(contents: Widget*) extends Widget {
-      val rendered = tag("h3", contents: _*)
+      val rendered = DOM.createElement("h3", contents: _*)
     }
 
     case class Level4(contents: Widget*) extends Widget {
-      val rendered = tag("h4", contents: _*)
+      val rendered = DOM.createElement("h4", contents: _*)
     }
 
     case class Level5(contents: Widget*) extends Widget {
-      val rendered = tag("h5", contents: _*)
+      val rendered = DOM.createElement("h5", contents: _*)
     }
 
     case class Level6(contents: Widget*) extends Widget {
-      val rendered = tag("h6", contents: _*)
+      val rendered = DOM.createElement("h6", contents: _*)
     }
   }
 
   case class Paragraph(contents: Widget*) extends Widget {
-    val rendered = tag("p", contents: _*)
+    val rendered = DOM.createElement("p", contents: _*)
   }
 
   object Text {
     case class Bold(contents: Widget*) extends Widget {
-      val rendered = tag("b", contents: _*)
+      val rendered = DOM.createElement("b", contents: _*)
     }
 
     case class Small(contents: Widget*) extends Widget {
-      val rendered = tag("small", contents: _*)
+      val rendered = DOM.createElement("small", contents: _*)
     }
   }
 
   case class Raw(html: String) extends Widget {
-    val rendered = tag("span")
+    val rendered = DOM.createElement("span")
     rendered.innerHTML = html
   }
 
   case class Image(source: String) extends Widget {
-    val rendered = tag("img")
+    val rendered = DOM.createElement("img")
     rendered.setAttribute("src", source)
   }
 
   case class LineBreak() extends Widget {
-    val rendered = tag("br")
+    val rendered = DOM.createElement("br")
   }
 
   case class Button(contents: Widget*) extends Widget.Button {
-    val rendered = tag("button", contents: _*)
+    val rendered = DOM.createElement("button", contents: _*)
   }
 
   case class Section(contents: Widget*) extends Widget {
-    val rendered = tag("section", contents: _*)
+    val rendered = DOM.createElement("section", contents: _*)
   }
 
   case class Header(contents: Widget*) extends Widget {
-    val rendered = tag("header", contents: _*)
+    val rendered = DOM.createElement("header", contents: _*)
   }
 
   case class Footer(contents: Widget*) extends Widget {
-    val rendered = tag("footer", contents: _*)
+    val rendered = DOM.createElement("footer", contents: _*)
   }
 
   case class Navigation(contents: Widget*) extends Widget {
-    val rendered = tag("nav", contents: _*)
+    val rendered = DOM.createElement("nav", contents: _*)
   }
 
   def Anchor(ref: String = "")(contents: Widget*) = new Widget.Anchor {
-    val rendered = tag("a", contents: _*)
+    val rendered = DOM.createElement("a", contents: _*)
 
     if (ref == "") rendered.setAttribute("style", "cursor: pointer")
     else rendered.setAttribute("href", ref)
   }
 
   def Form(contents: Widget*) = new Widget {
-    val rendered = tag("form", contents: _*)
+    val rendered = DOM.createElement("form", contents: _*)
   }
 
   def Label(forId: String = "")(contents: Widget*) = new Widget {
-    val rendered = tag("label", contents: _*)
+    val rendered = DOM.createElement("label", contents: _*)
     if (forId.nonEmpty) rendered.setAttribute("for", forId)
   }
 
@@ -106,7 +106,7 @@ object HTML {
     case class Text(placeholder: String = "",
                     autofocus: Boolean = false,
                     autocomplete: Boolean = true) extends Widget.Input.Text {
-      val rendered = tag("input")
+      val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
 
       if (autofocus) rendered.setAttribute("autofocus", "")
@@ -116,15 +116,15 @@ object HTML {
     }
 
     case class Checkbox() extends Widget.Input.Checkbox {
-      val rendered = tag("input")
+      val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
     }
 
     case class Select(options: Seq[String], selected: Int = -1) extends Widget.Input.Select {
-      val rendered = tag("select")
+      val rendered = DOM.createElement("select")
       options.zipWithIndex.foreach { case (cur, idx) =>
-        val elem = dom.document.createElement("option")
+        val elem = DOM.createElement("option")
         elem.appendChild(dom.document.createTextNode(cur))
         if (idx == selected) elem.setAttribute("selected", "")
         rendered.appendChild(elem)
@@ -133,30 +133,30 @@ object HTML {
   }
 
   case class HorizontalLine() extends Widget {
-    val rendered = tag("hr")
+    val rendered = DOM.createElement("hr")
   }
 
   object List {
     case class Unordered(contents: List.Item*) extends Widget.List {
-      val rendered = tag("ul", contents: _*)
+      val rendered = DOM.createElement("ul", contents: _*)
     }
 
     case class Ordered(contents: List.Item*) extends Widget.List {
-      val rendered = tag("ol", contents: _*)
+      val rendered = DOM.createElement("ol", contents: _*)
     }
 
     case class Item(contents: Widget*) extends Widget.List.Item {
-      val rendered = tag("li", contents: _*)
+      val rendered = DOM.createElement("li", contents: _*)
     }
   }
 
   object Container {
     case class Generic(contents: Widget*) extends Widget.Container {
-      val rendered = tag("div", contents: _*)
+      val rendered = DOM.createElement("div", contents: _*)
     }
 
     case class Inline(contents: Widget*) extends Widget.Container {
-      val rendered = tag("span", contents: _*)
+      val rendered = DOM.createElement("span", contents: _*)
     }
   }
 }
