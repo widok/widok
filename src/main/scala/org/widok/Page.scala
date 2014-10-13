@@ -1,7 +1,7 @@
 package org.widok
 
 trait BasePage {
-  def contents(): Seq[Widget]
+  def contents(): Seq[Widget[_]]
 
   def render() {
     (for {

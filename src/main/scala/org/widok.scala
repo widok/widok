@@ -24,30 +24,26 @@ package object widok {
     new Error().printStackTrace()
   }
 
-  implicit def WidgetToSeq(view: Widget) = Seq(view)
+  implicit def WidgetToSeq[T <: Widget[T]](view: Widget[T]) = Seq(view)
 
-  implicit def StringToWidget(s: String) = new Widget {
-    val rendered = dom.document.createTextNode(s)
-      // TODO This conversion is not well-defined, but needed as a workaround.
-      .asInstanceOf[org.scalajs.dom.HTMLElement]
-  }
+  implicit def StringToWidget(value: String) = HTML.Text(value)
 
-  implicit def StringChannelToWidget[T <: String](value: Channel[T]): Widget =
+  implicit def StringChannelToWidget[T <: String](value: Channel[T]) =
     HTML.Container.Inline().bindString(value)
 
-  implicit def IntChannelToWidget[T <: Int](value: Channel[T]): Widget =
+  implicit def IntChannelToWidget[T <: Int](value: Channel[T]) =
     HTML.Container.Inline().bindInt(value)
 
-  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]): Widget =
+  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]) =
     HTML.Container.Inline().bindDouble(value)
 
-  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]): Widget =
+  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]) =
     HTML.Container.Inline().bindBoolean(value)
 
-  implicit def WidgetChannelToWidget[T <: Widget](value: Channel[T]): Widget =
+  implicit def WidgetChannelToWidget[T <: Widget[_]](value: Channel[T]) =
     HTML.Container.Inline().bindWidget(value)
 
-  implicit def OptWidgetChannelToWidget[T <: Option[Widget]](value: Channel[T]): Widget =
+  implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]](value: Channel[T]) =
     HTML.Container.Inline().bindOptWidget(value)
 
   implicit def InstantiatedRouteToString(route: InstantiatedRoute): String = route.uri()

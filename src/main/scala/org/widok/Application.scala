@@ -17,7 +17,7 @@ class RoutingApplication(enabled: Set[Route], fallback: Route) extends Applicati
 }
 
 trait PageApplication extends Application with BasePage {
-  def contents(): Seq[Widget]
+  def contents(): Seq[Widget[_]]
   def ready()
 
   def main() {

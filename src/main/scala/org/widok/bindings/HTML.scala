@@ -13,80 +13,84 @@ object HTML {
   }
 
   object Heading {
-    case class Level1(contents: Widget*) extends Widget {
+    case class Level1(contents: Widget[_]*) extends Widget[Level1] {
       val rendered = DOM.createElement("h1", contents: _*)
     }
 
-    case class Level2(contents: Widget*) extends Widget {
+    case class Level2(contents: Widget[_]*) extends Widget[Level2] {
       val rendered = DOM.createElement("h2", contents: _*)
     }
 
-    case class Level3(contents: Widget*) extends Widget {
+    case class Level3(contents: Widget[_]*) extends Widget[Level3] {
       val rendered = DOM.createElement("h3", contents: _*)
     }
 
-    case class Level4(contents: Widget*) extends Widget {
+    case class Level4(contents: Widget[_]*) extends Widget[Level4] {
       val rendered = DOM.createElement("h4", contents: _*)
     }
 
-    case class Level5(contents: Widget*) extends Widget {
+    case class Level5(contents: Widget[_]*) extends Widget[Level5] {
       val rendered = DOM.createElement("h5", contents: _*)
     }
 
-    case class Level6(contents: Widget*) extends Widget {
+    case class Level6(contents: Widget[_]*) extends Widget[Level6] {
       val rendered = DOM.createElement("h6", contents: _*)
     }
   }
 
-  case class Paragraph(contents: Widget*) extends Widget {
+  case class Paragraph(contents: Widget[_]*) extends Widget[Paragraph] {
     val rendered = DOM.createElement("p", contents: _*)
   }
 
   object Text {
-    case class Bold(contents: Widget*) extends Widget {
+    case class Bold(contents: Widget[_]*) extends Widget[Bold] {
       val rendered = DOM.createElement("b", contents: _*)
     }
 
-    case class Small(contents: Widget*) extends Widget {
+    case class Small(contents: Widget[_]*) extends Widget[Small] {
       val rendered = DOM.createElement("small", contents: _*)
     }
   }
 
-  case class Raw(html: String) extends Widget {
+  case class Text(value: String) extends Widget[Text] {
+    val rendered = DOM.createText(value)
+  }
+
+  case class Raw(html: String) extends Widget[Raw] {
     val rendered = DOM.createElement("span")
     rendered.innerHTML = html
   }
 
-  case class Image(source: String) extends Widget {
+  case class Image(source: String) extends Widget[Image] {
     val rendered = DOM.createElement("img")
     rendered.setAttribute("src", source)
   }
 
-  case class LineBreak() extends Widget {
+  case class LineBreak() extends Widget[LineBreak] {
     val rendered = DOM.createElement("br")
   }
 
-  case class Button(contents: Widget*) extends Widget.Button {
+  case class Button(contents: Widget[_]*) extends Widget.Button[Button] {
     val rendered = DOM.createElement("button", contents: _*)
   }
 
-  case class Section(contents: Widget*) extends Widget {
+  case class Section(contents: Widget[_]*) extends Widget[Section] {
     val rendered = DOM.createElement("section", contents: _*)
   }
 
-  case class Header(contents: Widget*) extends Widget {
+  case class Header(contents: Widget[_]*) extends Widget[Header] {
     val rendered = DOM.createElement("header", contents: _*)
   }
 
-  case class Footer(contents: Widget*) extends Widget {
+  case class Footer(contents: Widget[_]*) extends Widget[Footer] {
     val rendered = DOM.createElement("footer", contents: _*)
   }
 
-  case class Navigation(contents: Widget*) extends Widget {
+  case class Navigation(contents: Widget[_]*) extends Widget[Navigation] {
     val rendered = DOM.createElement("nav", contents: _*)
   }
 
-  case class Anchor(contents: Widget*) extends Widget.Anchor {
+  case class Anchor(contents: Widget[_]*) extends Widget.Anchor[Anchor] {
     val rendered = DOM.createElement("a", contents: _*)
 
     def url(value: String) = {
@@ -95,11 +99,11 @@ object HTML {
     }
   }
 
-  case class Form(contents: Widget*) extends Widget {
+  case class Form(contents: Widget[_]*) extends Widget[Form] {
     val rendered = DOM.createElement("form", contents: _*)
   }
 
-  case class Label(contents: Widget*) extends Widget {
+  case class Label(contents: Widget[_]*) extends Widget[Label] {
     val rendered = DOM.createElement("label", contents: _*)
 
     def forId(value: String) = {
@@ -109,7 +113,7 @@ object HTML {
   }
 
   object Input {
-    case class Text() extends Widget.Input.Text {
+    case class Text() extends Widget.Input.Text[Text] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "text")
@@ -130,13 +134,13 @@ object HTML {
       }
     }
 
-    case class Checkbox() extends Widget.Input.Checkbox {
+    case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
     }
 
-    case class Select(options: Seq[String], selected: Int = -1) extends Widget.Input.Select {
+    case class Select(options: Seq[String], selected: Int = -1) extends Widget.Input.Select[Select] {
       val rendered = DOM.createElement("select")
       options.zipWithIndex.foreach { case (cur, idx) =>
         val elem = DOM.createElement("option")
@@ -147,30 +151,30 @@ object HTML {
     }
   }
 
-  case class HorizontalLine() extends Widget {
+  case class HorizontalLine() extends Widget[HorizontalLine] {
     val rendered = DOM.createElement("hr")
   }
 
   object List {
-    case class Unordered(contents: List.Item*) extends Widget.List {
+    case class Unordered(contents: List.Item*) extends Widget.List[Unordered] {
       val rendered = DOM.createElement("ul", contents: _*)
     }
 
-    case class Ordered(contents: List.Item*) extends Widget.List {
+    case class Ordered(contents: List.Item*) extends Widget.List[Ordered] {
       val rendered = DOM.createElement("ol", contents: _*)
     }
 
-    case class Item(contents: Widget*) extends Widget.List.Item {
+    case class Item(contents: Widget[_]*) extends Widget.List.Item[Item] {
       val rendered = DOM.createElement("li", contents: _*)
     }
   }
 
   object Container {
-    case class Generic(contents: Widget*) extends Widget.Container {
+    case class Generic(contents: Widget[_]*) extends Widget.Container[Generic] {
       val rendered = DOM.createElement("div", contents: _*)
     }
 
-    case class Inline(contents: Widget*) extends Widget.Container {
+    case class Inline(contents: Widget[_]*) extends Widget.Container[Inline] {
       val rendered = DOM.createElement("span", contents: _*)
     }
   }
