@@ -53,8 +53,11 @@ object ChannelTest extends JasmineTest {
       var sum = 0
       ch.take(2).attach(cur => sum += cur)
 
+      expect(ch.observers.size == 1)
       ch := 1
       ch := 2
+
+      expect(ch.observers.size == 0)
       ch := 3
       ch := 4
 

@@ -82,19 +82,19 @@ trait Channel[T] extends Identity {
   def take(count: Int): Channel[T] = {
     assume(count > 0)
 
+    var taken = 1
     val ch = Channel[T]()
-    var taken = 0
+    var obs: Observer[T] = null
 
-    def f: Observer[T] = t =>
-      if (taken < count) {
-        ch := t
-        taken += 1
-      } else {
-        // TODO Not working?
-        // detach(f)
-      }
+    def f: Observer[T] = t => {
+      ch := t
 
-    attach(f)
+      if (taken < count) taken += 1
+      else detach(obs)
+    }
+
+    obs = f
+    attach(obs)
     ch
   }
 
