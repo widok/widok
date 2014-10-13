@@ -86,33 +86,48 @@ object HTML {
     val rendered = DOM.createElement("nav", contents: _*)
   }
 
-  def Anchor(ref: String = "")(contents: Widget*) = new Widget.Anchor {
+  case class Anchor(contents: Widget*) extends Widget.Anchor {
     val rendered = DOM.createElement("a", contents: _*)
 
-    if (ref == "") rendered.setAttribute("style", "cursor: pointer")
-    else rendered.setAttribute("href", ref)
+    def url(value: String) = {
+      rendered.setAttribute("href", value)
+      this
+    }
   }
 
-  def Form(contents: Widget*) = new Widget {
+  case class Form(contents: Widget*) extends Widget {
     val rendered = DOM.createElement("form", contents: _*)
   }
 
-  def Label(forId: String = "")(contents: Widget*) = new Widget {
+  case class Label(contents: Widget*) extends Widget {
     val rendered = DOM.createElement("label", contents: _*)
-    if (forId.nonEmpty) rendered.setAttribute("for", forId)
+
+    def forId(value: String) = {
+      rendered.setAttribute("for", value)
+      this
+    }
   }
 
   object Input {
-    case class Text(placeholder: String = "",
-                    autofocus: Boolean = false,
-                    autocomplete: Boolean = true) extends Widget.Input.Text {
+    case class Text() extends Widget.Input.Text {
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
-
-      if (autofocus) rendered.setAttribute("autofocus", "")
-      rendered.setAttribute("placeholder", placeholder)
-      rendered.setAttribute("autocomplete", if (autocomplete) "on" else "off")
       rendered.setAttribute("type", "text")
+
+      def autofocus(value: Boolean) = {
+        rendered.setAttribute("autofocus", "")
+        this
+      }
+
+      def placeholder(value: String) = {
+        rendered.setAttribute("placeholder", value)
+        this
+      }
+
+      def autocomplete(value: Boolean) = {
+        rendered.setAttribute("autocomplete", if (value) "on" else "off")
+        this
+      }
     }
 
     case class Checkbox() extends Widget.Input.Checkbox {

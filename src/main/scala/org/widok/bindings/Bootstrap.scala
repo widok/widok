@@ -93,7 +93,7 @@ object Bootstrap {
       .css("input-group")
 
   def ControlLabel(contents: Widget*) =
-    HTML.Label()(contents: _*)
+    HTML.Label(contents: _*)
       .css("control-label")
 
   // TODO Improve design.
@@ -105,8 +105,8 @@ object Bootstrap {
     ).css("alert alert-danger")
 
   object Input {
-    def Text(placeholder: String = "", autofocus: Boolean = false, autocomplete: Boolean = true) = {
-      val text = HTML.Input.Text(placeholder, autofocus, autocomplete)
+    def Text() = {
+      val text = HTML.Input.Text()
       text.css("form-control")
       text
     }
@@ -166,7 +166,11 @@ object Bootstrap {
     def renderTabs(tabs: Seq[Tab], currentTab: Channel[Tab]) = {
       val renderedTabs = tabs.map(tab =>
         Bootstrap.Navigation.Item(currentTab.map(_ == tab))(
-          HTML.Anchor()(tab.name).bind((_: Unit) => currentTab := tab)))
+          HTML.Anchor(tab.name)
+            .bind((_: Unit) => currentTab := tab)
+            .cursor(HTML.Cursor.Pointer)
+        )
+      )
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
@@ -225,21 +229,23 @@ object Bootstrap {
         .css("navbar-header")
 
     def Brand(contents: Widget*) =
-      HTML.Anchor()(contents: _*)
+      HTML.Anchor(contents: _*)
         .css("navbar-brand")
 
     def Collapse(contents: Widget*) =
       HTML.Container.Generic(contents: _*)
         .css("collapse", "navbar-collapse")
 
-    def Leaf(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
-      HTML.List.Item(HTML.Anchor(ref)(contents: _*))
-        .cssCh(active, "active")
-        .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
+    def Leaf(url: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) =
+      HTML.List.Item(
+        HTML.Anchor(contents: _*)
+          .url(url)
+      ).cssCh(active, "active")
+       .asInstanceOf[HTML.List.Item] // TODO Can this be prevented?
 
     def Branch(contentsCaption: Widget*)(contents: HTML.List.Item*) =
         HTML.List.Item(
-          HTML.Anchor()(
+          HTML.Anchor(
             HTML.Container.Inline(contentsCaption: _*),
             HTML.Container.Inline().css("caret")
           ).css("dropdown-toggle"),
@@ -309,8 +315,9 @@ object Bootstrap {
         .rendered
     }
 
-    def PageItem(ref: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
-      val rendered = HTML.Anchor(ref)(contents: _*)
+    def PageItem(url: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget*) = new Widget.List.Item {
+      val rendered = HTML.Anchor(contents: _*)
+        .url(url)
         .css("list-group-item")
         .cssCh(active, "active")
         .rendered
