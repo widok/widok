@@ -107,10 +107,12 @@ object Bootstrap {
     def Text() =
       HTML.Input.Text()
         .css("form-control")
+        .asInstanceOf[HTML.Input.Text] // Workaround
 
     def Select(options: Seq[String], selected: Int = -1) =
       HTML.Input.Select(options, selected)
         .css("form-control")
+        .asInstanceOf[HTML.Input.Select] // Workaround
   }
 
   object Button {
@@ -236,17 +238,19 @@ object Bootstrap {
         HTML.Anchor(contents: _*)
           .url(url)
       ).cssCh(active, "active")
+       .asInstanceOf[HTML.List.Item] // TODO Workaround
 
     def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*) =
-        HTML.List.Item(
-          HTML.Anchor(
-            HTML.Container.Inline(contentsCaption: _*),
-            HTML.Container.Inline().css("caret")
-          ).css("dropdown-toggle"),
-          HTML.List.Unordered(contents: _*)
-            .css("dropdown-menu")
-            .attribute("role", "menu")
-        ).css("dropdown")
+      HTML.List.Item(
+        HTML.Anchor(
+          HTML.Container.Inline(contentsCaption: _*),
+          HTML.Container.Inline().css("caret")
+        ).css("dropdown-toggle"),
+        HTML.List.Unordered(contents: _*)
+          .css("dropdown-menu")
+          .attribute("role", "menu")
+      ).css("dropdown")
+       .asInstanceOf[HTML.List.Item] // TODO Workaround
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
