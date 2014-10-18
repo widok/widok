@@ -308,6 +308,8 @@ object Bootstrap {
   trait AlertType { val cssTag: String }
   object AlertType {
     case object Success extends AlertType { val cssTag = "alert-success" }
+    case object Info extends AlertType { val cssTag = "alert-info" }
+    case object Warning extends AlertType { val cssTag = "alert-warning" }
     case object Danger extends AlertType { val cssTag = "alert-danger" }
   }
 
