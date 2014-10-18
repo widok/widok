@@ -181,7 +181,7 @@ object Bootstrap {
         .css("nav nav-pills")
         .attribute("role", "tablist")
 
-    def Item(active: Channel[Boolean] = Channel.unit(false))(contents: Widget[_]*) =
+    def Item(active: Channel[Boolean] = Channel())(contents: Widget[_]*) =
       HTML.List.Item(contents: _*)
         .cssCh(active, "active")
         .asInstanceOf[HTML.List.Item] // TODO Workaround
@@ -233,7 +233,7 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("collapse", "navbar-collapse")
 
-    def Leaf(url: String, active: Channel[Boolean] = Channel.unit(false))(contents: Widget[_]*) =
+    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: Widget[_]*) =
       HTML.List.Item(
         HTML.Anchor(contents: _*)
           .url(url)
