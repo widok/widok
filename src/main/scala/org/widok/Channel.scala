@@ -8,22 +8,24 @@ object Channel {
   type Observer[T] = T => Unit
 
   def apply[T]() = new Channel[T] {
-    def onAttach(observer: Observer[T]) {}
-    def onDetach(observer: Observer[T]) {}
+    def flush(observer: Observer[T]) { }
   }
 
   /**
    * Upon each subscription, emit ``v``. ``v`` is evaluated
    * lazily. Channel.unit() can be considered a cold observable.
    */
-  def unit[T](v: => T) = new Channel[T] {
-    def onAttach(observer: Observer[T]) { observer(v) }
-    def onDetach(observer: Observer[T]) {}
-  }
+  def unit[T](v: => T) = StateChannel(v)
 
-  def from[T](elems: Seq[T]) = new Channel[T] {
-    def onAttach(observer: Observer[T]) { elems.foreach(observer) }
-    def onDetach(observer: Observer[T]) {}
+  def sync[T](ch: Channel[T], ch2: Channel[T]) {
+    var obs: Observer[T] = null
+    var obs2: Observer[T] = null
+
+    obs = value => ch2.produce(value, obs2)
+    obs2 = value => ch.produce(value, obs)
+
+    ch.attach(obs)
+    ch2.attach(obs2)
   }
 }
 
@@ -32,7 +34,34 @@ trait Channel[T] extends Identity {
 
   private[widok] val observers = new ArrayBuffer[Observer[T]]()
 
-  def cache: CachedChannel[T] = CachedChannel(this)
+  def flush(observer: Observer[T])
+
+  def cache: CachedChannel[T] = {
+    val res = CachedChannel[T]()
+    Channel.sync(this, res)
+    res
+  }
+
+  def attach(observer: Observer[T]) {
+    assume(!observers.contains(observer))
+    observers.append(observer)
+    flush(observer)
+  }
+
+  def attachFirst(observer: Observer[T]) {
+    assume(!observers.contains(observer))
+    observers.prepend(observer)
+    flush(observer)
+  }
+
+  def detach(observer: Observer[T]) = {
+    assume(observers.contains(observer))
+    observers -= observer
+  }
+
+  def destroy() {
+    observers.clear()
+  }
 
   def produce(v: T) {
     observers.foreach(_(v))
@@ -51,32 +80,13 @@ trait Channel[T] extends Identity {
   }
 
   def :=(v: T) = produce(v)
+  def head: Channel[T] = take(1)
+  def tail: Channel[T] = skip(1)
 
-  def onAttach(observer: Observer[T])
-  def onDetach(observer: Observer[T])
-
-  def silentAttach(observer: Observer[T]) {
-    assume(!observers.contains(observer))
-    observers.append(observer)
-  }
-
-  def attach(observer: Observer[T]) {
-    silentAttach(observer)
-    onAttach(observer)
-  }
-
-  def silentDetach(observer: Observer[T]) {
-    assume(observers.contains(observer))
-    observers -= observer
-  }
-
-  def detach(observer: Observer[T]) = {
-    silentDetach(observer)
-    onDetach(observer)
-  }
-
-  def destroy() {
-    observers.clear()
+  def map[U](f: T => U): ChildChannel[T, U] = {
+    val res = ChildChannel(this, f)
+    attach(value => res := f(value))
+    res
   }
 
   def take(count: Int): Channel[T] = {
@@ -86,14 +96,13 @@ trait Channel[T] extends Identity {
     val ch = Channel[T]()
     var obs: Observer[T] = null
 
-    def f: Observer[T] = t => {
+    obs = t => {
       ch := t
 
       if (taken < count) taken += 1
       else detach(obs)
     }
 
-    obs = f
     attach(obs)
     ch
   }
@@ -110,110 +119,73 @@ trait Channel[T] extends Identity {
 
     ch
   }
+}
+
+object StateChannel {
+  import Channel.Observer
+
+  def apply[T](v: => T) = new Channel[T] {
+    def flush(observer: Observer[T]) { observer(v) }
+    def produce() { observers.foreach(_(v)) }
+  }
+}
+
+case class ChildChannel[T, U](parent: Channel[T], f: T => U) extends Channel[U] {
+  import Channel.Observer
+
+  def flush(observer: Observer[U]) { parent.flush(observer.compose(f)) }
+}
+
+case class CachedChannel[T]() extends Channel[T] {
+  import Channel.Observer
+
+  protected var cached: Option[T] = None
+  attach(t => cached = Some(t))
+
+  def flush(observer: Observer[T]) {
+    cached.foreach(t => observer(t))
+  }
+
+  @deprecated("Leads to imperative style", "0.1")
+  def get = cached
+
+  def update(f: T => T) {
+    cached.foreach(t => this := f(t))
+  }
 
   def unique: Channel[T] = {
     val ch = Channel[T]()
-    var value: Option[T] = None
-
-    attach(t => if (!value.contains(t)) {
-      ch := t
-      value = Some(t)
-    })
-
+    attachFirst(t => if (!cached.contains(t)) ch := t)
     ch
   }
-
-  def head: Channel[T] = take(1)
-  def tail: Channel[T] = skip(1)
 
   // Maps each value change of ``other`` to a change of ``this``.
   def zip[U](other: Channel[U]): Channel[(T, U)] = {
     val res = Channel[(T, U)]()
-    var tValue = Option.empty[T]
-
-    attach(t => tValue = Some(t))
-    other.attach(u => tValue.foreach(t => res.produce((t, u))))
-
-    res
-  }
-
-  def create[U](f: T => U): Channel[U] = {
-    val that = this
-
-    val res = new Channel[U] {
-      def onAttach(observer: Observer[U]) {
-        that.onAttach(value => observer(f(value)))
-      }
-
-      def onDetach(observer: Observer[U]) {}
-    }
-
-    res
-  }
-
-  def map[U](f: T => U): Channel[U] = {
-    val res = create(f)
-    silentAttach(value => res.produce(f(value)))
+    other.attach(u => cached.foreach(t => res := (t, u)))
     res
   }
 
   def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
     lens(f(shapeless.lens[T]))
 
-  /* Two-way lens that propagates back changes. */
+  /* Two-way lens that propagates back changes to all observers. */
   def lens[U](l: shapeless.Lens[T, U]): Channel[U] = {
-    val res = create(l.get)
-    var cache: Option[T] = None
+    val res = ChildChannel[T, U](this, l.get)
 
     var observer: Observer[T] = null
 
     val propagateBack = (value: U) =>
-      cache.foreach(cur => produce(l.set(cur)(value), observer))
+      cached.foreach(cur => produce(l.set(cur)(value), observer))
 
-    observer = (value: T) => {
-      cache = Some(value)
-      res.produce(l.get(value), propagateBack)
-    }
+    observer = value => res.produce(l.get(value), propagateBack)
 
-    silentAttach(observer)
+    attach(observer)
     res.attach(propagateBack)
 
     res
   }
-}
-
-case class CachedChannel[T](ch: Channel[T] = Channel[T]()) {
-  import Channel.Observer
-
-  private var value: Option[T] = None
-
-  ch.attach(t => value = Some(t))
-
-  @deprecated("Leads to imperative style", "0.1")
-  def get = value
-
-  def update(f: T => T) {
-    value.foreach(t => ch := f(t))
-  }
 
   override def toString =
-    value.map(_.toString).getOrElse("<undefined>")
-
-  /* Inherit all public methods manually from Channel except for cache(). */
-  def produce(v: T) = ch.produce(v)
-  def produce(v: T, ignore: Observer[T]*) = ch.produce(v, ignore: _*)
-  def flatProduce(v: Option[T]) = ch.flatProduce(v)
-  def flatProduce(v: Option[T], ignore: Observer[T]*) = ch.flatProduce(v, ignore: _*)
-  def :=(v: T) = ch := v
-  def attach(observer: Observer[T]) = ch.attach(observer)
-  def detach(observer: Observer[T]) = ch.detach(observer)
-  def take(count: Int): Channel[T] = ch.take(count)
-  def skip(count: Int): Channel[T] = ch.skip(count)
-  def unique: Channel[T] = ch.unique
-  def head: Channel[T] = ch.head
-  def tail: Channel[T] = ch.tail
-  def zip[U](other: Channel[U]): Channel[(T, U)] = ch.zip(other)
-  def map[U](f: T => U): Channel[U] = ch.map(f)
-  def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) = ch.value(f)
-  def lens[U](l: shapeless.Lens[T, U]): Channel[U] = ch.lens(l)
+    cached.map(_.toString).getOrElse("<undefined>")
 }

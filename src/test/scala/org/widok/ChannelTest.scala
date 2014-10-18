@@ -34,7 +34,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should unique()") {
-      val ch = Channel[Int]()
+      val ch = CachedChannel[Int]()
       val ch2 = ch.unique
 
       var sum = 0
@@ -78,18 +78,36 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(3 + 4)
     }
 
+    it("should cache()") {
+      val ch = Channel[Test]()
+      val cache = ch.cache
+
+      val a = cache.value[Int](_ >> 'a)
+
+      var sum = 0
+      a.attach(cur => sum += cur)
+
+      ch := Test(1, true)
+      expect(sum).toBe(1)
+
+      ch := Test(2, false)
+      expect(sum).toBe(1 + 2)
+
+      a := 3
+      expect(sum).toBe(1 + 2 + 3)
+    }
+
     it("should value()") {
-      val ch = Channel.unit[Test](Test(1, true))
+      val ch = Channel.unit(Test(1, true)).cache
 
       val a = ch.value[Int](_ >> 'a)
 
       var sum = 0
       a.attach(cur => sum += cur)
+      expect(sum).toBe(1)
 
       var sum2 = 0
       ch.attach(cur => sum2 += cur.a)
-
-      expect(sum).toBe(1)
       expect(sum2).toBe(1)
 
       ch := Test(2, false)
@@ -112,29 +130,75 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(42)
 
       ch.attach(value => sum += value + 1)
-      expect(sum).toBe(42 + 42 + 1)
-    }
-
-    it("should from()") {
-      val ch = Channel.from(Seq(1, 2, 3))
-
-      var sum = 0
-      ch.attach(value => sum += value)
-      expect(sum).toBe(1 + 2 + 3)
-
-      ch.attach(value => sum += value)
-      expect(sum).toBe(1 + 2 + 3 + 1 + 2 + 3)
+      expect(sum).toBe(42 + 43)
     }
 
     it("should map()") {
-      val ch = Channel.unit(42).map(_ + 1)
+      val ch = Channel[Int]()
+      val map = ch.map(_ + 1)
+
+      var sum = 0
+      map.attach(value => sum += value)
+      ch := 42
+      expect(sum).toBe(43)
+
+      map.attach(value => sum += value + 1)
+      ch := 43
+      expect(sum).toBe(43 + 44 + 45)
+    }
+
+    it("should zip()") {
+      val ch = CachedChannel[Int]()
+      val ch2 = Channel[Int]()
+
+      val zip = ch.zip(ch2)
+
+      var value = (0, 0)
+      zip.attach(cur => value = cur)
+
+      ch := 23
+      ch2 := 42
+      expect(value == (23, 42)).toBe(true)
+
+      ch := 24
+      expect(value == (23, 42)).toBe(true)
+
+      ch2 := 43
+      expect(value == (24, 43)).toBe(true)
+    }
+  }
+
+  describe("StateChannel") {
+    it("should apply()") {
+      var v = 23
+      val ch = StateChannel(v)
 
       var sum = 0
       ch.attach(value => sum += value)
-      expect(sum).toBe(43)
 
-      ch.attach(value => sum += value + 1)
-      expect(sum).toBe(43 + 43 + 1)
+      expect(sum).toBe(23)
+
+      v = 24
+      ch.produce()
+
+      expect(sum).toBe(23 + 24)
+    }
+
+    it("should map()") {
+      var v = 23
+      val ch = StateChannel(v)
+      val map = ch.map(_ + 1)
+
+      var sum = 0
+      map.attach(value => sum += value)
+      expect(sum).toBe(24)
+
+      map.map(_ + 2).attach(value => sum += value)
+      expect(sum).toBe(24 + 26)
+
+      v = 24
+      ch.produce()
+      expect(sum).toBe(24 + 26 + 25 + 27)
     }
   }
 }
