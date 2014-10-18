@@ -61,6 +61,7 @@ object Bootstrap {
     case object Off extends Glyphicon { val cssTag = "glyphicon-off" }
     case object Pause extends Glyphicon { val cssTag = "glyphicon-pause" }
     case object Stop extends Glyphicon { val cssTag = "glyphicon-stop" }
+    case object Minus extends Glyphicon { val cssTag = "glyphicon-minus" }
   }
 
   trait Role { val value: String }
