@@ -47,6 +47,15 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(1)
     }
 
+    it("should unique()") {
+      val ch = StateChannel[Int](42).cache.unique
+
+      var sum = 0
+      ch.attach(cur => sum += cur)
+
+      expect(sum).toBe(42)
+    }
+
     it("should take()") {
       val ch = Channel[Int]()
 

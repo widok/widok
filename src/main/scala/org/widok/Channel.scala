@@ -154,7 +154,7 @@ case class CachedChannel[T]() extends Channel[T] {
   }
 
   def unique: Channel[T] = {
-    val ch = Channel[T]()
+    val ch = ChildChannel(this, identity[T])
     attachFirst(t => if (!cached.contains(t)) ch := t)
     ch
   }
