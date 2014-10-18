@@ -14,7 +14,7 @@ object Widget {
   }
 
   trait List[V <: List[V]] extends Widget[List[V]] { self: V =>
-    def bind[T, U <: Seq[T]](channel: Channel[U])(f: T => List.Item[_]) = {
+    def bind[T](channel: Channel[Seq[T]])(f: T => List.Item[_]) = {
       channel.attach(list => {
         DOM.clear(rendered)
 
