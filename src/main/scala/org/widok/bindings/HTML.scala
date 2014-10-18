@@ -169,6 +169,33 @@ object HTML {
     }
   }
 
+  object Table {
+    case class Head(contents: Row*) extends Widget.List[Head] {
+      val rendered = DOM.createElement("thead", contents: _*)
+    }
+
+    case class HeadColumn(contents: Widget[_]*) extends Widget[HeadColumn] {
+      val rendered = DOM.createElement("th", contents: _*)
+    }
+
+    case class Body(contents: Row*) extends Widget.List[Body] {
+      val rendered = DOM.createElement("tbody", contents: _*)
+    }
+
+    // May contain either HeadColumn or Column
+    case class Row(contents: Widget[_]*) extends Widget.List.Item[Row] {
+      val rendered = DOM.createElement("tr", contents: _*)
+    }
+
+    case class Column(contents: Widget[_]*) extends Widget[Column] {
+      val rendered = DOM.createElement("td", contents: _*)
+    }
+  }
+
+  case class Table(contents: Widget[_]*) extends Widget[Table] {
+    val rendered = DOM.createElement("table", contents: _*)
+  }
+
   object Container {
     case class Generic(contents: Widget[_]*) extends Widget.Container[Generic] {
       val rendered = DOM.createElement("div", contents: _*)
