@@ -163,6 +163,11 @@ case class Aggregate[T]() {
     }
   }
 
+  def set(items: Seq[T]) {
+    clear()
+    items.foreach(cur => append(cur))
+  }
+
   def isEmpty: Channel[Boolean] = {
     val ch = Channel.unit(elements.isEmpty)
 
@@ -302,6 +307,7 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   def contains(value: Channel[T]) = agg.contains(value)
   def remove(value: Channel[T], ignore: Observer[T]*) = agg.remove(value, ignore: _*)
   def clear(ignore: Observer[T]*) = agg.clear(ignore: _*)
+  def set(items: Seq[T]) = agg.set(items)
   def isEmpty: Channel[Boolean] = agg.isEmpty
   def nonEmpty: Channel[Boolean] = agg.nonEmpty
   def size: Channel[Int] = agg.size
