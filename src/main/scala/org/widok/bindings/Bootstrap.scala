@@ -62,6 +62,7 @@ object Bootstrap {
     case object Pause extends Glyphicon { val cssTag = "glyphicon-pause" }
     case object Stop extends Glyphicon { val cssTag = "glyphicon-stop" }
     case object Minus extends Glyphicon { val cssTag = "glyphicon-minus" }
+    case object Remove extends Glyphicon { val cssTag = "glyphicon-remove" }
   }
 
   trait Role { val value: String }
@@ -138,16 +139,28 @@ object Bootstrap {
     object Size {
       case object Normal extends Size { val cssTag = "" }
       case object ExtraSmall extends Size { val cssTag = "btn-xs" }
+      case object Small extends Size { val cssTag = "btn-sm" }
+      case object Medium extends Size { val cssTag = "btn-md" }
+      case object Large extends Size { val cssTag = "btn-lg" }
+    }
+
+    trait Type { val cssTag: String }
+    object Type {
+      case object Default extends Type { val cssTag = "btn-default" }
+      case object Success extends Type { val cssTag = "btn-success" }
+      case object Info extends Type { val cssTag = "btn-info" }
+      case object Warning extends Type { val cssTag = "btn-warning" }
+      case object Danger extends Type { val cssTag = "btn-danger" }
     }
 
     // For better usability all buttons should have icons. Therefore
     // None is not the default value.
-    def apply(icon: Glyphicon, size: Size = Size.Normal)(contents: Widget[_]*) = {
+    def apply(icon: Glyphicon, size: Size = Size.Normal, `type`: Type = Type.Default)(contents: Widget[_]*) = {
       val btn =
         if (icon == Glyphicon.None) HTML.Button(contents: _*)
         else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
 
-      btn.css("btn btn-default")
+      btn.css("btn", `type`.cssTag, size.cssTag)
     }
   }
 
