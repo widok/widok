@@ -47,4 +47,5 @@ Tim Nieradzik <tim@kognit.io>
 * [Project page](https://widok.github.io/)
 * [API documentation](http://widok.github.io/api/index.html)
 * [Source code](https://github.com/widok/widok)
+* [Issue tracker](https://github.com/widok/widok/issues)
 * [Travis CI](https://travis-ci.org/widok/widok)
