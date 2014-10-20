@@ -89,11 +89,11 @@ trait Channel[T] extends Identity {
     res
   }
 
-  def take(count: Int): Channel[T] = {
+  def take(count: Int): ChildChannel[T, T] = {
     assume(count > 0)
 
     var taken = 1
-    val ch = Channel[T]()
+    val ch = ChildChannel(this, identity[T])
     var obs: Observer[T] = null
 
     obs = t => {

@@ -209,5 +209,20 @@ object ChannelTest extends JasmineTest {
       ch.produce()
       expect(sum).toBe(24 + 26 + 25 + 27)
     }
+
+    it("should take()") {
+      val ch = StateChannel(42)
+      val take = ch.take(2)
+
+      var sum = 0
+      take.map(_ + 1).attach(value => sum += value)
+      expect(sum).toBe(43)
+
+      ch := 1
+      expect(sum).toBe(45)
+
+      ch := 1
+      expect(sum).toBe(45)
+    }
   }
 }
