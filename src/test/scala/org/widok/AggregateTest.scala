@@ -638,6 +638,7 @@ object AggregateTest extends JasmineTest {
       expect(size).toBe(1)
 
       val ch2 = agg2.append(1)
+      ch2 := 3
       expect(size).toBe(2)
 
       agg2.remove(ch2)

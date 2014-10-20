@@ -56,7 +56,10 @@ object Aggregate {
       map += ((parent, ch))
 
       ch.attach(value => {
-        parent.produce(value, observers(parent))
+        parent.detach(observers(parent)) // TODO Find a better way.
+        parent.produce(value)
+        parent.attach(observers(parent))
+
         if (!f(value)) delete(parent)
       })
 
