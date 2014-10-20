@@ -24,8 +24,11 @@ object Channel {
     obs = value => ch2.produce(value, obs2)
     obs2 = value => ch.produce(value, obs)
 
-    ch.attach(obs)
-    ch2.attach(obs2)
+    ch.silentAttach(obs)
+    ch2.silentAttach(obs2)
+
+    ch.flush(obs)
+    ch2.flush(obs2)
   }
 }
 
@@ -42,9 +45,13 @@ trait Channel[T] extends Identity {
     res
   }
 
-  def attach(observer: Observer[T]) {
+  def silentAttach(observer: Observer[T]) {
     assume(!observers.contains(observer))
     observers.append(observer)
+  }
+
+  def attach(observer: Observer[T]) {
+    silentAttach(observer)
     flush(observer)
   }
 
@@ -68,6 +75,7 @@ trait Channel[T] extends Identity {
   }
 
   def produce(v: T, ignore: Observer[T]*) {
+    assume(ignore.forall(observers.contains))
     observers.diff(ignore).foreach(_(v))
   }
 
@@ -76,6 +84,7 @@ trait Channel[T] extends Identity {
   }
 
   def flatProduce(v: Option[T], ignore: Observer[T]*) {
+    assume(ignore.forall(observers.contains))
     v.foreach(cur => observers.diff(ignore).foreach(_(cur)))
   }
 
@@ -102,8 +111,8 @@ trait Channel[T] extends Identity {
     val ch = ChildChannel(this, identity[T])
     var obs: Observer[T] = null
 
-    obs = t => {
-      ch := t
+    obs = value => {
+      ch := value
 
       if (taken < count) taken += 1
       else detach(obs)
@@ -119,9 +128,10 @@ trait Channel[T] extends Identity {
     val ch = Channel[T]()
     var skipped = 0
 
-    attach(t =>
+    attach { value =>
       if (skipped < count) skipped += 1
-      else ch := t)
+      else ch := value
+    }
 
     ch
   }
@@ -180,14 +190,16 @@ case class CachedChannel[T]() extends Channel[T] {
     val res = ChildChannel[T, U](this, l.get)
 
     var observer: Observer[T] = null
-
-    val propagateBack = (value: U) =>
-      cached.foreach(cur => produce(l.set(cur)(value), observer))
+    var propagateBack: Observer[U] = null
 
     observer = value => res.produce(l.get(value), propagateBack)
+    propagateBack = value => cached.foreach(cur => produce(l.set(cur)(value), observer))
 
-    attach(observer)
-    res.attach(propagateBack)
+    silentAttach(observer)
+    res.silentAttach(propagateBack)
+
+    flush(observer)
+    res.flush(propagateBack)
 
     res
   }
