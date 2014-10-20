@@ -89,6 +89,12 @@ trait Channel[T] extends Identity {
     res
   }
 
+  def filter(f: T => Boolean): ChildChannel[T, T] = {
+    val res = ChildChannel(this, identity[T])
+    attach(value => if (f(value)) res := value)
+    res
+  }
+
   def take(count: Int): ChildChannel[T, T] = {
     assume(count > 0)
 
