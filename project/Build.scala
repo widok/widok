@@ -2,6 +2,8 @@ import sbt._
 import sbt.Keys._
 import scoverage.ScoverageSbtPlugin._
 import scala.scalajs.sbtplugin.ScalaJSPlugin._
+import org.typelevel.sbt.Developer
+import org.typelevel.sbt.TypelevelPlugin._
 
 object Build extends sbt.Build {
   val buildOrganisation = "org.widok"
@@ -14,6 +16,11 @@ object Build extends sbt.Build {
   lazy val main = Project(id = "widok", base = file("."))
     .settings(scalaJSSettings: _*)
     .settings(instrumentSettings: _*)
+    .settings(typelevelDefaultSettings ++ Seq(
+      TypelevelKeys.signArtifacts := true,
+      TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
+      TypelevelKeys.githubProject := ("widok", "widok")
+    ): _*)
     .settings(
       resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/content/alexander-myltsev/maven",
       libraryDependencies ++= Seq(
@@ -25,5 +32,6 @@ object Build extends sbt.Build {
       version := buildVersion,
       scalaVersion := buildScalaVersion,
       scalacOptions := buildScalaOptions,
-      ScalaJSKeys.persistLauncher := true)
+      ScalaJSKeys.persistLauncher := true
+    )
 }
