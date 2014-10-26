@@ -142,6 +142,47 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(42 + 43)
     }
 
+    it("should +()") {
+      val ch = Channel[Int]()
+
+      var sum = 0
+      val childCh = ch + (sum += (_: Int))
+
+      ch := 42
+      expect(sum).toBe(0)
+
+      childCh := 23
+      expect(sum).toBe(23)
+    }
+
+    it("should +() with attach()") {
+      val ch = Channel[Int]()
+      val childCh = ch + ((_: Int) => ())
+
+      var sum = 0
+      childCh.attach(sum += _)
+
+      ch := 42
+      expect(sum).toBe(42)
+    }
+
+    it("should +() with chaining") {
+      val ch = Channel[Int]()
+
+      var chSum = 0
+      ch.attach(chSum += _)
+
+      var sum = 0
+      val childCh = (sum += (_: Int)) + ch + (sum += (_: Int))
+
+      ch := 42
+      expect(sum).toBe(0)
+
+      childCh := 23
+      expect(sum).toBe(23 * 2)
+      expect(chSum).toBe(42 + 23)
+    }
+
     it("should map()") {
       val ch = Channel[Int]()
       val map = ch.map(_ + 1)
@@ -238,6 +279,15 @@ object ChannelTest extends JasmineTest {
 
       ch := 1
       expect(sum).toBe(45)
+    }
+
+    it("should +()") {
+      val ch = StateChannel(42)
+      val childCh = ch + ((_: Int) => ())
+
+      var sum = 0
+      childCh.attach(sum += _)
+      expect(sum).toBe(42)
     }
   }
 }

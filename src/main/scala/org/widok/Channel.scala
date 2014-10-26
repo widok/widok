@@ -92,6 +92,18 @@ trait Channel[T] extends Identity {
   def head: Channel[T] = take(1)
   def tail: Channel[T] = skip(1)
 
+  def +(ch: Channel[T]): ChildChannel[T, T] = {
+    val res = ChildChannel(this, identity[T])
+    val obsRes: Observer[T] = ch := _
+    res.attach(obsRes)
+
+    val obs: Observer[T] = res.produce(_, obsRes)
+    attach(obs)
+
+    res.attach(produce(_, obs))
+    res
+  }
+
   def map[U](f: T => U): ChildChannel[T, U] = {
     val res = ChildChannel(this, f)
     attach(value => res := f(value))
