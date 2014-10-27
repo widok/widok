@@ -15,12 +15,13 @@ object Build extends sbt.Build {
   lazy val main = Project(id = "widok", base = file("."))
     .settings(scalaJSSettings: _*)
     .settings(instrumentSettings: _*)
-    .settings(typelevelDefaultSettings ++ Seq(
+    .settings(typelevelDefaultSettings: _*)
+    .settings(
       TypelevelKeys.signArtifacts := true,
       TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
-      TypelevelKeys.githubProject := ("widok", "widok")
-    ): _*)
-    .settings(
+      TypelevelKeys.githubProject := ("widok", "widok"),
+      homepage := Some(url("http://widok.github.io/")),
+      licenses += ("GPL-3.0", url("http://www.gnu.org/copyleft/gpl.html")),
       resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/content/alexander-myltsev/maven",
       libraryDependencies ++= Seq(
         "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
