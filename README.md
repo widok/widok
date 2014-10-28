@@ -29,7 +29,7 @@ Channels model continuous values as streams. These streams can be observed. Inte
 Aggregates are channel containers. They allow to deal with large lists efficiently. If an item gets added, removed or updated, this is reflected directly by a change in the DOM, only operating on the actual nodes.
 
 ## License
-Widok is licensed under the terms of the GPLv3.
+Widok is licensed under the terms of the Apache v2.0 license.
 
 ## Authors
 * Tim Nieradzik

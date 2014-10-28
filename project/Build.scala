@@ -21,7 +21,7 @@ object Build extends sbt.Build {
       TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
       TypelevelKeys.githubProject := ("widok", "widok"),
       homepage := Some(url("http://widok.github.io/")),
-      licenses += ("GPL-3.0", url("http://www.gnu.org/copyleft/gpl.html")),
+      licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/content/alexander-myltsev/maven",
       libraryDependencies ++= Seq(
         "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
