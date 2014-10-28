@@ -115,6 +115,35 @@ object AggregateTest extends JasmineTest {
       expect(count).toBe(1)
     }
 
+    it("should partition()") {
+      val agg = Aggregate[Int]()
+
+      val (left, right) = agg.partition(_ % 2 == 0)
+
+      var countLeft = 0
+      left.size.attach(value => countLeft = value)
+
+      var countRight = 0
+      right.size.attach(value => countRight = value)
+
+      agg.append(3)
+      expect(countLeft).toBe(0)
+      expect(countRight).toBe(1)
+
+      val two = agg.append(2)
+      expect(countLeft).toBe(1)
+      expect(countRight).toBe(1)
+
+      agg.append(4)
+      agg.append(5)
+      expect(countLeft).toBe(2)
+      expect(countRight).toBe(2)
+
+      agg.remove(two)
+      expect(countLeft).toBe(1)
+      expect(countRight).toBe(2)
+    }
+
     it("should filter() with back-propagation of added elements") {
       val agg = Aggregate[Int]()
 

@@ -199,6 +199,16 @@ case class Aggregate[T]() {
     impl.result
   }
 
+  def partition(f: T => Boolean): (Aggregate[T], Aggregate[T]) = {
+    val isTrue = new Aggregate.FilterImpl(this)
+    isTrue.f = f
+
+    val isFalse = new Aggregate.FilterImpl(this)
+    isFalse.f = (!(_: Boolean)).compose(f)
+
+    (isTrue.result, isFalse.result)
+  }
+
   def map[U](f: T => U): Aggregate[U] = {
     val agg = Aggregate[U]()
 
@@ -312,6 +322,7 @@ case class CachedAggregate[T](agg: Aggregate[T] = Aggregate[T]()) {
   def nonEmpty: Channel[Boolean] = agg.nonEmpty
   def size: Channel[Int] = agg.size
   def filter(f: T => Boolean): Aggregate[T] = agg.filter(f)
+  def partition(f: T => Boolean): (Aggregate[T], Aggregate[T]) = agg.partition(f)
   def map[U](f: T => U): Aggregate[U] = agg.map(f)
   def forall[U](f: T => Boolean): Channel[Boolean] = agg.forall(f)
 }
