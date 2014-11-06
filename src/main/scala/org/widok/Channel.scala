@@ -130,6 +130,10 @@ trait ReadChannel[T]
     res
   }
 
+  // TODO Not covered by flatMap() in ``MapFunctions``. Probably ``Channel`` needs to
+  // be co-variant.
+  def flatMapCh[U](f: T => Channel[U]): Channel[U] = ???
+
   def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
     forkUni { value =>
       Result.Next(f.lift(value))
