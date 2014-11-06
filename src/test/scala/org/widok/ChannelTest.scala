@@ -34,7 +34,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should distinct()") {
-      val ch = OptVar[Int](0)
+      val ch = Opt[Int](0)
       val ch2 = ch.distinct
 
       var sum = 0
