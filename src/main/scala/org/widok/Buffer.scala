@@ -32,6 +32,8 @@ trait ReadBuffer[T]
     else None
   }
 
+  def splitAt(element: T): (ReadBuffer[T], ReadBuffer[T]) = ???
+
   def take(count: Int): ReadBuffer[T] = ???
   def skip(count: Int): ReadBuffer[T] = ???
 

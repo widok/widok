@@ -21,6 +21,7 @@ trait BoundedStreamFunctions[Out[_], T] extends StreamFunctions[Out, T] {
   def lastOption: ReadChannel[Option[T]]
   def last: ReadChannel[T]
   def isLast(element: T): ReadChannel[Boolean]
+  def splitAt(element: T): (Out[T], Out[T])
 }
 
 trait FilterFunctions[Out[_], T] {
