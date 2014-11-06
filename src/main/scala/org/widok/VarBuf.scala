@@ -52,7 +52,7 @@ trait ReadVarBuf[T]
 
   def map[U](f: T => U): ReadVarBuf[U] = ???
   def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???
-  def flatMap[U](f: T => ReadVarBuf[U]): ReadChannel[U] = ???
+  def flatMap[U](f: T => ReadVarBuf[U]): ReadVarBuf[U] = ???
   def takeUntil(ch: Channel[_]): ReadVarBuf[T] = ???
 }
 
