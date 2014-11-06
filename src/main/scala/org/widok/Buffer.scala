@@ -18,6 +18,7 @@ object Buffer {
 trait ReadBuffer[T]
   extends Aggregate[T]
   with OrderFunctions[T]
+  with BoundedStreamFunctions[ReadBuffer, T]
 {
   def before(value: T): Option[T] = {
     val position = indexOf(value) - 1
@@ -30,6 +31,20 @@ trait ReadBuffer[T]
     if (position < currentSize) Some(get(position))
     else None
   }
+
+  def take(count: Int): ReadBuffer[T] = ???
+  def skip(count: Int): ReadBuffer[T] = ???
+
+  def headOption: ReadChannel[Option[T]] = ???
+  def lastOption: ReadChannel[Option[T]] = ???
+
+  def head: ReadChannel[T] = headOption.map(_.get)
+  def last: ReadChannel[T] = lastOption.map(_.get)
+
+  def tail: ReadBuffer[T] = ???
+
+  def isHead(elem: T): ReadChannel[Boolean] = headOption.map(_ == Some(elem))
+  def isLast(elem: T): ReadChannel[Boolean] = lastOption.map(_ == Some(elem))
 
   override def toString = toSeq.toString()
 }

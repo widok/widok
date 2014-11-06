@@ -6,24 +6,29 @@ package org.widok
  * If an operation produces a single value, the return type is ReadChannel[_],
  * otherwise Out[_].
  */
-trait FilterFunctions[Out[_], T] {
+
+/** Unbounded stream. */
+trait StreamFunctions[Out[_], T] {
   def take(count: Int): Out[T]
   def skip(count: Int): Out[T]
+  def head: ReadChannel[T]
+  def isHead(element: T): ReadChannel[Boolean]
+  def tail: Out[T]
+}
+
+trait BoundedStreamFunctions[Out[_], T] extends StreamFunctions[Out, T] {
+  def headOption: ReadChannel[Option[T]]
+  def lastOption: ReadChannel[Option[T]]
+  def last: ReadChannel[T]
+  def isLast(element: T): ReadChannel[Boolean]
+}
+
+trait FilterFunctions[Out[_], T] {
   def filter(f: T => Boolean): Out[T]
   def filterCh(f: ReadChannel[T => Boolean]): Out[T]
   def distinct: Out[T]
   def span(f: T => Boolean): (Out[T], Out[T])
-  def head: ReadChannel[T]
-  def isHead(value: T): ReadChannel[Boolean]
-  def tail: Out[T]
   def partition(f: T => Boolean): (Out[T], Out[T])
-}
-
-trait FilterSequenceFunctions[Out[_], T] extends FilterFunctions[Out, T] {
-  def headOption: ReadChannel[Option[T]]
-  def lastOption: ReadChannel[Option[T]]
-  def last: ReadChannel[T]
-  def isLast(elem: T): ReadChannel[Boolean]
 }
 
 trait FoldFunctions[T] {

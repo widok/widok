@@ -4,12 +4,9 @@ import scala.collection.mutable
 
 trait ReadVarBuf[T]
   extends ReadBuffer[Var[T]]
-  with FilterSequenceFunctions[ReadVarBuf, T]
+  with FilterFunctions[ReadVarBuf, T]
   with MapFunctions[ReadVarBuf, T]
 {
-  def take(count: Int): ReadVarBuf[T] = ???
-  def skip(count: Int): ReadVarBuf[T] = ???
-
   def filter(f: T => Boolean): ReadVarBuf[T] =
     FilteredVarBuf(this, f)
 
@@ -45,17 +42,6 @@ trait ReadVarBuf[T]
 
     (left, right)
   }
-
-  def headOption: ReadChannel[Option[T]] = ???
-  def lastOption: ReadChannel[Option[T]] = ???
-
-  def head: ReadChannel[T] = headOption.map(_.get)
-  def last: ReadChannel[T] = lastOption.map(_.get)
-
-  def isHead(elem: T): ReadChannel[Boolean] = headOption.map(_ == Some(elem))
-  def isLast(elem: T): ReadChannel[Boolean] = lastOption.map(_ == Some(elem))
-
-  def tail: ReadVarBuf[T] = ???
 
   def map[U](f: T => U): ReadVarBuf[U] = ???
   def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???

@@ -26,6 +26,7 @@ object Result {
 
 trait ReadChannel[T]
   extends Identity
+  with StreamFunctions[ReadChannel, T]
   with FilterFunctions[ReadChannel, T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
