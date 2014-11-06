@@ -119,10 +119,15 @@ trait ReadChannel[T]
       Result.Next(Some(f(value)))
     }
 
-  def foreach(f: T => Unit): ReadChannel[Unit] = map(f)
+  def foreach(f: T => Unit): ReadChannel[Unit] =
+    forkUni { value =>
+      Result.Next(Some(f(value)))
+    }
 
-  def contains(needle: T): ReadChannel[Boolean] =
-    exists(_ == needle)
+  def equal(value: T): ReadChannel[Boolean] =
+    forkUni { t =>
+      Result.Next(Some(t == value))
+    }
 
   def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] = {
     val res = Channel[U]()
@@ -149,6 +154,9 @@ trait ReadChannel[T]
 
   def exists(f: T => Boolean): ReadChannel[Boolean] = ???
   def forall(f: T => Boolean): ReadChannel[Boolean] = ???
+
+  def contains(needle: T): ReadChannel[Boolean] =
+    exists(_ == needle)
 
   def takeUntil(ch: Channel[_]): ReadChannel[T] = {
     val res = Channel[T]()

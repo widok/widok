@@ -50,6 +50,7 @@ trait ReadVarBuf[T]
   def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???
   def flatMap[U](f: T => ReadVarBuf[U]): ReadVarBuf[U] = ???
   def takeUntil(ch: Channel[_]): ReadVarBuf[T] = ???
+  def equal(value: T): ReadChannel[Boolean] = ???
 }
 
 trait WriteVarBuf[T] extends WriteBuffer[Var[T]]

@@ -46,10 +46,25 @@ trait MapFunctions[Out[_], T] {
   def partialMap[U](f: PartialFunction[T, U]): Out[U]
   def flatMap[U](f: T => Out[U]): Out[U]
   def takeUntil(ch: Channel[_]): Out[T]
+
+  /**
+   * Equality check
+   *
+   * @note Channels: The current value matches.
+   * @note Lists: All elements have the same value.
+   */
+  def equal(value: T): ReadChannel[Boolean]
 }
 
 trait IterateFunctions[T] {
   def foreach(f: T => Unit): ReadChannel[Unit]
+
+  /**
+   * Stream contains at least one occurrence of ``value``.
+   *
+   * @note Channels: Once true, will never produce any other value.
+   * @note Aggregates: When the item is removed, it will produce false.
+   */
   def contains(value: T): ReadChannel[Boolean]
 }
 
