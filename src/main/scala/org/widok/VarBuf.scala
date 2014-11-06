@@ -5,6 +5,7 @@ import scala.collection.mutable
 trait ReadVarBuf[T]
   extends ReadBuffer[Var[T]]
   with FilterSequenceFunctions[ReadVarBuf, T]
+  with MapFunctions[ReadVarBuf, T]
 {
   def take(count: Int): ReadVarBuf[T] = ???
   def skip(count: Int): ReadVarBuf[T] = ???
@@ -55,6 +56,11 @@ trait ReadVarBuf[T]
   def isLast(elem: T): ReadChannel[Boolean] = lastOption.map(_ == Some(elem))
 
   def tail: ReadVarBuf[T] = ???
+
+  def map[U](f: T => U): ReadVarBuf[U] = ???
+  def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???
+  def flatMap[U](f: T => ReadVarBuf[U]): ReadChannel[U] = ???
+  def takeUntil(ch: Channel[_]): ReadVarBuf[T] = ???
 }
 
 trait WriteVarBuf[T] extends WriteBuffer[Var[T]]
