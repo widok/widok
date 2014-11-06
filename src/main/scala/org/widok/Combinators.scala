@@ -37,7 +37,7 @@ trait FoldFunctions[T] {
 
 trait MapFunctions[Out[_], T] {
   def map[U](f: T => U): Out[U]
-  def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U]
+  def partialMap[U](f: PartialFunction[T, U]): Out[U]
   def flatMap[U](f: T => Out[U]): ReadChannel[U]
   def takeUntil(ch: Channel[_]): Out[T]
 }
