@@ -108,7 +108,7 @@ object Bootstrap {
       case object Danger extends Style { override def toString = "label-danger" }
     }
 
-    def apply(style: Channel[Label.Style])(contents: Widget[_]*) =
+    def apply(style: ReadChannel[Label.Style])(contents: Widget[_]*) =
       HTML.Container.Generic(contents: _*)
         .css("label")
         .cssCh(style.map(_.toString))
@@ -212,7 +212,7 @@ object Bootstrap {
         .css("nav nav-pills")
         .attribute("role", "tablist")
 
-    def Item(active: Channel[Boolean] = Channel())(contents: Widget[_]*) =
+    def Item(active: ReadChannel[Boolean] = Channel())(contents: Widget[_]*) =
       HTML.List.Item(contents: _*)
         .cssCh(active, "active")
         .asInstanceOf[HTML.List.Item] // TODO Workaround

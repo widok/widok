@@ -1,0 +1,84 @@
+package org.widok
+
+/**
+ * This file defines functions to be implemented by streaming data structures.
+ *
+ * If an operation produces a single value, the return type is ReadChannel[_],
+ * otherwise Out[_].
+ */
+trait FilterFunctions[Out[_], T] {
+  def take(count: Int): Out[T]
+  def skip(count: Int): Out[T]
+  def filter(f: T => Boolean): Out[T]
+  def filterCh(f: ReadChannel[T => Boolean]): Out[T]
+  def distinct: Out[T]
+  def span(f: T => Boolean): (Out[T], Out[T])
+  def head: ReadChannel[T]
+  def isHead(value: T): ReadChannel[Boolean]
+  def tail: Out[T]
+  def partition(f: T => Boolean): (Out[T], Out[T])
+}
+
+trait FilterSequenceFunctions[Out[_], T] extends FilterFunctions[Out, T] {
+  def headOption: ReadChannel[Option[T]]
+  def lastOption: ReadChannel[Option[T]]
+  def last: ReadChannel[T]
+  def isLast(elem: T): ReadChannel[Boolean]
+}
+
+trait FoldFunctions[T] {
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U]
+  def exists(f: T => Boolean): ReadChannel[Boolean]
+  def forall(f: T => Boolean): ReadChannel[Boolean]
+
+  def sum[U >: T](implicit num: Numeric[U]): ReadChannel[U] =
+    foldLeft(num.zero)(num.plus)
+}
+
+trait MapFunctions[Out[_], T] {
+  def map[U](f: T => U): Out[U]
+  def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U]
+  def flatMap[U](f: T => Out[U]): ReadChannel[U]
+  def takeUntil(ch: Channel[_]): Out[T]
+}
+
+trait IterateFunctions[T] {
+  def foreach(f: T => Unit): ReadChannel[Unit]
+  def contains(value: T): ReadChannel[Boolean]
+}
+
+trait OrderFunctions[T] {
+  def get(value: Int): T
+  def before(value: T): Option[T]
+  def after(value: T): Option[T]
+  def indexOf(value: T): Int
+  def toSeq: Seq[T]
+
+  def apply(value: Int): T = get(value)
+}
+
+trait UpdateFunctions[T] {
+  def update(f: T => T)
+  def clear()
+}
+
+trait UpdateSequenceFunctions[Container[_], T] {
+  def prepend(elem: T)
+  def append(elem: T)
+  def insertBefore(ref: T, elem: T)
+  def insertAfter(ref: T, elem: T)
+  def remove(handle: T)
+  def appendAll(agg: Container[T])
+  def removeAll(agg: Container[T])
+  def set(items: T*)
+  def +=(value: T) = append(value)
+  def ++=(agg: Container[T]) = appendAll(agg)
+  def -=(value: T) = remove(value)
+  def --=(agg: Container[T]) = removeAll(agg)
+}
+
+trait SizeFunctions[T] {
+  def size: ReadChannel[Int]
+  def isEmpty: ReadChannel[Boolean]
+  def nonEmpty: ReadChannel[Boolean]
+}

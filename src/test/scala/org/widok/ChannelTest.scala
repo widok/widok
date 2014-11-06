@@ -33,22 +33,22 @@ object ChannelTest extends JasmineTest {
       expect(map(b)).toBe(2)
     }
 
-    it("should unique()") {
-      val ch = CachedChannel[Int]()
-      val ch2 = ch.unique
+    it("should distinct()") {
+      val ch = OptVar[Int]()
+      val ch2 = ch.distinct
 
       var sum = 0
-      ch2.attach(cur => sum += cur)
+      ch2.attach(sum += _.get)
 
-      ch := 1
-      ch := 1
-      ch := 1
+      ch := Some(1)
+      ch := Some(1)
+      ch := Some(1)
 
       expect(sum).toBe(1)
     }
 
-    it("should unique()") {
-      val ch = StateChannel[Int](42).cache.unique
+    it("should distinct()") {
+      val ch = LazyVar[Int](42).distinct
 
       var sum = 0
       ch.attach(cur => sum += cur)
@@ -62,11 +62,11 @@ object ChannelTest extends JasmineTest {
       var sum = 0
       ch.take(2).attach(cur => sum += cur)
 
-      expect(ch.observers.size == 1)
+      expect(ch.children.size).toBe(1)
       ch := 1
       ch := 2
 
-      expect(ch.observers.size == 0)
+      expect(ch.children.size).toBe(0)
       ch := 3
       ch := 4
 
@@ -87,7 +87,8 @@ object ChannelTest extends JasmineTest {
       expect(sum).toBe(3 + 4)
     }
 
-    it("should cache()") {
+    // TODO
+    /*it("should cache()") {
       val ch = Channel[Test]()
       val cache = ch.cache
 
@@ -104,10 +105,10 @@ object ChannelTest extends JasmineTest {
 
       a := 3
       expect(sum).toBe(1 + 2 + 3)
-    }
+    }*/
 
     it("should value()") {
-      val ch = Channel.unit(Test(1, true)).cache
+      val ch = Var(Test(1, true))
 
       val a = ch.value[Int](_ >> 'a)
 
@@ -131,8 +132,8 @@ object ChannelTest extends JasmineTest {
       expect(sum2).toBe(1 + 2 + 3 + 4)
     }
 
-    it("should unit()") {
-      val ch = Channel.unit(42)
+    it("should Var()") {
+      val ch = Var(42)
       var sum = 0
 
       ch.attach(value => sum += value)
@@ -168,19 +169,38 @@ object ChannelTest extends JasmineTest {
 
     it("should +() with chaining") {
       val ch = Channel[Int]()
-
       var chSum = 0
       ch.attach(chSum += _)
 
-      var sum = 0
-      val childCh = (sum += (_: Int)) + ch + (sum += (_: Int))
+      val ch2 = Channel[Int]()
+      var chSum2 = 0
+      ch2.attach(chSum2 += _)
+
+      val ch3 = Channel[Int]()
+      var chSum3 = 0
+      ch3.attach(chSum3 += _)
+
+      val childCh = ch + ch2 + ch3
 
       ch := 42
-      expect(sum).toBe(0)
+      expect(chSum).toBe(42)
+      expect(chSum2).toBe(0)
+      expect(chSum3).toBe(0)
+
+      ch2 := 43
+      expect(chSum).toBe(42)
+      expect(chSum2).toBe(43)
+      expect(chSum3).toBe(0)
+
+      ch3 := 44
+      expect(chSum).toBe(42)
+      expect(chSum2).toBe(43)
+      expect(chSum3).toBe(44)
 
       childCh := 23
-      expect(sum).toBe(23 * 2)
       expect(chSum).toBe(42 + 23)
+      expect(chSum2).toBe(43 + 23)
+      expect(chSum3).toBe(44 + 23)
     }
 
     it("should map()") {
@@ -198,7 +218,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should zip()") {
-      val ch = CachedChannel[Int]()
+      val ch = Var[Int](0)
       val ch2 = Channel[Int]()
 
       val zip = ch.zip(ch2)
@@ -218,10 +238,10 @@ object ChannelTest extends JasmineTest {
     }
   }
 
-  describe("StateChannel") {
+  describe("LazyVar") {
     it("should apply()") {
       var v = 23
-      val ch = StateChannel(v)
+      val ch = LazyVar(v)
 
       var sum = 0
       ch.attach(value => sum += value)
@@ -236,7 +256,7 @@ object ChannelTest extends JasmineTest {
 
     it("should map()") {
       var v = 23
-      val ch = StateChannel(v)
+      val ch = LazyVar(v)
       val map = ch.map(_ + 1)
 
       var sum = 0
@@ -252,7 +272,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should filter()") {
-      val ch = StateChannel(42)
+      val ch = LazyVar(42)
       val filter = ch.filter(_ % 2 == 0)
 
       var sum = 0
@@ -267,7 +287,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should take()") {
-      val ch = StateChannel(42)
+      val ch = LazyVar(42)
       val take = ch.take(2)
 
       var sum = 0
@@ -282,7 +302,7 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should +()") {
-      val ch = StateChannel(42)
+      val ch = LazyVar(42)
       val childCh = ch + ((_: Int) => ())
 
       var sum = 0

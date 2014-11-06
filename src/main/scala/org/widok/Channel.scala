@@ -1,221 +1,348 @@
 package org.widok
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import org.widok.Helpers.Identity
 
 object Channel {
-  type Observer[T] = T => Unit
+  type Observer[T, U] = T => Result[U]
 
-  def apply[T]() = new Channel[T] {
-    def flush(observer: Observer[T]) { }
-  }
-
-  /**
-   * Upon each subscription, emit ``v``. ``v`` is evaluated
-   * lazily. Channel.unit() can be considered a cold observable.
-   */
-  def unit[T](v: => T) = StateChannel(v)
-
-  def sync[T](ch: Channel[T], ch2: Channel[T]) {
-    var obs: Observer[T] = null
-    var obs2: Observer[T] = null
-
-    obs = value => ch2.produce(value, obs2)
-    obs2 = value => ch.produce(value, obs)
-
-    ch.silentAttach(obs)
-    ch2.silentAttach(obs2)
-
-    ch.flush(obs)
-    ch2.flush(obs2)
-  }
+  def apply[T](): Channel[T] =
+    new Channel[T] {
+      def request() { }
+      def flush(f: T => Unit) { }
+      def dispose() { }
+    }
 }
 
-trait Channel[T] extends Identity {
+trait Result[T] {
+  def valueOpt: Option[T]
+}
+
+object Result {
+  case class Next[T](value: Option[T]) extends Result[T] { def valueOpt = value }
+  case class Done[T](value: Option[T]) extends Result[T] { def valueOpt = value }
+}
+
+trait ReadChannel[T]
+  extends Identity
+  with FilterFunctions[ReadChannel, T]
+  with FoldFunctions[T]
+  with MapFunctions[ReadChannel, T]
+  with IterateFunctions[T]
+  with Disposable {
+
   import Channel.Observer
 
-  private[widok] val observers = new ArrayBuffer[Observer[T]]()
+  private[widok] val children = mutable.ArrayBuffer[ChildChannel[T, Any]]()
 
-  def flush(observer: Observer[T])
+  def flush(f: T => Unit)
 
-  def cache: CachedChannel[T] = {
-    val res = CachedChannel[T]()
+  def request()
+
+  def attach(f: T => Unit): ReadChannel[Unit] =
+    forkUni { value =>
+      f(value)
+      Result.Next(None)
+    }
+
+  def silentAttach(f: T => Unit): ReadChannel[Unit] =
+    forkUni(value => {
+      f(value)
+      Result.Next(None)
+    }, silent = true)
+
+  /* TODO reimplement
+  def cache: OptVar[T] = {
+    val res = OptVar[T]()
     Channel.sync(this, res)
+    res
+  }*/
+
+  def buffer: VarBuf[T] = {
+    val buf = VarBuf[T]()
+    attach(buf += Var(_))
+    buf
+  }
+
+  /** Uni-directional read/write fork */
+  def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
+    val ch = UniChildChannel[T, U](this, observer)
+    children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
+    if (!silent) ch.request()
+    ch
+  }
+
+  def filter(f: T => Boolean): ReadChannel[T] =
+    forkUni { value =>
+      if (f(value)) Result.Next(Some(value))
+      else Result.Next(None)
+    }
+
+  def filterCh(f: ReadChannel[T => Boolean]): ReadChannel[T] = ???
+
+  def partition(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) =
+    (filter(f), filter((!(_: Boolean)).compose(f)))
+
+  def take(count: Int): ReadChannel[T] = {
+    assert(count > 0)
+    var cnt = count
+    forkUni { value =>
+      if (cnt > 1) { cnt -= 1; Result.Next(Some(value)) }
+      else Result.Done(Some(value))
+    }
+  }
+
+  def skip(count: Int): ReadChannel[T] = {
+    assert(count > 0)
+    var cnt = count
+    forkUni { value =>
+      if (cnt > 0) { cnt -= 1; Result.Next(None) }
+
+      // TODO Create a new result type which continues processing
+      // the stream without calling this callback.
+      else Result.Next(Some(value))
+    }
+  }
+
+  def head: ReadChannel[T] = forkUni(value => Result.Done(Some(value)))
+  def tail: ReadChannel[T] = skip(1)
+
+  def isHead(value: T): ReadChannel[Boolean] =
+    take(1).map(_ == value)
+
+  def span(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) = ???
+
+  def map[U](f: T => U): ReadChannel[U] =
+    forkUni { value =>
+      Result.Next(Some(f(value)))
+    }
+
+  def foreach(f: T => Unit): ReadChannel[Unit] = map(f)
+
+  def contains(needle: T): ReadChannel[Boolean] =
+    exists(_ == needle)
+
+  def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] = {
+    val res = Channel[U]()
+    attach(f(_).attach(res := _))
     res
   }
 
-  def silentAttach(observer: Observer[T]) {
-    assume(!observers.contains(observer))
-    observers.append(observer)
+  def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
+    forkUni { value =>
+      Result.Next(f.lift(value))
+    }
+
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = {
+    var accum = acc
+    forkUni { value =>
+      accum = f(accum, value)
+      Result.Next(Some(accum))
+    }
   }
 
-  def attach(observer: Observer[T]) {
-    silentAttach(observer)
-    flush(observer)
+  def exists(f: T => Boolean): ReadChannel[Boolean] = ???
+  def forall(f: T => Boolean): ReadChannel[Boolean] = ???
+
+  def takeUntil(ch: Channel[_]): ReadChannel[T] = {
+    val res = Channel[T]()
+    val child = forkUni[T] { value =>
+      res := value
+      Result.Next(None)
+    }
+    ch.forkUni[Any] { _ =>
+      child.dispose()
+      Result.Done(None)
+    }
+    res
   }
 
-  def attachFirst(observer: Observer[T]) {
-    assume(!observers.contains(observer))
-    observers.prepend(observer)
-    flush(observer)
+  def writeTo(write: WriteChannel[T]): Channel[T] = {
+    assert(this != write)
+    val res = Channel[T]()
+    write << res
+    res << this
+    res
   }
 
-  def detach(observer: Observer[T]) = {
-    assume(observers.contains(observer))
-    observers -= observer
+  def distinct: ReadChannel[T] = {
+    var cur = Option.empty[T]
+    forkUni { value =>
+      if (cur.contains(value)) Result.Next(None)
+      else {
+        cur = Some(value)
+        Result.Next(cur)
+      }
+    }
   }
 
-  def destroy() {
-    observers.clear()
+  def dispose()
+}
+
+trait WriteChannel[T] {
+  import Channel.Observer
+
+  private[widok] val children: mutable.ArrayBuffer[ChildChannel[T, Any]]
+
+  def flush(f: T => Unit)
+
+  def produce(value: T) {
+    children.foreach(_.process(value))
   }
 
-  def produce(v: T) {
-    observers.foreach(_(v))
-  }
-
-  def produce(v: T, ignore: Observer[T]*) {
-    assume(ignore.forall(observers.contains))
-    observers.diff(ignore).foreach(_(v))
+  def produce[U](value: T, ignore: ReadChannel[U]*) {
+    assume(ignore.forall(children.contains))
+    children.diff(ignore).foreach(_.process(value))
   }
 
   def flatProduce(v: Option[T]) {
-    v.foreach(cur => observers.foreach(_(cur)))
+    v.foreach(cur => children.foreach(_.process(cur)))
   }
 
-  def flatProduce(v: Option[T], ignore: Observer[T]*) {
-    assume(ignore.forall(observers.contains))
-    v.foreach(cur => observers.diff(ignore).foreach(_(cur)))
+  def flatProduce[U](v: Option[T], ignore: Observer[T, U]*) {
+    assume(ignore.forall(children.contains))
+    v.foreach(cur => children.diff(ignore).foreach(_.process(cur)))
+  }
+
+  /** Bi-directional fork */
+  def forkBi[U](fwd: Observer[T, U], bwd: Observer[U, T], silent: Boolean = false): Channel[U] = {
+    val ch = BiChildChannel[T, U](this, fwd, bwd)
+    children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
+    if (!silent) ch.request()
+    ch
+  }
+
+  /** Redirect stream from ``other`` to ``this``. */
+  def <<(other: ReadChannel[T]): ReadChannel[Unit] = {
+    other.attach(this := _)
+  }
+
+  def <<[U](other: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = {
+    other.attach(this.produce(_, ignore))
   }
 
   def :=(v: T) = produce(v)
-  def head: Channel[T] = take(1)
-  def tail: Channel[T] = skip(1)
+}
 
-  def +(ch: Channel[T]): ChildChannel[T, T] = {
-    val res = ChildChannel(this, identity[T])
-    val obsRes: Observer[T] = ch := _
-    res.attach(obsRes)
-
-    val obs: Observer[T] = res.produce(_, obsRes)
-    attach(obs)
-
-    res.attach(produce(_, obs))
-    res
+trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
+  /** Synchronise ``this`` and ``other``. */
+  def <<>>(other: Channel[T]) {
+    var obsOther: ReadChannel[Unit] = null
+    val obsThis = silentAttach(other.produce(_, obsOther))
+    obsOther = other.attach(produce(_, obsThis))
+    obsThis.request()
   }
 
-  def map[U](f: T => U): ChildChannel[T, U] = {
-    val res = ChildChannel(this, f)
-    attach(value => res := f(value))
-    res
+  def <<>>(other: Channel[T], ignoreOther: ReadChannel[Unit]) {
+    var obsOther: ReadChannel[Unit] = null
+    val obsThis = silentAttach(other.produce(_, obsOther, ignoreOther))
+    obsOther = other.attach(produce(_, obsThis))
+    obsThis.request()
   }
 
-  def filter(f: T => Boolean): ChildChannel[T, T] = {
-    val res = ChildChannel(this, identity[T])
-    attach(value => if (f(value)) res := value)
+  def +(write: WriteChannel[T]): Channel[T] = {
+    val res = Channel[T]()
+    val ignore = write << res
+    this <<>> (res, ignore)
     res
   }
+}
 
-  def take(count: Int): ChildChannel[T, T] = {
-    assume(count > 0)
+trait ChildChannel[T, U] extends Channel[U] {
+  def process(value: T)
+}
 
-    var taken = 1
-    val ch = ChildChannel(this, identity[T])
-    var obs: Observer[T] = null
+/** Uni-directional child */
+case class UniChildChannel[T, U](parent: ReadChannel[T],
+                                 observer: Channel.Observer[T, U]) extends ChildChannel[T, U] {
+  def process(value: T) {
+    observer(value) match {
+      case Result.Next(resultValue) =>
+        resultValue.foreach(this := _)
+      case Result.Done(resultValue) =>
+        resultValue.foreach(this := _)
+        dispose()
+    }
+  }
 
-    obs = value => {
-      ch := value
+  /** Flush data from parent */
+  def request() {
+    parent.flush(process)
+  }
 
-      if (taken < count) taken += 1
-      else detach(obs)
+  def dispose() {
+    parent.children -= this.asInstanceOf[ChildChannel[T, Any]]
+  }
+
+  def flush(f: U => Unit) {
+    parent.flush(observer(_).valueOpt.foreach(f))
+  }
+}
+
+/** Bi-directional child */
+case class BiChildChannel[T, U](parent: WriteChannel[T],
+                                fwd: Channel.Observer[T, U],
+                                bwd: Channel.Observer[U, T]) extends ChildChannel[T, U]
+{
+  val back = silentAttach { value =>
+    bwd(value) match {
+      case Result.Next(resultValue) =>
+        resultValue.foreach(r => parent.produce(r, this))
+      case Result.Done(resultValue) =>
+        resultValue.foreach(r => parent.produce(r, this))
+        dispose()
     }
 
-    attach(obs)
-    ch
+    Result.Next(None)
   }
 
-  def skip(count: Int): Channel[T] = {
-    assume(count > 0)
+  def request() {
+    parent.flush(process)
+  }
 
-    val ch = Channel[T]()
-    var skipped = 0
-
-    attach { value =>
-      if (skipped < count) skipped += 1
-      else ch := value
+  def process(value: T) {
+    fwd(value) match {
+      case Result.Next(resultValue) =>
+        resultValue.foreach(r => produce(r, back))
+      case Result.Done(resultValue) =>
+        resultValue.foreach(r => produce(r, back))
+        dispose()
     }
+  }
 
-    ch
+  def dispose() {
+    parent.children -= this.asInstanceOf[ChildChannel[T, Any]]
+  }
+
+  def flush(f: U => Unit) {
+    parent.flush(fwd(_).valueOpt.foreach(f))
   }
 }
 
-object StateChannel {
-  import Channel.Observer
-
-  def apply[T](v: => T) = new Channel[T] {
-    def flush(observer: Observer[T]) { observer(v) }
-    def produce() { observers.foreach(_(v)) }
-  }
-}
-
-case class ChildChannel[T, U](parent: Channel[T], f: T => U) extends Channel[U] {
-  import Channel.Observer
-
-  def flush(observer: Observer[U]) { parent.flush(observer.compose(f)) }
-}
-
-case class CachedChannel[T]() extends Channel[T] {
-  import Channel.Observer
-
-  protected var cached: Option[T] = None
-  attach(t => cached = Some(t))
-
-  def flush(observer: Observer[T]) {
-    cached.foreach(t => observer(t))
-  }
-
-  @deprecated("Leads to imperative style", "0.1")
-  def get = cached
+trait StateChannel[T] extends Channel[T] {
+  def dispose() { }
+  def request() { }
 
   def update(f: T => T) {
-    cached.foreach(t => this := f(t))
+    flush(t => this := f(t))
   }
 
-  def unique: Channel[T] = {
-    val ch = ChildChannel(this, identity[T])
-    attachFirst(t => if (!cached.contains(t)) ch := t)
-    ch
-  }
-
-  // Maps each value change of ``other`` to a change of ``this``.
-  def zip[U](other: Channel[U]): Channel[(T, U)] = {
+  /** Maps each value change of ``other`` to a change of ``this``. */
+  def zip[U](other: ReadChannel[U]): ReadChannel[(T, U)] = {
     val res = Channel[(T, U)]()
-    other.attach(u => cached.foreach(t => res := (t, u)))
+    other.attach(u => flush(t => res := (t, u)))
     res
   }
 
   def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
     lens(f(shapeless.lens[T]))
 
-  /* Two-way lens that propagates back changes to all observers. */
+  /** Two-way lens that propagates back changes to all observers. */
   def lens[U](l: shapeless.Lens[T, U]): Channel[U] = {
-    val res = ChildChannel[T, U](this, l.get)
-
-    var observer: Observer[T] = null
-    var propagateBack: Observer[U] = null
-
-    observer = value => res.produce(l.get(value), propagateBack)
-    propagateBack = value => cached.foreach(cur => produce(l.set(cur)(value), observer))
-
-    silentAttach(observer)
-    res.silentAttach(propagateBack)
-
-    flush(observer)
-    res.flush(propagateBack)
-
-    res
+    var cur: Option[T] = None
+    forkBi(
+      fwdValue => { cur = Some(fwdValue); Result.Next(Some(l.get(fwdValue))) },
+      bwdValue => Result.Next(Some(l.set(cur.get)(bwdValue))))
   }
-
-  override def toString =
-    cached.map(_.toString).getOrElse("<undefined>")
 }
