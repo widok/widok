@@ -21,17 +21,17 @@ object LazyVar {
 }
 
 object OptVar {
-  def apply[T](value: T): OptVar[T] = {
+  def apply[T](value: Var[T]): OptVar[T] = {
     val res = OptVar[T]()
     res := Some(value)
     res
   }
 }
 
-case class OptVar[T]() extends StateChannel[Option[T]]
+case class OptVar[T]() extends StateChannel[Option[Var[T]]]
                        with SizeFunctions[T]
 {
-  protected var cached: Option[T] = None
+  protected var cached: Option[Var[T]] = None
 
   attach(t => cached = t)
 
@@ -41,11 +41,11 @@ case class OptVar[T]() extends StateChannel[Option[T]]
     res
   }
 
-  def flush(f: Option[T] => Unit) { f(cached) }
+  def flush(f: Option[Var[T]] => Unit) { f(cached) }
   def nonEmpty: ReadChannel[Boolean] = isEmpty.map(!_)
   def size: ReadChannel[Int] = isEmpty.map(if (_) 0 else 1)
-  def values: ReadChannel[T] = partialMap { case Some(v) => v }
+  def values: ReadChannel[Var[T]] = partialMap { case Some(v) => v }
   def clear() { this := None }
-  def get: Option[T] = cached
+  def get: Option[Var[T]] = cached
   override def toString = cached.map(_.toString).getOrElse("<undefined>")
 }
