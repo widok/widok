@@ -8,11 +8,7 @@ trait ReadVarBuf[T]
   with MapFunctions[ReadVarBuf, T]
 {
   /** Materialise elements to a writable VarBuf. */
-  def toVarBuf: VarBuf[T] = {
-    val buf = VarBuf[T]()
-    foreach(buf.append)
-    buf
-  }
+  def toVarBuf: VarBuf[T] = VarBuf(this)
 
   def filter(f: T => Boolean): ReadVarBuf[T] =
     FilteredVarBuf(this, f)
@@ -106,7 +102,13 @@ case class VarBuf[T]() extends Buffer[Var[T]]
 }
 
 object VarBuf {
-  def unit[T](elements: T*) = {
+  def apply[T](elements: ReadBuffer[Var[T]]): VarBuf[T] = {
+    val buf = VarBuf[T]()
+    buf ++= elements
+    buf
+  }
+
+  def apply[T](elements: T*): VarBuf[T] = {
     val buf = VarBuf[T]()
     buf.set(elements.map(value => Var(value)): _*)
     buf

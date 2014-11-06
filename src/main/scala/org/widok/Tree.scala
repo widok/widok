@@ -15,7 +15,7 @@ trait Tree[T] {
 object Tree {
   def apply[T](root: T, child: Tree[T]*): Tree[T] = new Tree[T] {
     val value = Var(root)
-    val children = VarBuf.unit(child: _*)
+    val children = VarBuf(child: _*)
     override def toString = "<tree>"
   }
 }
