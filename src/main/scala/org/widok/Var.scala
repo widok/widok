@@ -21,31 +21,45 @@ object LazyVar {
 }
 
 object OptVar {
-  def apply[T](value: Var[T]): OptVar[T] = {
+  def apply[T](value: T): OptVar[T] = {
     val res = OptVar[T]()
-    res := Some(value)
+    res := value
     res
   }
 }
 
-case class OptVar[T]() extends StateChannel[Option[Var[T]]]
+/**
+ * Publishes a stream of defined values. Use isEmpty() to detect when the
+ * current value is cleared.
+ */
+case class OptVar[T]() extends StateChannel[T]
                        with SizeFunctions[T]
 {
-  protected var cached: Option[Var[T]] = None
+  private var cached: Option[T] = None
+  private val defined = LazyVar[Boolean](cached.isDefined)
 
-  attach(t => cached = t)
-
-  def isEmpty: ReadChannel[Boolean] = {
-    val res = LazyVar[Boolean](cached.isEmpty)
-    attach(_ => res.produce())
-    res
+  attach { t =>
+    cached = Some(t)
+    defined.produce()
   }
 
-  def flush(f: Option[Var[T]] => Unit) { f(cached) }
-  def nonEmpty: ReadChannel[Boolean] = isEmpty.map(!_)
-  def size: ReadChannel[Int] = isEmpty.map(if (_) 0 else 1)
-  def values: ReadChannel[Var[T]] = partialMap { case Some(v) => v }
-  def clear() { this := None }
-  def get: Option[Var[T]] = cached
+  def isEmpty: ReadChannel[Boolean] = defined.map(!_)
+  def nonEmpty: ReadChannel[Boolean] = defined
+
+  def isDefined: ReadChannel[Boolean] = defined
+
+  def flush(f: T => Unit) {
+    if (cached.isDefined) f(cached.get)
+  }
+
+  def size: ReadChannel[Int] = defined.map(if (_) 1 else 0)
+
+  def clear() {
+    cached = None
+    defined.produce()
+  }
+
+  def get: Option[T] = cached
+
   override def toString = cached.map(_.toString).getOrElse("<undefined>")
 }

@@ -34,18 +34,15 @@ object ChannelTest extends JasmineTest {
     }
 
     it("should distinct()") {
-      val ch = OptVar[Int](Var(0))
-      val ch2 = ch.map(_.get).distinct
+      val ch = OptVar[Int](0)
+      val ch2 = ch.distinct
 
       var sum = 0
-      ch2.attach(sum += _.get)
+      ch2.attach(sum += _)
 
-      val v = Var(1)
-      val v2 = Var(2)
-
-      ch := Some(v)
-      ch := Some(v)
-      ch := Some(v2)
+      ch := 1
+      ch := 1
+      ch := 2
 
       expect(sum).toBe(3)
     }
