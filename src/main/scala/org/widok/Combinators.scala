@@ -1,7 +1,8 @@
 package org.widok
 
 /**
- * This file defines functions to be implemented by streaming data structures.
+ * This file defines functions to be implemented by streaming data structures, i.e.
+ * by children of channels and aggregates.
  *
  * If an operation produces a single value, the return type is ReadChannel[_],
  * otherwise Out[_].
@@ -11,13 +12,31 @@ package org.widok
 trait StreamFunctions[Out[_], T] {
   def take(count: Int): Out[T]
   def skip(count: Int): Out[T]
+
+  /**
+   * Returns first element
+   *
+   * @note Channels: First produced element after head() was called; it is not the
+   *       first value after an observer is attached to head()'s result.
+   * @note Aggregates: Produce a value for the first row. If the list is empty,
+   *       head does not produce any value. If the first row is deleted, the next
+   *       row will be produced.
+   */
   def head: ReadChannel[T]
+
   def isHead(element: T): ReadChannel[Boolean]
   def tail: Out[T]
 }
 
 trait BoundedStreamFunctions[Out[_], T] extends StreamFunctions[Out, T] {
+  /**
+   * Returns first element with the possibility of non-existence
+   *
+   * @note Channels: TBD
+   * @note Aggregates: Some(First row) or None if the list is empty.
+   */
   def headOption: ReadChannel[Option[T]]
+
   def lastOption: ReadChannel[Option[T]]
   def last: ReadChannel[T]
   def isLast(element: T): ReadChannel[Boolean]
@@ -51,7 +70,7 @@ trait MapFunctions[Out[_], T] {
    * Equality check
    *
    * @note Channels: The current value matches.
-   * @note Lists: All elements have the same value.
+   * @note Aggregates: All elements have the same value.
    */
   def equal(value: T): ReadChannel[Boolean]
 }
