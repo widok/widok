@@ -129,6 +129,11 @@ trait ReadChannel[T]
       Result.Next(Some(t == value))
     }
 
+  def unequal(value: T): ReadChannel[Boolean] =
+    forkUni { t =>
+      Result.Next(Some(t != value))
+    }
+
   def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] = {
     val res = Channel[U]()
     attach(f(_).attach(res := _))

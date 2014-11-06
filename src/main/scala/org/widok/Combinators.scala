@@ -73,6 +73,13 @@ trait MapFunctions[Out[_], T] {
    * @note Aggregates: All elements have the same value.
    */
   def equal(value: T): ReadChannel[Boolean]
+
+  /**
+   * Inequality check
+   *
+   * @see equal()
+   */
+  def unequal(value: T): ReadChannel[Boolean]
 }
 
 trait IterateFunctions[T] {
