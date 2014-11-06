@@ -31,8 +31,6 @@ trait ReadBuffer[T]
     else None
   }
 
-  def toVarMap[U](default: U): AggMap[T, Var[U]] = VarMap(this, default)
-
   override def toString = toSeq.toString()
 }
 

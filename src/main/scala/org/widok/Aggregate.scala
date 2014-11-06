@@ -42,6 +42,8 @@ trait Aggregate[T] extends SizeFunctions[T] {
 
   def currentSize: Int
 
+  def toVarMap[U](default: U): AggMap[T, Var[U]] = VarMap(this, default)
+
   def size: ReadChannel[Int] = {
     val ch = LazyVar(currentSize)
 
