@@ -7,6 +7,13 @@ trait ReadVarBuf[T]
   with FilterFunctions[ReadVarBuf, T]
   with MapFunctions[ReadVarBuf, T]
 {
+  /** Materialise elements to a writable VarBuf. */
+  def toVarBuf: VarBuf[T] = {
+    val buf = VarBuf[T]()
+    foreach(buf.append)
+    buf
+  }
+
   def filter(f: T => Boolean): ReadVarBuf[T] =
     FilteredVarBuf(this, f)
 
