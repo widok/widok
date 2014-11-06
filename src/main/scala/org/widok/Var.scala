@@ -59,7 +59,8 @@ case class OptVar[T]() extends StateChannel[T]
     defined.produce()
   }
 
-  def get: Option[T] = cached
+  /** @note This method may only be called if the value is defined. */
+  def get: T = cached.get
 
   override def toString = cached.map(_.toString).getOrElse("<undefined>")
 }
