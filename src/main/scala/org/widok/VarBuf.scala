@@ -124,7 +124,7 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   private[widok] var mapping = new mutable.HashMap[Var[T], Unit]()
 
   private[widok] val chChanges = new Channel[Change[Var[T]]] {
-    def dispose() { }
+    def attached: Boolean = false
     def request() { }
 
     def flush(obs: Change[Var[T]] => Unit) {

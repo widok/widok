@@ -29,7 +29,7 @@ case class AggMap[A, B](parent: Aggregate[A], elementValue: B) extends Unordered
 
   private[widok] val chChanges = new Channel[Change[(A, B)]] {
     def request() { }
-    def dispose() { }
+    def attached: Boolean = false
     def flush(f: Change[(A, B)] => Unit) {
       parent.foreach { element =>
         f(Change.Insert(Position.Last(), (element, mapping(element))))

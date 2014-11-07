@@ -63,7 +63,7 @@ trait RootReadBuffer[T] {
 
   private[widok] val chChanges = new Channel[Change[T]] {
     def request() { }
-    def dispose() { }
+    def attached: Boolean = false
     def flush(f: Change[T] => Unit) {
       elements.foreach { element =>
         f(Change.Insert(Position.Last(), element))
