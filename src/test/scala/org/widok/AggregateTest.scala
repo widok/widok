@@ -1,9 +1,10 @@
 package org.widok
 
+/*
+TODO Must be adapted to the new interface
 import scala.scalajs.test.JasmineTest
 
 object AggregateTest extends JasmineTest {
-/* TODO Must be adapted to the new interface
   describe("Aggregate") {
     it("should append()") {
       val agg = Aggregate[Int]()
@@ -745,5 +746,5 @@ object AggregateTest extends JasmineTest {
       expect(sum).toBe(1 + 3 + 4)
     }
   }
-*/
 }
+*/
