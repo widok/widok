@@ -52,7 +52,7 @@ object ChannelTest extends FunSuite {
     val ch = LazyVar[Int](42).distinct
 
     var sum = 0
-    ch.attach(cur => sum += cur)
+    ch.attach(sum += _)
 
     expect(sum).toBe(42)
   }
@@ -61,7 +61,7 @@ object ChannelTest extends FunSuite {
     val ch = Channel[Int]()
 
     var sum = 0
-    ch.take(2).attach(cur => sum += cur)
+    ch.take(2).attach(sum += _)
 
     expect(ch.children.size).toBe(1)
     ch := 1
@@ -78,7 +78,7 @@ object ChannelTest extends FunSuite {
     val ch = Channel[Int]()
 
     var sum = 0
-    ch.skip(2).attach(cur => sum += cur)
+    ch.skip(2).attach(sum += _)
 
     ch := 1
     ch := 2
@@ -88,15 +88,14 @@ object ChannelTest extends FunSuite {
     expect(sum).toBe(3 + 4)
   }
 
-  // TODO
-  /*test("cache()") {
+  test("toOpt()") {
     val ch = Channel[Test]()
-    val cache = ch.cache
+    val cache = ch.toOpt
 
     val a = cache.value[Int](_ >> 'a)
 
     var sum = 0
-    a.attach(cur => sum += cur)
+    a.attach(sum += _)
 
     ch := Test(1, true)
     expect(sum).toBe(1)
@@ -106,7 +105,7 @@ object ChannelTest extends FunSuite {
 
     a := 3
     expect(sum).toBe(1 + 2 + 3)
-  }*/
+  }
 
   test("value()") {
     val ch = Var(Test(1, true))
@@ -114,7 +113,7 @@ object ChannelTest extends FunSuite {
     val a = ch.value[Int](_ >> 'a)
 
     var sum = 0
-    a.attach(cur => sum += cur)
+    a.attach(sum += _)
     expect(sum).toBe(1)
 
     var sum2 = 0

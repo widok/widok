@@ -53,13 +53,6 @@ trait ReadChannel[T]
       Result.Next(None)
     }, silent = true)
 
-  /* TODO reimplement
-  def cache: OptVar[T] = {
-    val res = OptVar[T]()
-    Channel.sync(this, res)
-    res
-  }*/
-
   def buffer: VarBuf[T] = {
     val buf = VarBuf[T]()
     attach(buf += Var(_))
@@ -253,6 +246,12 @@ trait WriteChannel[T] {
 }
 
 trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
+  def toOpt: Opt[T] = {
+    val res = Opt[T]()
+    this <<>> res
+    res
+  }
+
   /** Synchronise ``this`` and ``other``. */
   def <<>>(other: Channel[T]) {
     var obsOther: ReadChannel[Unit] = null
