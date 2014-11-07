@@ -11,6 +11,7 @@ object ChannelSpec extends FunSuite {
     tickExpr = () => ()
   }
 
+  /** Checks whether two channels behave in the same way. */
   def assertEquals[T](ch: ReadChannel[T], ch2: ReadChannel[T]) {
     val left = mutable.ArrayBuffer[T]()
     val right = mutable.ArrayBuffer[T]()
@@ -73,6 +74,7 @@ object ChannelSpec extends FunSuite {
     forallChVal((ch, value) => (ch.equal(value), ch.unequal(value).map(!_)))
   }
 
+  /* TODO Generalise values */
   test("head") {
     // TODO Use Channel.fromSeq()
     assertEquals(Var(42).head, Var(42))
@@ -80,10 +82,15 @@ object ChannelSpec extends FunSuite {
   }
 
   test("Opt") {
+    forallCh(ch => (ch.toOpt, ch))
+
     assertEquals(Opt().isDefined.head, Var(false))
     assertEquals(Opt(42).isDefined.head, Var(true))
 
     assertEquals(Opt().isDefined, Opt().nonEmpty)
     assertEquals(Opt(42).isDefined, Opt(42).nonEmpty)
+
+    assertEquals(Opt(42), Var(42))
+    assertEquals(Opt(), Channel())
   }
 }
