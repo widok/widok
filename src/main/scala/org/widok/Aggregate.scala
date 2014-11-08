@@ -44,17 +44,10 @@ trait Aggregate[T] extends SizeFunctions[T] {
 
   def toVarMap[U](default: U): AggMap[T, Var[U]] = VarMap(this, default)
 
-  def size: ReadChannel[Int] = {
-    val ch = LazyVar(currentSize)
-
-    chChanges.attach {
-      case Change.Insert(_, _) => ch.produce()
-      case Change.Remove(_) => ch.produce()
-      case Change.Clear() => ch.produce()
+  def size: ReadChannel[Int] =
+    chChanges.forkUni { change =>
+      Result.Next(Some(currentSize))
     }
-
-    ch
-  }
 
   def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
   def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
