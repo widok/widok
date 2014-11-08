@@ -27,9 +27,7 @@ case class AggMap[A, B](parent: Aggregate[A], elementValue: B) extends Unordered
   import Aggregate.Change
   import Aggregate.Position
 
-  private[widok] val chChanges = new Channel[Change[(A, B)]] {
-    def request() { }
-    def attached: Boolean = false
+  private[widok] val chChanges = new RootChannel[Change[(A, B)]] {
     def flush(f: Change[(A, B)] => Unit) {
       parent.foreach { element =>
         f(Change.Insert(Position.Last(), (element, mapping(element))))

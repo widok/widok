@@ -20,6 +20,9 @@ trait ReadBuffer[T]
   with OrderFunctions[T]
   with BoundedStreamFunctions[ReadBuffer, T]
 {
+  import Aggregate.Change
+  import Aggregate.Position
+
   def before(value: T): Option[T] = {
     val position = indexOf(value) - 1
     if (position >= 0) Some(get(position))
@@ -40,7 +43,17 @@ trait ReadBuffer[T]
   def headOption: ReadChannel[Option[T]] = ???
   def lastOption: ReadChannel[Option[T]] = ???
 
-  def head: ReadChannel[T] = headOption.map(_.get)
+  def head: ReadChannel[T] = chChanges.partialMap {
+    case Change.Insert(Position.Head(), element) =>
+      element
+
+    case Change.Insert(Position.Last(), element)
+      if currentSize == 0 => element
+
+    case Change.Insert(Position.Before(before), element)
+      if get(0) == before => element
+  }
+
   def last: ReadChannel[T] = lastOption.map(_.get)
 
   def tail: ReadBuffer[T] = ???
@@ -61,9 +74,7 @@ trait RootReadBuffer[T] {
 
   private[widok] val elements: ArrayBuffer[T]
 
-  private[widok] val chChanges = new Channel[Change[T]] {
-    def request() { }
-    def attached: Boolean = false
+  private[widok] val chChanges = new RootChannel[Change[T]] {
     def flush(f: Change[T] => Unit) {
       elements.foreach { element =>
         f(Change.Insert(Position.Last(), element))
@@ -90,35 +101,35 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[Aggregate, T] {
   private[widok] val chChanges: Channel[Change[T]]
 
   def prepend(elem: T) {
-    elements.prepend(elem)
     chChanges := Change.Insert(Position.Head(), elem)
+    elements.prepend(elem)
   }
 
   def append(elem: T) {
-    elements.append(elem)
     chChanges := Change.Insert(Position.Last(), elem)
+    elements.append(elem)
   }
 
   def insertBefore(ref: T, elem: T) {
+    chChanges := Change.Insert(Position.Before(ref), elem)
     val position = elements.indexOf(ref) - 1
     elements.insert(position, elem)
-    chChanges := Change.Insert(Position.Before(ref), elem)
   }
 
   def insertAfter(ref: T, elem: T) {
+    chChanges := Change.Insert(Position.After(ref), elem)
     val position = elements.indexOf(ref) + 1
     elements.insert(position, elem)
-    chChanges := Change.Insert(Position.After(ref), elem)
   }
 
   def remove(handle: T) {
-    elements -= handle
     chChanges := Change.Remove(handle)
+    elements -= handle
   }
 
   def clear() {
-    elements.clear()
     chChanges := Change.Clear()
+    elements.clear()
   }
 
   def set(items: T*) {

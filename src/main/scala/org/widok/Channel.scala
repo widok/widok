@@ -8,10 +8,8 @@ object Channel {
   type Observer[T, U] = T => Result[U]
 
   def apply[T](): Channel[T] =
-    new Channel[T] {
-      def request() { }
+    new RootChannel[T] {
       def flush(f: T => Unit) { }
-      def attached: Boolean = false
     }
 }
 
@@ -31,8 +29,9 @@ trait ReadChannel[T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
   with IterateFunctions[T]
-  with Disposable {
-
+  with SizeFunctions[T]
+  with Disposable
+{
   import Channel.Observer
 
   private[widok] val children = mutable.Queue[ChildChannel[T, Any]]()
@@ -62,6 +61,14 @@ trait ReadChannel[T]
   /** Uni-directional read/write fork */
   def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
     val ch = UniChildChannel[T, U](this, observer)
+    children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
+    if (!silent) ch.request()
+    ch
+  }
+
+  /** Uni-directional flat fork */
+  def forkFlat[U](observer: Observer[T, ReadChannel[U]], silent: Boolean = false): ReadChannel[U] = {
+    val ch = FlatChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     if (!silent) ch.request()
     ch
@@ -127,11 +134,8 @@ trait ReadChannel[T]
       Result.Next(Some(t != value))
     }
 
-  def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] = {
-    val res = Channel[U]()
-    attach(f(_).attach(res := _))
-    res
-  }
+  def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] =
+    forkFlat(value => Result.Next(Some(f(value))))
 
   // TODO Not covered by flatMap() in ``MapFunctions``. Probably ``Channel`` needs to
   // be co-variant.
@@ -142,11 +146,12 @@ trait ReadChannel[T]
       Result.Next(f.lift(value))
     }
 
+  /** @note Caches the accumulator value. */
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = {
     var accum = acc
-    forkUni { value =>
+    forkFlat { value =>
       accum = f(accum, value)
-      Result.Next(Some(accum))
+      Result.Next(Some(Var(accum)))
     }
   }
 
@@ -165,16 +170,16 @@ trait ReadChannel[T]
       else Result.Next(None)
     }
 
-  def takeUntil(ch: Channel[_]): ReadChannel[T] = {
-    val res = Channel[T]()
-    val child = forkUni[T] { value =>
-      res := value
-      Result.Next(None)
+  def takeUntil(ch: ReadChannel[_]): ReadChannel[T] = {
+    val res = forkUni { value =>
+      Result.Next(Some(value))
     }
+
     ch.forkUni[Any] { _ =>
-      child.dispose()
+      res.dispose()
       Result.Done(None)
     }
+
     res
   }
 
@@ -275,22 +280,74 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
   }
 
   /** @note Its public use is discouraged. takeUntil() is a safer alternative. */
-  def dispose() {
-    assert(!attached)
-    children.dequeueAll { cur =>
-      cur.dispose()
-      true
-    }
-  }
+  def dispose()
 }
 
-trait ChildChannel[T, U] extends Channel[U] {
+trait ChildChannel[T, U]
+  extends Channel[U]
+  with ChannelDefaultSize[U]
+  with ChannelDefaultEmpty[U]
+{
+  /** Return true if the stream is completed. */
   def process(value: T): Boolean
+}
+
+case class FlatChildChannel[T, U](parent: ReadChannel[T],
+                                  observer: Channel.Observer[T, ReadChannel[U]])
+  extends ChildChannel[T, U]
+{
+  private var bound: ReadChannel[U] = null
+
+  def attached: Boolean =
+    parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
+
+  def onChannel(ch: Option[ReadChannel[U]]) {
+    if (bound != null) {
+      bound.dispose()
+      bound = null
+    }
+
+    if (ch.isDefined) {
+      bound = ch.get
+      bound.attach(this := _)
+    }
+  }
+
+  def process(value: T): Boolean =
+    observer(value) match {
+      case Result.Next(resultValue) =>
+        onChannel(resultValue)
+        false
+
+      case Result.Done(resultValue) =>
+        onChannel(resultValue)
+        true
+    }
+
+  /** Flush data from parent */
+  def request() {
+    parent.flush(value =>
+      if (process(value))
+        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
+  }
+
+  def flush(f: U => Unit) {
+    if (bound != null) bound.flush(f)
+  }
+
+  def dispose() {
+    assert(attached)
+    if (bound != null) bound.dispose()
+    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
+    while (children.nonEmpty) children.head.dispose()
+  }
 }
 
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
-                                 observer: Channel.Observer[T, U]) extends ChildChannel[T, U] {
+                                 observer: Channel.Observer[T, U])
+  extends ChildChannel[T, U]
+{
   def attached: Boolean =
     parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
 
@@ -306,11 +363,19 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
 
   /** Flush data from parent */
   def request() {
-    parent.flush(value => process(value))
+    parent.flush(value =>
+      if (process(value))
+        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
   }
 
   def flush(f: U => Unit) {
     parent.flush(observer(_).valueOpt.foreach(f))
+  }
+
+  def dispose() {
+    assert(attached)
+    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
+    while (children.nonEmpty) children.head.dispose()
   }
 }
 
@@ -334,7 +399,9 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
   }
 
   def request() {
-    parent.flush(value => process(value))
+    parent.flush(value =>
+      if (process(value))
+        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
   }
 
   def process(value: T): Boolean =
@@ -350,12 +417,56 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
   def flush(f: U => Unit) {
     parent.flush(fwd(_).valueOpt.foreach(f))
   }
+
+  def dispose() {
+    assert(attached)
+    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
+    while (children.nonEmpty) children.head.dispose()
+  }
+}
+
+trait ChannelDefaultSize[T] {
+  this: ReadChannel[T] =>
+
+  def size: ReadChannel[Int] = {
+    var count = 0
+    forkUni { t =>
+      count += 1
+      Result.Next(Some(count))
+    }
+  }
+}
+
+trait ChannelDefaultEmpty[T] {
+  this: ReadChannel[T] =>
+
+  def isEmpty: ReadChannel[Boolean] =
+    forkUni { t =>
+      Result.Done(Some(false))
+    }
+
+  def nonEmpty: ReadChannel[Boolean] =
+    forkUni { t =>
+      Result.Done(Some(true))
+    }
+}
+
+trait RootChannel[T]
+  extends Channel[T]
+  with ChannelDefaultSize[T]
+  with ChannelDefaultEmpty[T]
+{
+  def request() { }
+  def attached: Boolean = false
+
+  def dispose() {
+    while (children.nonEmpty) children.head.dispose()
+  }
 }
 
 trait StateChannel[T] extends Channel[T] {
-  def attached: Boolean = false
-
   def request() { }
+  def attached: Boolean = false
 
   def update(f: T => T) {
     flush(t => this := f(t))
@@ -377,5 +488,9 @@ trait StateChannel[T] extends Channel[T] {
     forkBi(
       fwdValue => { cur = Some(fwdValue); Result.Next(Some(l.get(fwdValue))) },
       bwdValue => Result.Next(Some(l.set(cur.get)(bwdValue))))
+  }
+
+  def dispose() {
+    while (children.nonEmpty) children.head.dispose()
   }
 }

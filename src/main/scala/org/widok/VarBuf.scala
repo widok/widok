@@ -49,7 +49,7 @@ trait ReadVarBuf[T]
   def map[U](f: T => U): ReadVarBuf[U] = ???
   def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???
   def flatMap[U](f: T => ReadVarBuf[U]): ReadVarBuf[U] = ???
-  def takeUntil(ch: Channel[_]): ReadVarBuf[T] = ???
+  def takeUntil(ch: ReadChannel[_]): ReadVarBuf[T] = ???
   def equal(value: T): ReadChannel[Boolean] = ???
   def unequal(value: T): ReadChannel[Boolean] = ???
 }
@@ -123,10 +123,7 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
 
   private[widok] var mapping = new mutable.HashMap[Var[T], Unit]()
 
-  private[widok] val chChanges = new Channel[Change[Var[T]]] {
-    def attached: Boolean = false
-    def request() { }
-
+  private[widok] val chChanges = new RootChannel[Change[Var[T]]] {
     def flush(obs: Change[Var[T]] => Unit) {
       parent.foreach { element =>
         if (f(element.get)) obs(Change.Insert(Position.Last(), element))

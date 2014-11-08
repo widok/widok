@@ -6,6 +6,9 @@ package org.widok
  *
  * If an operation produces a single value, the return type is ReadChannel[_],
  * otherwise Out[_].
+ *
+ * Var, LazyVar and Opt are StateChannels.
+ * VarBuf and Buffer are Aggregates.
  */
 
 /** Unbounded stream. */
@@ -32,7 +35,6 @@ trait BoundedStreamFunctions[Out[_], T] extends StreamFunctions[Out, T] {
   /**
    * Returns first element with the possibility of non-existence
    *
-   * @note Channels: TBD
    * @note Aggregates: Some(First row) or None if the list is empty.
    */
   def headOption: ReadChannel[Option[T]]
@@ -64,7 +66,7 @@ trait MapFunctions[Out[_], T] {
   def map[U](f: T => U): Out[U]
   def partialMap[U](f: PartialFunction[T, U]): Out[U]
   def flatMap[U](f: T => Out[U]): Out[U]
-  def takeUntil(ch: Channel[_]): Out[T]
+  def takeUntil(ch: ReadChannel[_]): Out[T]
 
   /**
    * Equality check
@@ -125,7 +127,27 @@ trait UpdateSequenceFunctions[Container[_], T] {
 }
 
 trait SizeFunctions[T] {
+  /**
+   * @note Channels: The size is only produced in response to each
+   *       received value on the channel.
+   * @note StateChannels: Produce when a new child is attached and if
+   *       the size changes. In Opt the size is reset if the value is
+   *       cleared.
+   * @note Aggregates: Produce the row count once a row is added or
+   *       removed.
+   */
   def size: ReadChannel[Int]
+
+  /**
+   * @note Channels: Produces false with the first received value. Opt
+   *       on the other hand will produce true if the current value is
+   *       cleared.
+   * @note Aggregates: Produce a new value once a row is added or removed.
+   */
   def isEmpty: ReadChannel[Boolean]
+
+  /**
+   * Negation of ``isEmpty``
+   */
   def nonEmpty: ReadChannel[Boolean]
 }

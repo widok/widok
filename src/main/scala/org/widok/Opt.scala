@@ -12,13 +12,14 @@ object Opt {
  * Publishes a stream of defined values. Use isEmpty() to detect when the
  * current value is cleared.
  */
-case class Opt[T]() extends StateChannel[T] with SizeFunctions[T] {
+case class Opt[T]() extends StateChannel[T] {
   private var cached: Option[T] = None
   private val defined = LazyVar[Boolean](cached.isDefined)
 
   attach { t =>
+    val prevDefined = cached.isDefined
     cached = Some(t)
-    defined.produce()
+    if (!prevDefined) defined.produce()
   }
 
   def isEmpty: ReadChannel[Boolean] = defined.map(!_)
@@ -30,15 +31,21 @@ case class Opt[T]() extends StateChannel[T] with SizeFunctions[T] {
     if (cached.isDefined) f(cached.get)
   }
 
-  def size: ReadChannel[Int] = defined.map(if (_) 1 else 0)
+  def size: ReadChannel[Int] =
+    defined.flatMap { state =>
+      if (!state) Var(0)
+      else foldLeft(0) { case (acc, cur) => acc + 1 }
+    }
 
   def clear() {
+    val prevDefined = cached.isDefined
     cached = None
-    defined.produce()
+    if (prevDefined) defined.produce()
   }
 
   /** @note This method may only be called if the value is defined. */
   def get: T = cached.get
 
-  override def toString = cached.map(_.toString).getOrElse("<undefined>")
+  private def str = cached.map(_.toString).getOrElse("<undefined>")
+  override def toString = s"Opt($str)"
 }

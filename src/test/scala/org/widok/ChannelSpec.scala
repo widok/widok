@@ -12,13 +12,14 @@ object ChannelSpec extends FunSuite {
   }
 
   /** Checks whether two channels behave in the same way. */
-  def assertEquals[T](ch: ReadChannel[T], ch2: ReadChannel[T]) {
+  def assertEquals[T](ch: ReadChannel[T], ch2: ReadChannel[T], parent: Option[Channel[Int]] = None) {
     val left = mutable.ArrayBuffer[T]()
     val right = mutable.ArrayBuffer[T]()
 
     tickExpr = () => {
-      Assert.isEquals(left, right, "Both channels produce the same values")
-      Assert.isEquals(ch.attached, ch2.attached, "Both channels have the same ``attached`` state")
+      Assert.isEquals(left, right,
+        "Both channels produce the same values",
+        "Channel type: " + parent.map(_.getClass))
     }
 
     ch.attach { value => left += value }
@@ -29,7 +30,7 @@ object ChannelSpec extends FunSuite {
     /* Different channel types may differ in their semantics. */
     val channels = Seq(
       () => Var[Int](0),
-      () => Opt[Int](),
+      () => Opt[Int](0),
       () => Channel[Int]())
     val elems = Seq(1, 2, 3)
 
@@ -38,7 +39,7 @@ object ChannelSpec extends FunSuite {
       val ch = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch, value)
-        assertEquals(lch, rch)
+        assertEquals(lch, rch, Some(ch))
         ch := value
         tick()
       }
@@ -49,7 +50,7 @@ object ChannelSpec extends FunSuite {
       val ch2 = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch2, value * 2)
-        assertEquals(lch, rch)
+        assertEquals(lch, rch, Some(ch))
         ch2 := value
         tick()
       }
@@ -79,6 +80,20 @@ object ChannelSpec extends FunSuite {
     // TODO Use Channel.fromSeq()
     assertEquals(Var(42).head, Var(42))
     forallCh(ch => (ch.head, ch.take(1)))
+  }
+
+  test("isEmpty") {
+    assertEquals(Var(42).isEmpty, Var(false))
+    assertEquals(Opt().isEmpty, Var(true))
+    forallCh(ch => (ch.isEmpty, ch.nonEmpty.map(!_)))
+    forallCh(ch => (ch.nonEmpty, ch.head.map(_ => true)))
+  }
+
+  test("size") {
+    assertEquals(Var(42).size, Var(1))
+    assertEquals(Opt().size, Var(0))
+    assertEquals(Opt(1).size, Var(1))
+    forallCh(ch => (ch.size, ch.foldLeft(0) { case (acc, cur) => acc + 1 }))
   }
 
   test("Opt") {
