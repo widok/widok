@@ -236,4 +236,33 @@ object ChannelTest extends FunSuite {
     ch2 := 43
     expect(value == (24, 43)).toBe(true)
   }
+
+  test("flatMap()") {
+    val ch = Opt[Int]()
+    val ch2 = Channel[Int]()
+
+    val map = ch.flatMapCh(_ => ch2)
+
+    var sum = 0
+    ch2.attach(sum += _)
+
+    map := 1
+    ch := 0
+
+    map := 5
+    Assert.isEquals(sum, 5)
+  }
+
+  test("flatMap()") {
+    val ch = Opt[Int]()
+    val map = ch.flatMapCh(_ => Var(42))
+
+    var sum = 0
+
+    ch.attach(sum += _)
+    map.attach(sum += _)
+
+    ch := 0
+    Assert.isEquals(sum, 42)
+  }
 }

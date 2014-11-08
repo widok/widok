@@ -57,7 +57,7 @@ trait ReadChannel[T]
     buf
   }
 
-  /** Uni-directional read/write fork */
+  /** Uni-directional fork for values */
   def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
     val ch = UniChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
@@ -65,9 +65,17 @@ trait ReadChannel[T]
     ch
   }
 
-  /** Uni-directional flat fork */
-  def forkFlat[U](observer: Observer[T, ReadChannel[U]], silent: Boolean = false): ReadChannel[U] = {
+  /** Uni-directional fork for channels */
+  def forkUniFlat[U](observer: Observer[T, ReadChannel[U]], silent: Boolean = false): ReadChannel[U] = {
     val ch = FlatChildChannel[T, U](this, observer)
+    children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
+    if (!silent) flush(ch.process)
+    ch
+  }
+
+  /** Bi-directional fork for channels */
+  def forkBiFlat[U](obs: Observer[T, Channel[U]], silent: Boolean = false): Channel[U] = {
+    val ch = BiFlatChildChannel[T, U](this, obs)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     if (!silent) flush(ch.process)
     ch
@@ -134,11 +142,11 @@ trait ReadChannel[T]
     }
 
   def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] =
-    forkFlat(value => Result.Next(Some(f(value))))
+    forkUniFlat(value => Result.Next(Some(f(value))))
 
-  // TODO Not covered by flatMap() in ``MapFunctions``. Probably ``Channel`` needs to
-  // be co-variant.
-  def flatMapCh[U](f: T => Channel[U]): Channel[U] = ???
+  /** flatMap with back-propagation. */
+  def flatMapCh[U](f: T => Channel[U]): Channel[U] =
+    forkBiFlat(value => Result.Next(Some(f(value))))
 
   def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
     forkUni { value =>
@@ -148,7 +156,7 @@ trait ReadChannel[T]
   /** @note Caches the accumulator value. */
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = {
     var accum = acc
-    forkFlat { value =>
+    forkUniFlat { value =>
       accum = f(accum, value)
       Result.Next(Some(Var(accum)))
     }
@@ -192,7 +200,7 @@ trait ReadChannel[T]
 
   def distinct: ReadChannel[T] = {
     var cur = Option.empty[T]
-    forkFlat { value =>
+    forkUniFlat { value =>
       if (cur.contains(value)) Result.Next(None)
       else {
         cur = Some(value)
@@ -245,7 +253,7 @@ trait WriteChannel[T] {
     }
   }
 
-  /** Bi-directional fork */
+  /** Bi-directional fork for values */
   def forkBi[U](fwd: Observer[T, U], bwd: Observer[U, T], silent: Boolean = false): Channel[U] = {
     val ch = BiChildChannel[T, U](this, fwd, bwd)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
@@ -428,6 +436,62 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
   def dispose() {
     assert(attached)
     disposable = true
+
+    back.dispose()
+
+    children.foreach(_.dispose())
+    children.clear()
+  }
+}
+
+case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
+                                    observer: Channel.Observer[T, Channel[U]])
+  extends ChildChannel[T, U]
+{
+  private var bound: Channel[U] = null
+  var ignore: ReadChannel[Unit] = null
+
+  def attached: Boolean =
+    parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
+
+  val back = silentAttach { value =>
+    if (bound != null && ignore != null) bound.produce(value, ignore)
+  }
+
+  def onChannel(ch: Option[Channel[U]]) {
+    if (bound != null) {
+      bound.dispose()
+      bound = null
+    }
+
+    if (ch.isDefined) {
+      bound = ch.get
+      ignore = bound.attach(this := _)
+    }
+  }
+
+  def process(value: T) {
+    observer(value) match {
+      case Result.Next(resultValue) =>
+        onChannel(resultValue)
+
+      case Result.Done(resultValue) =>
+        onChannel(resultValue)
+        disposable = true
+    }
+  }
+
+  def flush(f: U => Unit) {
+    if (bound != null) bound.flush(f)
+  }
+
+  def dispose() {
+    assert(attached)
+    disposable = true
+
+    if (bound != null) bound.dispose()
+
+    back.dispose()
 
     children.foreach(_.dispose())
     children.clear()
