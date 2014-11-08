@@ -36,9 +36,8 @@ trait ReadChannel[T]
 
   private[widok] val children = mutable.Queue[ChildChannel[T, Any]]()
 
+  /** Flush data and call f for each element */
   def flush(f: T => Unit)
-
-  def request()
 
   def attach(f: T => Unit): ReadChannel[Unit] =
     forkUni { value =>
@@ -62,7 +61,7 @@ trait ReadChannel[T]
   def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
     val ch = UniChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
-    if (!silent) ch.request()
+    if (!silent) flush(ch.process)
     ch
   }
 
@@ -70,7 +69,7 @@ trait ReadChannel[T]
   def forkFlat[U](observer: Observer[T, ReadChannel[U]], silent: Boolean = false): ReadChannel[U] = {
     val ch = FlatChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
-    if (!silent) ch.request()
+    if (!silent) flush(ch.process)
     ch
   }
 
@@ -213,28 +212,44 @@ trait WriteChannel[T] {
   def flush(f: T => Unit)
 
   def produce(value: T) {
-    children.dequeueAll(_.process(value))
+    children.dequeueAll { child =>
+      if (!child.disposable) child.process(value)
+      child.disposable
+    }
   }
 
   def produce[U](value: T, ignore: ReadChannel[U]*) {
     assume(ignore.forall(children.contains))
-    children.diff(ignore).dequeueAll(_.process(value))
+    children.diff(ignore).dequeueAll { child =>
+      if (!child.disposable) child.process(value)
+      child.disposable
+    }
   }
 
-  def flatProduce(v: Option[T]) {
-    v.foreach(cur => children.dequeueAll(_.process(cur)))
+  def flatProduce(value: Option[T]) {
+    value.foreach { v =>
+      children.dequeueAll { child =>
+        if (!child.disposable) child.process(v)
+        child.disposable
+      }
+    }
   }
 
-  def flatProduce[U](v: Option[T], ignore: Observer[T, U]*) {
+  def flatProduce[U](value: Option[T], ignore: Observer[T, U]*) {
     assume(ignore.forall(children.contains))
-    v.foreach(cur => children.diff(ignore).dequeueAll(_.process(cur)))
+    value.foreach { v =>
+      children.diff(ignore).dequeueAll { child =>
+        if (!child.disposable) child.process(v)
+        child.disposable
+      }
+    }
   }
 
   /** Bi-directional fork */
   def forkBi[U](fwd: Observer[T, U], bwd: Observer[U, T], silent: Boolean = false): Channel[U] = {
     val ch = BiChildChannel[T, U](this, fwd, bwd)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
-    if (!silent) ch.request()
+    if (!silent) flush(ch.process)
     ch
   }
 
@@ -262,14 +277,14 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther))
     obsOther = other.attach(produce(_, obsThis))
-    obsThis.request()
+    flush(obsThis.asInstanceOf[UniChildChannel[Any, Any]].process)
   }
 
   def <<>>(other: Channel[T], ignoreOther: ReadChannel[Unit]) {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther, ignoreOther))
     obsOther = other.attach(produce(_, obsThis))
-    obsThis.request()
+    flush(obsThis.asInstanceOf[UniChildChannel[Any, Any]].process)
   }
 
   def +(write: WriteChannel[T]): Channel[T] = {
@@ -288,8 +303,10 @@ trait ChildChannel[T, U]
   with ChannelDefaultSize[U]
   with ChannelDefaultEmpty[U]
 {
+  private[widok] var disposable = false
+
   /** Return true if the stream is completed. */
-  def process(value: T): Boolean
+  def process(value: T)
 }
 
 case class FlatChildChannel[T, U](parent: ReadChannel[T],
@@ -313,22 +330,15 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
     }
   }
 
-  def process(value: T): Boolean =
+  def process(value: T) {
     observer(value) match {
       case Result.Next(resultValue) =>
         onChannel(resultValue)
-        false
 
       case Result.Done(resultValue) =>
         onChannel(resultValue)
-        true
+        disposable = true
     }
-
-  /** Flush data from parent */
-  def request() {
-    parent.flush(value =>
-      if (process(value))
-        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
   }
 
   def flush(f: U => Unit) {
@@ -337,9 +347,12 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 
   def dispose() {
     assert(attached)
+    disposable = true
+
     if (bound != null) bound.dispose()
-    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
-    while (children.nonEmpty) children.head.dispose()
+
+    children.foreach(_.dispose())
+    children.clear()
   }
 }
 
@@ -351,21 +364,16 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   def attached: Boolean =
     parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
 
-  def process(value: T): Boolean =
+  def process(value: T) {
+    assert(!disposable)
+
     observer(value) match {
       case Result.Next(resultValue) =>
         flatProduce(resultValue)
-        false
       case Result.Done(resultValue) =>
         flatProduce(resultValue)
-        true
+        disposable = true
     }
-
-  /** Flush data from parent */
-  def request() {
-    parent.flush(value =>
-      if (process(value))
-        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
   }
 
   def flush(f: U => Unit) {
@@ -374,15 +382,18 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
 
   def dispose() {
     assert(attached)
-    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
-    while (children.nonEmpty) children.head.dispose()
+    disposable = true
+
+    children.foreach(_.dispose())
+    children.clear()
   }
 }
 
 /** Bi-directional child */
 case class BiChildChannel[T, U](parent: WriteChannel[T],
                                 fwd: Channel.Observer[T, U],
-                                bwd: Channel.Observer[U, T]) extends ChildChannel[T, U]
+                                bwd: Channel.Observer[U, T])
+  extends ChildChannel[T, U]
 {
   def attached: Boolean =
     parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
@@ -398,21 +409,17 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
     }
   }
 
-  def request() {
-    parent.flush(value =>
-      if (process(value))
-        parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]]))
-  }
+  def process(value: T) {
+    assert(!disposable)
 
-  def process(value: T): Boolean =
     fwd(value) match {
       case Result.Next(resultValue) =>
         resultValue.foreach(r => produce(r, back))
-        false
       case Result.Done(resultValue) =>
         resultValue.foreach(r => produce(r, back))
-        true
+        disposable = true
     }
+  }
 
   def flush(f: U => Unit) {
     parent.flush(fwd(_).valueOpt.foreach(f))
@@ -420,8 +427,10 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
 
   def dispose() {
     assert(attached)
-    parent.children.dequeueFirst(_ == this.asInstanceOf[ChildChannel[T, Any]])
-    while (children.nonEmpty) children.head.dispose()
+    disposable = true
+
+    children.foreach(_.dispose())
+    children.clear()
   }
 }
 
@@ -456,16 +465,15 @@ trait RootChannel[T]
   with ChannelDefaultSize[T]
   with ChannelDefaultEmpty[T]
 {
-  def request() { }
   def attached: Boolean = false
 
   def dispose() {
-    while (children.nonEmpty) children.head.dispose()
+    children.foreach(_.dispose())
+    children.clear()
   }
 }
 
 trait StateChannel[T] extends Channel[T] {
-  def request() { }
   def attached: Boolean = false
 
   def update(f: T => T) {
@@ -491,6 +499,7 @@ trait StateChannel[T] extends Channel[T] {
   }
 
   def dispose() {
-    while (children.nonEmpty) children.head.dispose()
+    children.foreach(_.dispose())
+    children.clear()
   }
 }

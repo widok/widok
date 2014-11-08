@@ -117,7 +117,7 @@ object VarBuf {
   }
 }
 
-case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends ReadVarBuf[T] {
+case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends ReadVarBuf[T] with Disposable {
   import Aggregate.Change
   import Aggregate.Position
 
@@ -144,29 +144,33 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   def indexOf(value: Var[T]): Int = toSeq.indexOf(value)
   def toSeq: Seq[Var[T]] = parent.toSeq.filter(mapping.isDefinedAt)
 
-  val child = parent.changes.attach {
-    case Change.Insert(position, element) =>
-      element.attach { value =>
-        if (f(value)) {
-          val mappedPosition = Position.Last[Var[T]]() // TODO must preserve old order via position.map(...)
-          chChanges := Change.Insert(mappedPosition, element)
-          mapping += element -> (())
-        } else if (mapping.isDefinedAt(element)) {
+  def parentChange(change: Change[Var[T]]) {
+    change match {
+      case Change.Insert(position, element) =>
+        element.attach { value =>
+          if (f(value)) {
+            val mappedPosition = Position.Last[Var[T]]() // TODO must preserve old order via position.map(...)
+            chChanges := Change.Insert(mappedPosition, element)
+            mapping += element -> (())
+          } else if (mapping.isDefinedAt(element)) {
+            chChanges := Change.Remove(element)
+            mapping -= element
+          }
+        }
+
+      case Change.Remove(element) =>
+        // TODO detach above listener here
+        if (mapping.isDefinedAt(element)) {
           chChanges := Change.Remove(element)
           mapping -= element
         }
-      }
 
-    case Change.Remove(element) =>
-      // TODO detach above listener here
-      if (mapping.isDefinedAt(element)) {
-        chChanges := Change.Remove(element)
-        mapping -= element
-      }
-
-    case Change.Clear() =>
-      clear()
+      case Change.Clear() =>
+        clear()
+    }
   }
+
+  parent.changes.attach(parentChange)
 
   private[widok] def clear() {
     // TODO detach above listener here
@@ -177,6 +181,8 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   /** Clear mapping and reapply f() for all parent elements. */
   private[widok] def reset() {
     clear()
-    child.request()
+    parent.changes.flush(parentChange)
   }
+
+  def dispose() = ???
 }
