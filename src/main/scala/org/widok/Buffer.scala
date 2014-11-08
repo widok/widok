@@ -44,17 +44,17 @@ trait ReadBuffer[T]
   def lastOption: ReadChannel[Option[T]] = ???
 
   def head: ReadChannel[T] = chChanges.partialMap {
-    case Change.Insert(Position.Head(), element) =>
-      element
-
-    case Change.Insert(Position.Last(), element)
-      if currentSize == 0 => element
-
-    case Change.Insert(Position.Before(before), element)
-      if get(0) == before => element
+    case Change.Insert(Position.Head(), element) => element
+    case Change.Insert(Position.Last(), element) if get(0) == element => element
+    case Change.Insert(Position.Before(before), element) if get(0) == element => element
   }
 
-  def last: ReadChannel[T] = lastOption.map(_.get)
+  def last: ReadChannel[T] = chChanges.partialMap {
+    case Change.Insert(Position.Head(), element) if get(0) == element => element
+    case Change.Insert(Position.Last(), element) => element
+    case Change.Insert(Position.After(after), element)
+      if get(currentSize - 1) == after => element
+  }
 
   def tail: ReadBuffer[T] = ???
 
@@ -101,35 +101,35 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[Aggregate, T] {
   private[widok] val chChanges: Channel[Change[T]]
 
   def prepend(elem: T) {
-    chChanges := Change.Insert(Position.Head(), elem)
     elements.prepend(elem)
+    chChanges := Change.Insert(Position.Head(), elem)
   }
 
   def append(elem: T) {
-    chChanges := Change.Insert(Position.Last(), elem)
     elements.append(elem)
+    chChanges := Change.Insert(Position.Last(), elem)
   }
 
   def insertBefore(ref: T, elem: T) {
-    chChanges := Change.Insert(Position.Before(ref), elem)
     val position = elements.indexOf(ref) - 1
     elements.insert(position, elem)
+    chChanges := Change.Insert(Position.Before(ref), elem)
   }
 
   def insertAfter(ref: T, elem: T) {
-    chChanges := Change.Insert(Position.After(ref), elem)
     val position = elements.indexOf(ref) + 1
     elements.insert(position, elem)
+    chChanges := Change.Insert(Position.After(ref), elem)
   }
 
   def remove(handle: T) {
-    chChanges := Change.Remove(handle)
     elements -= handle
+    chChanges := Change.Remove(handle)
   }
 
   def clear() {
-    chChanges := Change.Clear()
     elements.clear()
+    chChanges := Change.Clear()
   }
 
   def set(items: T*) {

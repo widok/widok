@@ -192,11 +192,11 @@ trait ReadChannel[T]
 
   def distinct: ReadChannel[T] = {
     var cur = Option.empty[T]
-    forkUni { value =>
+    forkFlat { value =>
       if (cur.contains(value)) Result.Next(None)
       else {
         cur = Some(value)
-        Result.Next(cur)
+        Result.Next(Some(Var(cur.get)))
       }
     }
   }

@@ -47,7 +47,7 @@ trait Aggregate[T] extends SizeFunctions[T] {
   def size: ReadChannel[Int] =
     chChanges.forkUni { change =>
       Result.Next(Some(currentSize))
-    }
+    }.distinct
 
   def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
   def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
