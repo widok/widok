@@ -12,7 +12,11 @@ trait Buffer[T]
   with WriteBuffer[T]
 
 object Buffer {
-  def apply[T]() = new Buffer[T] { }
+  def apply[T](elements: T*) = {
+    val buf = new Buffer[T] { }
+    elements.foreach(buf.append)
+    buf
+  }
 }
 
 trait ReadBuffer[T]
@@ -35,7 +39,11 @@ trait ReadBuffer[T]
     else None
   }
 
-  def splitAt(element: T): (ReadBuffer[T], ReadBuffer[T]) = ???
+  def splitAt(element: T): (ReadBuffer[T], ReadBuffer[T]) = {
+    val seq = toSeq
+    val (left, right) = seq.splitAt(seq.indexOf(element))
+    (Buffer(left: _*), Buffer(right: _*))
+  }
 
   def take(count: Int): ReadBuffer[T] = ???
   def skip(count: Int): ReadBuffer[T] = ???
