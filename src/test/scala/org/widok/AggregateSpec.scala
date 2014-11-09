@@ -6,6 +6,22 @@ import cgta.otest.FunSuite
 object AggregateSpec extends FunSuite {
   import ChannelSpec._
 
+  def materialise[T](buf: ReadVarBuf[T]): Seq[Var[T]] = {
+    import Aggregate._
+    val res = mutable.ArrayBuffer.empty[Var[T]]
+    buf.changes.attach {
+      case Change.Insert(Position.Head(), element) => res.prepend(element)
+      case Change.Insert(Position.Last(), element) => res += element
+      case Change.Insert(Position.Before(before), element) =>
+        res.insert(res.indexOf(before) - 1, element)
+      case Change.Insert(Position.After(after), element) =>
+        res.insert(res.indexOf(after), element)
+      case Change.Remove(element) => res -= element
+      case Change.Clear() => res.clear()
+    }
+    res
+  }
+
   def forallBuf[T](f: VarBuf[Int] => (ReadChannel[T], ReadChannel[T])) {
     val elems = Seq(1, 2, 3)
 
@@ -29,7 +45,7 @@ object AggregateSpec extends FunSuite {
 
     val varbuf = VarBuf[Int]()
 
-    /** TODO Also check deletions and updates. */
+    /** Set up handler before insertion */
     elems.foreach { elem =>
       val (lch, rch) = f(varbuf)
       varbuf += elem
@@ -39,6 +55,41 @@ object AggregateSpec extends FunSuite {
         tick()
       }
     }
+
+    /** Set up handler after insertion */
+    elems.foreach { elem =>
+      varbuf += elem
+      val (lch, rch) = f(varbuf)
+      Assert.equals(lch.size, rch.size)
+      lch.zip(rch).foreach { case (a, b) =>
+        assertEquals(a, b)
+        tick()
+      }
+    }
+
+    /** Deleting */
+    elems.foreach { elem =>
+      val (lch, rch) = f(varbuf)
+
+      val fst = varbuf += elem
+      val snd = varbuf += elem
+
+      val sizeBefore = (lch.size, rch.size)
+      Assert.equals(lch.size, rch.size)
+
+      varbuf -= fst
+      val sizeAfter = (lch.size, rch.size)
+
+      Assert.equals(lch.size, rch.size)
+      Assert.isNotEquals(sizeBefore, sizeAfter)
+
+      lch.zip(rch).foreach { case (a, b) =>
+        assertEquals(a, b)
+        tick()
+      }
+    }
+
+    /** TODO Also check updating. */
   }
 
   test("head") {
@@ -58,6 +109,6 @@ object AggregateSpec extends FunSuite {
   }
 
   test("map") {
-    forallBufSeq(varbuf => (varbuf.map(_ * 3).toSeq, varbuf.toSeq.map(_.map(_ * 3))))
+    forallBufSeq(varbuf => (materialise(varbuf.map(_ * 3)), varbuf.toSeq.map(_.map(_ * 3))))
   }
 }

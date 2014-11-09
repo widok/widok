@@ -220,6 +220,7 @@ case class MappedVarBuf[T, U](parent: ReadVarBuf[T], f: T => U) extends ReadVarB
         /** TODO mapping += element -> element.map(f) */
         mapping += element -> Var(f(element.get))
         mapping(element) << element.map(f)
+        chChanges := Change.Insert(position.map(mapping), mapping(element))
 
       case Change.Remove(element) =>
         chChanges := Change.Remove(mapping(element))
