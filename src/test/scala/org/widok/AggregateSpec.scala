@@ -28,6 +28,14 @@ object AggregateSpec extends FunSuite {
     forallBuf(varbuf => (varbuf.head.isEmpty, varbuf.isEmpty))
   }
 
+  test("headOption") {
+    forallBuf(varbuf => (varbuf.headOption.partialMap { case Some(v) => v }, varbuf.head))
+  }
+
+  test("lastOption") {
+    forallBuf(varbuf => (varbuf.lastOption.partialMap { case Some(v) => v }, varbuf.last))
+  }
+
   test("last") {
     forallBuf(varbuf => (varbuf.last.isEmpty, varbuf.isEmpty))
   }

@@ -82,6 +82,10 @@ object ChannelSpec extends FunSuite {
     forallCh(ch => (ch.head, ch.take(1)))
   }
 
+  test("distinct") {
+    forallCh(ch => (ch.head.distinct, ch.head))
+  }
+
   test("isEmpty") {
     assertEquals(Var(42).isEmpty, Var(false))
     assertEquals(Opt().isEmpty, Var(true))

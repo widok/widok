@@ -49,6 +49,20 @@ object ChannelTest extends FunSuite {
   }
 
   test("distinct()") {
+    val ch = Opt[Int](0)
+    val ch2 = ch.distinct
+
+    var sum = 0
+
+    ch := 1
+    ch := 1
+    ch := 2
+
+    ch2.attach(sum += _)
+    expect(sum).toBe(2)
+  }
+
+  test("distinct()") {
     val ch = LazyVar[Int](42).distinct
 
     var sum = 0

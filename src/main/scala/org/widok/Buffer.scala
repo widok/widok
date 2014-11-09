@@ -40,8 +40,15 @@ trait ReadBuffer[T]
   def take(count: Int): ReadBuffer[T] = ???
   def skip(count: Int): ReadBuffer[T] = ???
 
-  def headOption: ReadChannel[Option[T]] = ???
-  def lastOption: ReadChannel[Option[T]] = ???
+  def headOption: ReadChannel[Option[T]] = chChanges.map { _ =>
+    if (currentSize == 0) None
+    else Some(get(0))
+  }.distinct
+
+  def lastOption: ReadChannel[Option[T]] = chChanges.map { _ =>
+    if (currentSize == 0) None
+    else Some(get(currentSize - 1))
+  }.distinct
 
   def head: ReadChannel[T] = chChanges.partialMap {
     case Change.Insert(Position.Head(), element) => element
