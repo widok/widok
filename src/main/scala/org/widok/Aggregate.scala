@@ -43,6 +43,7 @@ trait Aggregate[T] extends SizeFunctions[T] {
   def currentSize: Int
 
   def toVarMap[U](default: U): AggMap[T, Var[U]] = VarMap(this, default)
+  def toOptMap[U]: AggMap[T, Opt[U]] = OptMap(this)
 
   def size: ReadChannel[Int] =
     chChanges.forkUni { change =>

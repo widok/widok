@@ -23,7 +23,7 @@ trait UnorderedMap[A, B] extends Aggregate[(A, B)] {
  * Changes such as insertions and removals in the aggregate are propagated.
  * A constant value is assigned to each element when it is inserted.
  */
-case class AggMap[A, B](parent: Aggregate[A], elementValue: B) extends UnorderedMap[A, B] {
+case class AggMap[A, B](parent: Aggregate[A], elementValue: () => B) extends UnorderedMap[A, B] {
   import Aggregate.Change
   import Aggregate.Position
 
@@ -41,7 +41,7 @@ case class AggMap[A, B](parent: Aggregate[A], elementValue: B) extends Unordered
 
   parent.chChanges.attach {
     case Change.Insert(position, element) =>
-      mapping += element -> elementValue
+      mapping += element -> elementValue()
       chChanges := Change.Insert(
         position.map(value => (value, mapping(value))), (element, mapping(element)))
 
@@ -61,5 +61,10 @@ case class AggMap[A, B](parent: Aggregate[A], elementValue: B) extends Unordered
  */
 object VarMap {
   def apply[A, B](parent: Aggregate[A], default: B) =
-    AggMap[A, Var[B]](parent, Var(default))
+    AggMap[A, Var[B]](parent, () => Var(default))
+}
+
+object OptMap {
+  def apply[A, B](parent: Aggregate[A]) =
+    AggMap[A, Opt[B]](parent, () => Opt[B]())
 }
