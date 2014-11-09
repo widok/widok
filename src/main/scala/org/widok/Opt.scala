@@ -46,6 +46,13 @@ case class Opt[T]() extends StateChannel[T] {
   /** @note This method may only be called if the value is defined. */
   def get: T = cached.get
 
+  def getOrElse(default: => T): T = cached.getOrElse(default)
+  def orElse(default: => ReadChannel[T]): ReadChannel[T] =
+    defined.flatMap { value =>
+      if (value) Var(cached.get)
+      else default
+    }
+
   private def str = cached.map(_.toString).getOrElse("<undefined>")
   override def toString = s"Opt($str)"
 }
