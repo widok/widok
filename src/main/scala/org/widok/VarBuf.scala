@@ -46,7 +46,7 @@ trait ReadVarBuf[T]
     (left, right)
   }
 
-  def map[U](f: T => U): ReadVarBuf[U] = ???
+  def map[U](f: T => U): ReadVarBuf[U] = MappedVarBuf(this, f)
   def partialMap[U](f: PartialFunction[T, U]): ReadVarBuf[U] = ???
   def flatMap[U](f: T => ReadVarBuf[U]): ReadVarBuf[U] = ???
   def takeUntil(ch: ReadChannel[_]): ReadVarBuf[T] = ???
@@ -140,7 +140,7 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   }
 
   def contains(element: Var[T]): Boolean = mapping.isDefinedAt(element)
-  def get(value: Int): Var[T] =  toSeq(value)
+  def get(value: Int): Var[T] = toSeq(value)
   def indexOf(value: Var[T]): Int = toSeq.indexOf(value)
   def toSeq: Seq[Var[T]] = parent.toSeq.filter(mapping.isDefinedAt)
 
@@ -185,4 +185,58 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   }
 
   def dispose() = ???
+}
+
+case class MappedVarBuf[T, U](parent: ReadVarBuf[T], f: T => U) extends ReadVarBuf[U] with Disposable {
+  import Aggregate.Change
+  import Aggregate.Position
+
+  private[widok] var mapping = new mutable.HashMap[Var[T], Var[U]]()
+
+  private[widok] val chChanges = new RootChannel[Change[Var[U]]] {
+    def flush(obs: Change[Var[U]] => Unit) {
+      parent.foreach { element =>
+        obs(Change.Insert(Position.Last(), mapping(element)))
+      }
+    }
+  }
+
+  def currentSize: Int = mapping.size
+
+  def foreach(f: Var[U] => Unit) {
+    parent.foreach { element =>
+      f(mapping(element))
+    }
+  }
+
+  def contains(element: Var[U]): Boolean = mapping.values.exists(_ == element)
+  def get(value: Int): Var[U] = toSeq(value)
+  def indexOf(value: Var[U]): Int = toSeq.indexOf(value)
+  def toSeq: Seq[Var[U]] = parent.toSeq.map(mapping)
+
+  def parentChange(change: Change[Var[T]]) {
+    change match {
+      case Change.Insert(position, element) =>
+        /** TODO mapping += element -> element.map(f) */
+        mapping += element -> Var(f(element.get))
+        mapping(element) << element.map(f)
+
+      case Change.Remove(element) =>
+        chChanges := Change.Remove(mapping(element))
+        mapping(element).dispose()
+        mapping -= element
+
+      case Change.Clear() =>
+        chChanges := Change.Clear()
+        mapping.foreach(_._2.dispose())
+        mapping.clear()
+    }
+  }
+
+  val child = parent.changes.attach(parentChange)
+
+  def dispose() = {
+    child.dispose()
+    mapping.foreach(_._2.dispose())
+  }
 }

@@ -24,6 +24,23 @@ object AggregateSpec extends FunSuite {
     tick()
   }
 
+  def forallBufSeq[T](f: VarBuf[Int] => (Seq[ReadChannel[T]], Seq[ReadChannel[T]])): Unit = {
+    val elems = Seq(1, 2, 3)
+
+    val varbuf = VarBuf[Int]()
+
+    /** TODO Also check deletions and updates. */
+    elems.foreach { elem =>
+      val (lch, rch) = f(varbuf)
+      varbuf += elem
+      Assert.equals(lch.size, rch.size)
+      lch.zip(rch).foreach { case (a, b) =>
+        assertEquals(a, b)
+        tick()
+      }
+    }
+  }
+
   test("head") {
     forallBuf(varbuf => (varbuf.head.isEmpty, varbuf.isEmpty))
   }
@@ -38,5 +55,9 @@ object AggregateSpec extends FunSuite {
 
   test("last") {
     forallBuf(varbuf => (varbuf.last.isEmpty, varbuf.isEmpty))
+  }
+
+  test("map") {
+    forallBufSeq(varbuf => (varbuf.map(_ * 3).toSeq, varbuf.toSeq.map(_.map(_ * 3))))
   }
 }
