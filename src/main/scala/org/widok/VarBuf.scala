@@ -6,7 +6,10 @@ trait ReadVarBuf[T]
   extends ReadBuffer[Var[T]]
   with FilterFunctions[ReadVarBuf, T]
   with MapFunctions[ReadVarBuf, T]
+  with FoldFunctions[T]
 {
+  import Aggregate.Change
+
   /** Materialise elements to a writable VarBuf. */
   def toVarBuf: VarBuf[T] = VarBuf(this)
 
@@ -52,6 +55,43 @@ trait ReadVarBuf[T]
   def takeUntil(ch: ReadChannel[_]): ReadVarBuf[T] = ???
   def equal(value: T): ReadChannel[Boolean] = ???
   def unequal(value: T): ReadChannel[Boolean] = ???
+
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
+
+  def exists(f: T => Boolean): ReadChannel[Boolean] = ???
+
+  def forall(f: T => Boolean): ReadChannel[Boolean] = {
+    val falseIds = new mutable.HashMap[Var[T], Unit]()
+    val state = LazyVar(falseIds.isEmpty)
+
+    chChanges.attach {
+      case Change.Insert(position, element) =>
+        // TODO detach
+        element.attach { value =>
+          if (f(value)) {
+            if (falseIds.isDefinedAt(element)) {
+              falseIds -= element
+              state.produce()
+            }
+          } else {
+            falseIds += element -> (())
+            state.produce()
+          }
+        }
+
+      case Change.Remove(element) =>
+        if (falseIds.isDefinedAt(element)) {
+          falseIds -= element
+          state.produce()
+        }
+
+      case Change.Clear() =>
+        falseIds.clear()
+        state.produce()
+    }
+
+    state
+  }
 }
 
 trait WriteVarBuf[T] extends WriteBuffer[Var[T]]
