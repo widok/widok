@@ -466,7 +466,8 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
 
     if (ch.isDefined) {
       bound = ch.get
-      ignore = bound.attach(this := _)
+      ignore = bound.silentAttach(produce)
+      bound.flush(produce)
     }
   }
 
