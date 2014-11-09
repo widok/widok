@@ -4,12 +4,17 @@ trait Disposable {
   def dispose()
 }
 
-class Resource[T](allocate: => T, disp: T => Unit) extends Disposable {
-  var res = Option.empty[T]
+class Resource[T, U](allocate: T => U, disp: U => Unit) extends Disposable {
+  private var res = Option.empty[U]
 
-  def apply(): T = {
-    if (res.isEmpty) res = Some(allocate)
+  def isDefined = res.isDefined
+
+  def apply(): U =
     res.get
+
+  def set(arg: T) {
+    if (res.isDefined) disp(res.get)
+    res = Some(allocate(arg))
   }
 
   def dispose() {
@@ -19,5 +24,5 @@ class Resource[T](allocate: => T, disp: T => Unit) extends Disposable {
 }
 
 object Resource {
-  def apply[T](allocate: => T, disp: T => Unit) = new Resource(allocate, disp)
+  def apply[T, U](allocate: T => U, disp: U => Unit) = new Resource(allocate, disp)
 }
