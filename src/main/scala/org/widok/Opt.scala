@@ -53,6 +53,8 @@ case class Opt[T]() extends StateChannel[T] {
       else default
     }
 
+  def toOption: Option[T] = cached
+
   private def str = cached.map(_.toString).getOrElse("<undefined>")
   override def toString = s"Opt($str)"
 }
