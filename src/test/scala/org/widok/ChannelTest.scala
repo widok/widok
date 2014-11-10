@@ -252,6 +252,34 @@ object ChannelTest extends FunSuite {
   }
 
   test("flatMapCh()") {
+    val ch = Channel[Var[Int]]()
+    val a = ch.flatMapCh(cur => cur)
+    val b = ch.flatMapCh(cur => cur)
+
+    ch := Var(42)
+  }
+
+  test("flatMapCh()") {
+    val ch = Channel[Var[Test]]()
+    val a = ch.flatMapCh(_.value[Int](_ >> 'a))
+    val b = ch.flatMapCh(_.value[Boolean](_ >> 'b))
+
+    var sum = 0
+    a.attach(sum += _)
+    b.attach(cur => sum += (if (cur) 1 else 0))
+
+    expect(sum).toBe(0)
+
+    val v = Var(Test(2, false))
+    ch := v
+    expect(sum).toBe(2)
+
+    sum = 0
+    v := Test(3, false)
+    expect(sum).toBe(3)
+  }
+
+  test("flatMapCh()") {
     val ch = Opt[Int]()
     val ch2 = Channel[Int]()
 

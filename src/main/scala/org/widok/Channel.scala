@@ -449,7 +449,7 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
   extends ChildChannel[T, U]
 {
   private var bound: Channel[U] = null
-  var ignore: ReadChannel[Unit] = null
+  private var ignore: ReadChannel[Unit] = null
 
   def attached: Boolean =
     parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
@@ -466,8 +466,8 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
 
     if (ch.isDefined) {
       bound = ch.get
-      ignore = bound.silentAttach(produce)
-      bound.flush(produce)
+      ignore = bound.silentAttach(produce(_, back))
+      bound.flush(produce(_, back))
     }
   }
 
