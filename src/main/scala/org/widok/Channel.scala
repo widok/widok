@@ -148,6 +148,17 @@ trait ReadChannel[T]
   def flatMapCh[U](f: T => Channel[U]): Channel[U] =
     forkBiFlat(value => Result.Next(Some(f(value))))
 
+  def flatMapBuf[U](f: T => ReadBuffer[U]): ReadBuffer[U] = {
+    val buf = Buffer[U]()
+    var child: ReadChannel[Unit] = null
+    attach { value =>
+      buf.clear()
+      if (child != null) child.dispose()
+      child = f(value).changes.attach(buf.applyChange)
+    }
+    buf
+  }
+
   def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
     forkUni { value =>
       Result.Next(f.lift(value))
