@@ -160,4 +160,15 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[Aggregate, T] {
   def removeAll(agg: Aggregate[T]) {
     agg.foreach(remove)
   }
+
+  def applyChange(change: Change[T]) {
+    change match {
+      case Change.Insert(Position.Head(), elem) => prepend(elem)
+      case Change.Insert(Position.Last(), elem) => append(elem)
+      case Change.Insert(Position.Before(before), elem) => insertBefore(before, elem)
+      case Change.Insert(Position.After(after), elem) => insertAfter(after, elem)
+      case Change.Remove(elem) => remove(elem)
+      case Change.Clear() => clear()
+    }
+  }
 }
