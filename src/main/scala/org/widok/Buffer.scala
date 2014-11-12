@@ -76,6 +76,10 @@ trait ReadBuffer[T]
   def isHead(elem: T): ReadChannel[Boolean] = headOption.map(_ == Some(elem))
   def isLast(elem: T): ReadChannel[Boolean] = lastOption.map(_ == Some(elem))
 
+  def insertions: ReadChannel[T] = chChanges.partialMap {
+    case Change.Insert(_, element) => element
+  }
+
   override def toString = toSeq.toString()
 }
 
