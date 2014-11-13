@@ -184,13 +184,35 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
   def indexOf(value: Var[T]): Int = toSeq.indexOf(value)
   def toSeq: Seq[Var[T]] = parent.toSeq.filter(mapping.isDefinedAt)
 
+  private[widok] def mapPosition(position: Aggregate.Position[Var[T]]): Aggregate.Position[Var[T]] =
+    position match {
+      case Position.Head() => Position.Head()
+      case Position.Last() => Position.Last()
+      case _ =>
+        val element = position match {
+          case Position.Before(el) => el
+          case Position.After(el) => el
+        }
+
+        if (mapping.isEmpty) Position.Last()
+        else if (mapping.isDefinedAt(element)) position
+        else {
+          val defined = parent.toSeq.filter(mapping.isDefinedAt)
+          val min = defined.minBy(cur => math.abs(parent.indexOf(cur) - parent.indexOf(element)))
+
+          position match {
+            case Position.Before(_) => Position.After(min)
+            case Position.After(_) => Position.Before(min)
+          }
+        }
+    }
+
   def parentChange(change: Change[Var[T]]) {
     change match {
       case Change.Insert(position, element) =>
         element.attach { value =>
           if (f(value)) {
-            val mappedPosition = Position.Last[Var[T]]() // TODO must preserve old order via position.map(...)
-            chChanges := Change.Insert(mappedPosition, element)
+            chChanges := Change.Insert(mapPosition(position), element)
             mapping += element -> (())
           } else if (mapping.isDefinedAt(element)) {
             chChanges := Change.Remove(element)

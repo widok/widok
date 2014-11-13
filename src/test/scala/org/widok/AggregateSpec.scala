@@ -6,22 +6,6 @@ import cgta.otest.FunSuite
 object AggregateSpec extends FunSuite {
   import ChannelSpec._
 
-  def materialise[T](buf: ReadVarBuf[T]): Seq[Var[T]] = {
-    import Aggregate._
-    val res = mutable.ArrayBuffer.empty[Var[T]]
-    buf.changes.attach {
-      case Change.Insert(Position.Head(), element) => res.prepend(element)
-      case Change.Insert(Position.Last(), element) => res += element
-      case Change.Insert(Position.Before(before), element) =>
-        res.insert(res.indexOf(before) - 1, element)
-      case Change.Insert(Position.After(after), element) =>
-        res.insert(res.indexOf(after), element)
-      case Change.Remove(element) => res -= element
-      case Change.Clear() => res.clear()
-    }
-    res
-  }
-
   def forallBuf[T](f: VarBuf[Int] => (ReadChannel[T], ReadChannel[T])) {
     val elems = Seq(1, 2, 3)
 
@@ -40,18 +24,19 @@ object AggregateSpec extends FunSuite {
     tick()
   }
 
-  def forallBufSeq[T](f: VarBuf[Int] => (Seq[ReadChannel[T]], Seq[ReadChannel[T]])): Unit = {
+  def forallBufSeq[T](f: VarBuf[Int] => (Seq[ReadChannel[T]], () => Seq[T])): Unit = {
     val elems = Seq(1, 2, 3)
 
     val varbuf = VarBuf[Int]()
 
     /** Set up handler before insertion */
     elems.foreach { elem =>
-      val (lch, rch) = f(varbuf)
+      val (lch, fr) = f(varbuf)
       varbuf += elem
-      Assert.equals(lch.size, rch.size)
-      lch.zip(rch).foreach { case (a, b) =>
-        assertEquals(a, b)
+      val r = fr()
+      Assert.equals(lch.size, r.size)
+      lch.zip(r).foreach { case (a, b) =>
+        assertConstantEquals(a, b)
         tick()
       }
     }
@@ -59,32 +44,65 @@ object AggregateSpec extends FunSuite {
     /** Set up handler after insertion */
     elems.foreach { elem =>
       varbuf += elem
-      val (lch, rch) = f(varbuf)
-      Assert.equals(lch.size, rch.size)
-      lch.zip(rch).foreach { case (a, b) =>
-        assertEquals(a, b)
+      val (lch, fr) = f(varbuf)
+      val r = fr()
+      Assert.equals(lch.size, r.size)
+      lch.zip(r).foreach { case (a, b) =>
+        assertConstantEquals(a, b)
+        tick()
+      }
+    }
+
+    /** Inserting after */
+    varbuf.clear()
+    elems.foreach { elem =>
+      val (lch, fr) = f(varbuf)
+
+      val fst = varbuf += elem
+      varbuf += elem + 1
+      varbuf.insertAfter(fst, elem + 2)
+
+      val r = fr()
+      Assert.equals(lch.size, r.size)
+
+      lch.zip(r).foreach { case (a, b) =>
+        assertConstantEquals(a, b)
+        tick()
+      }
+    }
+
+    /** Inserting before */
+    elems.foreach { elem =>
+      val (lch, fr) = f(varbuf)
+
+      val fst = varbuf += elem
+      val snd = varbuf.insertBefore(fst, elem + 1)
+
+      val r = fr()
+      Assert.equals(lch.size, r.size)
+
+      lch.zip(r).foreach { case (a, b) =>
+        assertConstantEquals(a, b)
         tick()
       }
     }
 
     /** Deleting */
     elems.foreach { elem =>
-      val (lch, rch) = f(varbuf)
+      val (lch, fr) = f(varbuf)
 
       val fst = varbuf += elem
       val snd = varbuf += elem
 
-      val sizeBefore = (lch.size, rch.size)
-      Assert.equals(lch.size, rch.size)
+      val r = fr()
+      Assert.equals(lch.size, r.size)
 
       varbuf -= fst
-      val sizeAfter = (lch.size, rch.size)
+      val rAfter = fr()
+      Assert.equals(lch.size, rAfter.size)
 
-      Assert.equals(lch.size, rch.size)
-      Assert.isNotEquals(sizeBefore, sizeAfter)
-
-      lch.zip(rch).foreach { case (a, b) =>
-        assertEquals(a, b)
+      lch.zip(rAfter).foreach { case (a, b) =>
+        assertConstantEquals(a, b)
         tick()
       }
     }
@@ -109,6 +127,10 @@ object AggregateSpec extends FunSuite {
   }
 
   test("map") {
-    forallBufSeq(varbuf => (materialise(varbuf.map(_ * 3)), varbuf.toSeq.map(_.map(_ * 3))))
+    forallBufSeq(varbuf => (varbuf.map(_ * 3).materialise, () => varbuf.toSeq.map(_.get * 3)))
+  }
+
+  test("filter") {
+    forallBufSeq(varbuf => (varbuf.filter(_ > 1).materialise, () => varbuf.toSeq.map(_.get).filter(_ > 1)))
   }
 }

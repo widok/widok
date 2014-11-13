@@ -26,6 +26,17 @@ object ChannelSpec extends FunSuite {
     ch2.attach { value => right += value }
   }
 
+  /** Checks whether ``ch`` contains the given value. */
+  def assertConstantEquals[T](ch: ReadChannel[T], value: T) {
+    val left = mutable.ArrayBuffer[T]()
+
+    tickExpr = () => {
+      Assert.isEquals(left, mutable.ArrayBuffer(value), "Channel produces one value")
+    }
+
+    ch.attach { value => left += value }
+  }
+
   def forallChVal[T](f: (Channel[Int], Int) => (ReadChannel[T], ReadChannel[T])) {
     /* Different channel types may differ in their semantics. */
     val channels = Seq(

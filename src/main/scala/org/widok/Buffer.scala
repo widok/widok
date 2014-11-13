@@ -80,6 +80,24 @@ trait ReadBuffer[T]
     case Change.Insert(_, element) => element
   }
 
+  def materialise: Seq[T] = {
+    import Aggregate._
+    val res = ArrayBuffer.empty[T]
+
+    chChanges.attach { // TODO return Resource
+      case Change.Insert(Position.Head(), element) => res.prepend(element)
+      case Change.Insert(Position.Last(), element) => res += element
+      case Change.Insert(Position.Before(before), element) =>
+        res.insert(res.indexOf(before), element)
+      case Change.Insert(Position.After(after), element) =>
+        res.insert(res.indexOf(after) + 1, element)
+      case Change.Remove(element) => res -= element
+      case Change.Clear() => res.clear()
+    }
+
+    res
+  }
+
   override def toString = toSeq.toString()
 }
 
@@ -130,7 +148,7 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[Aggregate, T] {
   }
 
   def insertBefore(ref: T, elem: T) {
-    val position = elements.indexOf(ref) - 1
+    val position = elements.indexOf(ref)
     elements.insert(position, elem)
     chChanges := Change.Insert(Position.Before(ref), elem)
   }
