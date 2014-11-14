@@ -261,7 +261,7 @@ trait WriteChannel[T] {
     }
   }
 
-  def flatProduce[U](value: Option[T], ignore: Observer[T, U]*) {
+  def flatProduce[U](value: Option[T], ignore: ReadChannel[U]*) {
     assume(ignore.forall(children.contains))
     value.foreach { v =>
       children.diff(ignore).dequeueAll { child =>
