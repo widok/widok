@@ -48,13 +48,6 @@ trait ReadChannel[T]
       Result.Next(None)
     }
 
-  /** Cycle-free attach */
-  def safeAttach(f: T => Unit): ReadChannel[Unit] =
-    forkUni(value => {
-      f(value)
-      Result.Next(None)
-    }, safe = true)
-
   def silentAttach(f: T => Unit): ReadChannel[Unit] =
     forkUni(value => {
       f(value)
@@ -68,8 +61,8 @@ trait ReadChannel[T]
   }
 
   /** Uni-directional fork for values */
-  def forkUni[U](observer: Observer[T, U], silent: Boolean = false, safe: Boolean = false): ReadChannel[U] = {
-    val ch = UniChildChannel[T, U](this, observer, safe)
+  def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
+    val ch = UniChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     if (!silent) flush(ch.process)
     ch
@@ -387,8 +380,7 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
-                                 observer: Channel.Observer[T, U],
-                                 ignoreCycles: Boolean)
+                                 observer: Channel.Observer[T, U])
   extends ChildChannel[T, U]
 {
   private var inProcess = false
@@ -398,11 +390,7 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
 
   def process(value: T) {
     assert(!disposable)
-
-    if (inProcess) {
-      if (!ignoreCycles) throw new Exception("Cycle found")
-      return
-    }
+    assert(!inProcess, "Cycle found")
 
     inProcess = true
 
