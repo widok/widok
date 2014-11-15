@@ -39,6 +39,9 @@ trait ReadChannel[T]
   /** Flush data and call f for each element */
   def flush(f: T => Unit)
 
+  def child(): ReadChannel[T] =
+    forkUni(t => Result.Next(Some(t)))
+
   def attach(f: T => Unit): ReadChannel[Unit] =
     forkUni { value =>
       f(value)
@@ -385,10 +388,10 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
                                  observer: Channel.Observer[T, U],
-                                 safe: Boolean)
+                                 ignoreCycles: Boolean)
   extends ChildChannel[T, U]
 {
-  var inProcess = false
+  private var inProcess = false
 
   def attached: Boolean =
     parent.children.contains(this.asInstanceOf[ChildChannel[T, Any]])
@@ -397,7 +400,7 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
     assert(!disposable)
 
     if (inProcess) {
-      if (!safe) throw new Exception("Cycle found")
+      if (!ignoreCycles) throw new Exception("Cycle found")
       return
     }
 
