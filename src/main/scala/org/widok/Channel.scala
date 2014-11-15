@@ -36,6 +36,18 @@ trait ReadChannel[T]
 
   private[widok] val children = mutable.Queue[ChildChannel[T, Any]]()
 
+  def cache: Opt[T] = {
+    val res = Opt[T]()
+    res << this
+    res
+  }
+
+  def cache(default: T): Var[T] = {
+    val res = Var[T](default)
+    res << this
+    res
+  }
+
   /** Flush data and call f for each element */
   def flush(f: T => Unit)
 
