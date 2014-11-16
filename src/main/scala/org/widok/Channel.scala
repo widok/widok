@@ -585,6 +585,16 @@ trait StateChannel[T] extends Channel[T] {
     res
   }
 
+  /** In contrast to zip() this produces a new value for each change of
+    * ``this`` or ``other``. Therefore, ``other`` must be a StateChannel.
+    */
+  def combine[U](other: StateChannel[U]): ReadChannel[(T, U)] = {
+    val res = Channel[(T, U)]()
+    attach(t => other.flush(u => res := (t, u)))
+    other.attach(u => flush(t => res := (t, u)))
+    res
+  }
+
   def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
     lens(f(shapeless.lens[T]))
 
