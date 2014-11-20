@@ -62,14 +62,14 @@ trait ReadBuffer[T]
     case Change.Insert(Position.Head(), element) => element
     case Change.Insert(Position.Last(), element) if get(0) == element => element
     case Change.Insert(Position.Before(before), element) if get(0) == element => element
-  }
+  }.distinct
 
   def last: ReadChannel[T] = chChanges.partialMap {
     case Change.Insert(Position.Head(), element) if get(0) == element => element
     case Change.Insert(Position.Last(), element) => element
     case Change.Insert(Position.After(after), element)
       if get(currentSize - 1) == after => element
-  }
+  }.distinct
 
   def tail: ReadBuffer[T] = ???
 

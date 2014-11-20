@@ -5,7 +5,7 @@ import cgta.otest.FunSuite
 object AggregateSpec extends FunSuite {
   import ChannelSpec._
 
-  def forallBuf[T](f: VarBuf[Int] => (ReadChannel[T], ReadChannel[T])) {
+  def forallBuf[T](f: VarBuf[Int] => (ReadChannel[T], ReadChannel[T]), testEmptyList: Boolean = true) {
     val elems = Seq(1, 2, 3)
 
     val varbuf = VarBuf[Int]()
@@ -17,10 +17,12 @@ object AggregateSpec extends FunSuite {
       tick()
     }
 
-    val varbuf2 = VarBuf[Int]()
-    val (lch, rch) = f(varbuf2)
-    assertEquals(lch, rch)
-    tick()
+    if (testEmptyList) {
+      val varbuf2 = VarBuf[Int]()
+      val (lch, rch) = f(varbuf2)
+      assertEquals(lch, rch)
+      tick()
+    }
   }
 
   def forallBufSeq[T](f: VarBuf[Int] => (Seq[ReadChannel[T]], () => Seq[T])): Unit = {
@@ -110,7 +112,7 @@ object AggregateSpec extends FunSuite {
   }
 
   test("head") {
-    forallBuf(varbuf => (varbuf.head.isEmpty, varbuf.isEmpty))
+    forallBuf(varbuf => (varbuf.head.isEmpty, varbuf.isEmpty), testEmptyList = false)
   }
 
   test("headOption") {
@@ -122,7 +124,7 @@ object AggregateSpec extends FunSuite {
   }
 
   test("last") {
-    forallBuf(varbuf => (varbuf.last.isEmpty, varbuf.isEmpty))
+    forallBuf(varbuf => (varbuf.last.isEmpty, varbuf.isEmpty), testEmptyList = false)
   }
 
   test("map") {
