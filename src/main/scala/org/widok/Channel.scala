@@ -328,7 +328,10 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
   }
 
   def +(write: WriteChannel[T]): Channel[T] = {
-    val res = Channel[T]()
+    val that = this
+    val res = new RootChannel[T] {
+      def flush(f: T => Unit) { that.flush(f) }
+    }
     val ignore = write << res
     this <<>> (res, ignore)
     res
