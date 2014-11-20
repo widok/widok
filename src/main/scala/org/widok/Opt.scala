@@ -31,11 +31,26 @@ case class Opt[T]() extends StateChannel[T] {
     if (cached.isDefined) f(cached.get)
   }
 
-  def size: ReadChannel[Int] =
-    defined.flatMap { state =>
-      if (!state) Var(0)
-      else foldLeft(0) { case (acc, cur) => acc + 1 }
-    }
+  // TODO This does not work.
+  //def size: ReadChannel[Int] =
+  //  defined.flatMap { state =>
+  //    if (!state) Var(0)
+  //    else foldLeft(0) { case (acc, cur) => acc + 1 }
+  //  }
+
+  // Workaround
+  def size: ReadChannel[Int] = {
+    var count = 0
+    val res = forkUniState(t => {
+      count += 1
+      Result.Next(Some(count))
+    }, Some(count)).asInstanceOf[ChildChannel[Int, Int]]
+    defined.attach(d ⇒ if (!d) {
+      count = 0
+      res := 0
+    })
+    res
+  }
 
   def clear() {
     val prevDefined = cached.isDefined

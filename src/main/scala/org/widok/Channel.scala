@@ -88,10 +88,10 @@ trait ReadChannel[T]
   }
 
   /** Uni-directional fork for channels */
-  def forkUniFlat[U](observer: Observer[T, ReadChannel[U]], silent: Boolean = false): ReadChannel[U] = {
+  def forkUniFlat[U](observer: Observer[T, ReadChannel[U]]): ReadChannel[U] = {
     val ch = FlatChildChannel[T, U](this, observer)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
-    if (!silent) flush(ch.process)
+    flush(ch.process)
     ch
   }
 
@@ -556,13 +556,8 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
 trait ChannelDefaultSize[T] {
   this: ReadChannel[T] =>
 
-  def size: ReadChannel[Int] = {
-    var count = 0
-    forkUniState(t => {
-      count += 1
-      Result.Next(Some(count))
-    }, Some(count))
-  }
+  def size: ReadChannel[Int] =
+    foldLeft(0) { case (acc, cur) => acc + 1}
 }
 
 trait ChannelDefaultEmpty[T] {
