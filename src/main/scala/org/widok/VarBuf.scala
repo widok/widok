@@ -212,37 +212,33 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
       case Change.Insert(position, element) =>
         element.attach { value =>
           if (f(value)) {
-            chChanges := Change.Insert(mapPosition(position), element)
             mapping += element -> (())
+            chChanges := Change.Insert(mapPosition(position), element)
           } else if (mapping.isDefinedAt(element)) {
-            chChanges := Change.Remove(element)
             mapping -= element
+            chChanges := Change.Remove(element)
           }
         }
 
       case Change.Remove(element) =>
         // TODO detach above listener here
         if (mapping.isDefinedAt(element)) {
-          chChanges := Change.Remove(element)
           mapping -= element
+          chChanges := Change.Remove(element)
         }
 
       case Change.Clear() =>
-        clear()
+        // TODO detach above listener here
+        mapping.clear()
+        chChanges := Change.Clear()
     }
   }
 
   parent.changes.attach(parentChange)
 
-  private[widok] def clear() {
-    // TODO detach above listener here
-    mapping.clear()
-    chChanges := Change.Clear()
-  }
-
   /** Clear mapping and reapply f() for all parent elements. */
   private[widok] def reset() {
-    clear()
+    parentChange(Change.Clear())
     parent.changes.flush(parentChange)
   }
 
@@ -285,14 +281,15 @@ case class MappedVarBuf[T, U](parent: ReadVarBuf[T], f: T => U) extends ReadVarB
         chChanges := Change.Insert(position.map(mapping), mapping(element))
 
       case Change.Remove(element) =>
-        chChanges := Change.Remove(mapping(element))
+        val m = mapping(element)
         mapping(element).dispose()
         mapping -= element
+        chChanges := Change.Remove(m)
 
       case Change.Clear() =>
-        chChanges := Change.Clear()
         mapping.foreach(_._2.dispose())
         mapping.clear()
+        chChanges := Change.Clear()
     }
   }
 

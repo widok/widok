@@ -16,4 +16,21 @@ object VarBufTest extends FunSuite {
     elem := 1
     Assert.isEquals(state, true)
   }
+
+  test("filter().lastOption") {
+    val buf = VarBuf[Int]()
+    val filter = buf.filter(_ > 1)
+    var last = -1
+
+    filter.lastOption.attach(cur ⇒ last = cur.get.get)
+
+    buf += 1
+    buf += 2
+    buf += 3
+
+    Assert.isEquals(last, 3)
+    buf.remove(buf(2))
+
+    Assert.isEquals(last, 2)
+  }
 }
