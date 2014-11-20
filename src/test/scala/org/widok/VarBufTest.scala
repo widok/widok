@@ -33,4 +33,10 @@ object VarBufTest extends FunSuite {
 
     Assert.isEquals(last, 2)
   }
+
+  test("size()") {
+    var cur = -1
+    VarBuf().size.attach(cur = _)
+    Assert.isEquals(cur, 0)
+  }
 }

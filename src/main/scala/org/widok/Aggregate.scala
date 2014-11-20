@@ -46,10 +46,20 @@ trait Aggregate[T] extends SizeFunctions[T] {
   def toOptMap[U]: OptMap[T, U] = OptMap(this)
 
   def size: ReadChannel[Int] =
-    chChanges.forkUni { change =>
-      Result.Next(Some(currentSize))
-    }.distinct
+    chChanges.forkUniState(change =>
+      Result.Next(Some(currentSize)),
+      Some(currentSize)
+    ).distinct
 
-  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0).distinct
-  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0).distinct
+  def isEmpty: ReadChannel[Boolean] =
+    chChanges.forkUniState(
+      change => Result.Next(Some(currentSize == 0)),
+      Some(currentSize == 0)
+    ).distinct
+
+  def nonEmpty: ReadChannel[Boolean] =
+    chChanges.forkUniState(change =>
+      Result.Next(Some(currentSize != 0)),
+      Some(currentSize != 0)
+    ).distinct
 }

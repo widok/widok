@@ -74,14 +74,14 @@ trait ReadChannel[T]
 
   /** Uni-directional fork for values */
   def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
-    val ch = UniChildChannel[T, U](this, observer, observer)
+    val ch = UniChildChannel[T, U](this, observer, None)
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     if (!silent) flush(ch.process)
     ch
   }
 
-  def forkUniState[U](observer: Observer[T, U], onFlush: ⇒ U): ReadChannel[U] = {
-    val ch = UniChildChannel[T, U](this, observer, _ ⇒ Result.Next(Some(onFlush)))
+  def forkUniState[U](observer: Observer[T, U], onFlush: ⇒ Option[U]): ReadChannel[U] = {
+    val ch = UniChildChannel[T, U](this, observer, Some(() ⇒ onFlush))
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     flush(ch.process)
     ch
@@ -192,7 +192,7 @@ trait ReadChannel[T]
     forkUniState(value => {
       accum = f(accum, value)
       Result.Next(Some(accum))
-    }, accum)
+    }, Some(accum))
   }
 
   def exists(f: T => Boolean): ReadChannel[Boolean] =
@@ -238,7 +238,7 @@ trait ReadChannel[T]
         cur = Some(value)
         Result.Next(Some(cur.get))
       }
-    }, cur.get)
+    }, cur)
   }
 
   def attached: Boolean
@@ -399,7 +399,7 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
                                  observer: Channel.Observer[T, U],
-                                 onFlush: Channel.Observer[T, U])
+                                 onFlush: Option[() ⇒ Option[U]])
   extends ChildChannel[T, U]
 {
   private var inProcess = false
@@ -425,7 +425,8 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def flush(f: U => Unit) {
-    parent.flush(onFlush(_).valueOpt.foreach(f))
+    if (onFlush.isDefined) onFlush.get().foreach(f)
+    else parent.flush(observer(_).valueOpt.foreach(f))
   }
 
   def dispose() {
