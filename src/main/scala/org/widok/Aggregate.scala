@@ -50,6 +50,6 @@ trait Aggregate[T] extends SizeFunctions[T] {
       Result.Next(Some(currentSize))
     }.distinct
 
-  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
-  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
+  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0).distinct
+  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0).distinct
 }

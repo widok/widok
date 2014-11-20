@@ -1,6 +1,5 @@
 package org.widok
 
-import scala.collection.mutable
 import cgta.otest.FunSuite
 
 object AggregateSpec extends FunSuite {

@@ -35,6 +35,15 @@ object ChannelTest extends FunSuite {
   }
 
   test("distinct()") {
+    val ch = Var(1)
+    val dis = ch.distinct
+    ch := 1
+    var sum = 0
+    dis.attach(sum += _)
+    expect(sum).toBe(1)
+  }
+
+  test("distinct()") {
     val ch = Opt[Int](0)
     val ch2 = ch.distinct
 
