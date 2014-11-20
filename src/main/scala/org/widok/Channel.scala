@@ -336,6 +336,8 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
 
   /** @note Its public use is discouraged. takeUntil() is a safer alternative. */
   def dispose()
+
+  override def toString = "Channel()"
 }
 
 trait ChildChannel[T, U]
@@ -394,6 +396,8 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
     children.foreach(_.dispose())
     children.clear()
   }
+
+  override def toString = "FlatChildChannel()"
 }
 
 /** Uni-directional child */
@@ -436,6 +440,8 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
     children.foreach(_.dispose())
     children.clear()
   }
+
+  override def toString = "UniChildChannel()"
 }
 
 /** Bi-directional child */
@@ -483,6 +489,8 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
     children.foreach(_.dispose())
     children.clear()
   }
+
+  override def toString = "BiChildChannel()"
 }
 
 case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
@@ -538,6 +546,8 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
     children.foreach(_.dispose())
     children.clear()
   }
+
+  override def toString = "BiFlatChildChannel()"
 }
 
 trait ChannelDefaultSize[T] {
