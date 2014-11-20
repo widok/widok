@@ -545,10 +545,10 @@ trait ChannelDefaultSize[T] {
 
   def size: ReadChannel[Int] = {
     var count = 0
-    forkUni { t =>
+    forkUniState(t => {
       count += 1
       Result.Next(Some(count))
-    }
+    }, Some(count))
   }
 }
 
