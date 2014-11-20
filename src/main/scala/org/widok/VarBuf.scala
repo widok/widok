@@ -197,12 +197,20 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
         if (mapping.isEmpty) Position.Last()
         else if (mapping.isDefinedAt(element)) position
         else {
-          val defined = parent.toSeq.filter(mapping.isDefinedAt)
-          val min = defined.minBy(cur => math.abs(parent.indexOf(cur) - parent.indexOf(element)))
+          val (leftSpan, rightSpan) = parent.toSeq.span(_ != element)
+          val left = leftSpan.reverse.find(mapping.isDefinedAt)
+          val right = rightSpan.find(mapping.isDefinedAt)
 
           position match {
-            case Position.Before(_) => Position.After(min)
-            case Position.After(_) => Position.Before(min)
+            case Position.Before(_) =>
+              left.map(Position.After(_))
+                .orElse(right.map(Position.Before(_)))
+                .get
+
+            case Position.After(_) =>
+              right.map(Position.Before(_))
+                .orElse(left.map(Position.After(_)))
+                .get
           }
         }
     }
@@ -212,8 +220,9 @@ case class FilteredVarBuf[T](parent: ReadVarBuf[T], f: T => Boolean) extends Rea
       case Change.Insert(position, element) =>
         element.attach { value =>
           if (f(value)) {
+            val pos = mapPosition(position)
             mapping += element -> (())
-            chChanges := Change.Insert(mapPosition(position), element)
+            chChanges := Change.Insert(pos, element)
           } else if (mapping.isDefinedAt(element)) {
             mapping -= element
             chChanges := Change.Remove(element)
@@ -275,10 +284,11 @@ case class MappedVarBuf[T, U](parent: ReadVarBuf[T], f: T => U) extends ReadVarB
   def parentChange(change: Change[Var[T]]) {
     change match {
       case Change.Insert(position, element) =>
+        val pos = position.map(mapping)
         /** TODO mapping += element -> element.map(f) */
         mapping += element -> Var(f(element.get))
         mapping(element) << element.map(f)
-        chChanges := Change.Insert(position.map(mapping), mapping(element))
+        chChanges := Change.Insert(pos, mapping(element))
 
       case Change.Remove(element) =>
         val m = mapping(element)
