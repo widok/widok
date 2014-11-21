@@ -225,8 +225,8 @@ trait ReadChannel[T]
   def writeTo(write: WriteChannel[T]): Channel[T] = {
     assert(this != write)
     val res = Channel[T]()
-    write << res
-    res << this
+    val ignore = write << res
+    res << (this, ignore)
     res
   }
 
@@ -294,13 +294,11 @@ trait WriteChannel[T] {
   }
 
   /** Redirect stream from ``other`` to ``this``. */
-  def <<(other: ReadChannel[T]): ReadChannel[Unit] = {
+  def <<(other: ReadChannel[T]): ReadChannel[Unit] =
     other.attach(this := _)
-  }
 
-  def <<[U](other: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = {
+  def <<[U](other: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
     other.attach(produce(_, ignore))
-  }
 
   def :=(v: T) = produce(v)
 }

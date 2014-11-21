@@ -318,4 +318,20 @@ object ChannelTest extends FunSuite {
 
     Assert.isEquals(sum, 84)
   }
+
+  test("writeTo()") {
+    val chIn = Channel[Int]()
+    val chOut = Channel[Int]()
+
+    var out = -1
+    chOut.attach(out = _)
+
+    val ch = chIn.writeTo(chOut)
+
+    chIn := 1
+    Assert.isEquals(out, -1)
+
+    ch := 1
+    Assert.isEquals(out, 1)
+  }
 }
