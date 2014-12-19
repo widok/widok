@@ -51,4 +51,17 @@ object OptTest extends FunSuite {
 
     Assert.isEquals(elems, mutable.ArrayBuffer(1, 0, 1, 2))
   }
+
+  test("values()") {
+    val elems = mutable.ArrayBuffer.empty[Option[Int]]
+
+    val ch = Opt[Int]()
+    ch.values.attach(elems += _)
+
+    ch := 1
+    ch.clear()
+    ch := 2
+
+    Assert.isEquals(elems, mutable.ArrayBuffer(None, Some(1), None, Some(2)))
+  }
 }

@@ -69,7 +69,9 @@ case class Opt[T]() extends StateChannel[T] {
     }
 
   def values: ReadChannel[Option[T]] =
-    defined.map(_ => cached)
+    defined
+      .partialMap { case false ⇒ Option.empty[T] }
+      .merge(map(Some(_)))
 
   def toOption: Option[T] = cached
 
