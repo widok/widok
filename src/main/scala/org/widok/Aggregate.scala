@@ -42,6 +42,7 @@ trait Aggregate[T] extends SizeFunctions[T] {
 
   def currentSize: Int
 
+  def mapTo[U](f: T => U): FunctMap[T, U] = FunctMap(this, f)
   def toVarMap[U](default: U): VarMap[T, U] = VarMap(this, default)
   def toOptMap[U]: OptMap[T, U] = OptMap(this)
 

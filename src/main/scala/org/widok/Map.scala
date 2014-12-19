@@ -2,10 +2,26 @@ package org.widok
 
 import scala.collection.mutable
 
+trait ReadMap[A, B] extends Aggregate[(A, B)] {
+  import Aggregate.Change
+
+  def currentSize: Int
+  def contains(value: (A, B)): Boolean
+  def get(key: A): B
+  def has(key: A): Boolean
+  def apply(key: A) = get(key)
+
+  def valueChanges: ReadChannel[Change[B]] = chChanges.map {
+    case Change.Insert(position, element) => Change.Insert(position.map(_._2), element._2)
+    case Change.Remove(element) => Change.Remove(element._2)
+    case Change.Clear() => Change.Clear()
+  }
+}
+
 /**
  * A map is an unordered aggregate consisting of (key, value) pairs.
  */
-trait UnorderedMap[A, B] extends Aggregate[(A, B)] {
+trait UnorderedMap[A, B] extends ReadMap[A, B] {
   private[widok] val mapping = mutable.Map[A, B]()
 
   def currentSize: Int = mapping.size
@@ -15,7 +31,6 @@ trait UnorderedMap[A, B] extends Aggregate[(A, B)] {
 
   def get(key: A) = mapping(key)
   def has(key: A) = mapping.contains(key)
-  def apply(key: A) = get(key)
 }
 
 /**
@@ -100,32 +115,47 @@ trait MapCombinators[V, T] { // TODO extends FoldFunctions[T] {
   }
 }
 
+case class FunctMap[A, B](parent: Aggregate[A], f: A ⇒ B) extends ReadMap[A, B] with MapCombinators[A, B] {
+  import Aggregate.Change
+  import Aggregate.Position
+
+  private[widok] val chChanges = new RootChannel[Change[(A, B)]] {
+    def flush(g: Change[(A, B)] => Unit) {
+      parent.foreach { element =>
+        g(Change.Insert(Position.Last(), (element, f(element))))
+      }
+    }
+  }
+
+  parent.chChanges.attach {
+    case Change.Insert(position, element) =>
+      chChanges := Change.Insert(
+        position.map(value => (value, f(value))), (element, f(element)))
+
+    case Change.Remove(element) =>
+      chChanges := Change.Remove((element, f(element)))
+
+    case Change.Clear() =>
+      chChanges := Change.Clear()
+  }
+
+  def currentSize: Int = parent.currentSize
+  def contains(value: (A, B)): Boolean = has(value._1) && f(value._1) == value._2
+  def get(key: A): B = f(key)
+  def has(key: A): Boolean = ???
+  def foreach(g: ((A, B)) => Unit) {
+    parent.foreach(a ⇒ g(a, f(a)))
+  }
+}
+
 /**
  * A map which uses ``Var`` as a value for each element. This allows for
  * writing capabilities.
  */
 case class VarMap[A, B](parent: Aggregate[A], default: B) extends AggMap[A, Var[B]] with MapCombinators[A, Var[B]] {
-  import Aggregate.Change
-
   def elementValue: () => Var[B] = () => Var(default)
-
-  def valueChanges: ReadChannel[Change[Var[B]]] =
-    chChanges.map {
-      case Change.Insert(position, element) => Change.Insert(position.map(_._2), element._2)
-      case Change.Remove(element) => Change.Remove(element._2)
-      case Change.Clear() => Change.Clear()
-    }
 }
 
 case class OptMap[A, B](parent: Aggregate[A]) extends AggMap[A, Opt[B]] with MapCombinators[A, Opt[B]] {
-  import Aggregate.Change
-
   def elementValue: () => Opt[B] = () => Opt()
-
-  def valueChanges: ReadChannel[Change[Opt[B]]] =
-    chChanges.map {
-      case Change.Insert(position, element) => Change.Insert(position.map(_._2), element._2)
-      case Change.Remove(element) => Change.Remove(element._2)
-      case Change.Clear() => Change.Clear()
-    }
 }
