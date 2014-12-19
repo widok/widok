@@ -13,10 +13,8 @@ object DOM {
     elem
   }
 
-  def createText(value: String) =
+  def createText(value: String): dom.Text =
     dom.document.createTextNode(value)
-      // TODO Workaround
-      .asInstanceOf[org.scalajs.dom.HTMLElement]
 
   def getElement(id: String): Option[HTMLElement] =
     Option(dom.document.getElementById(id))

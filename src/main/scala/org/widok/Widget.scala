@@ -7,6 +7,7 @@ import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
 import org.widok.bindings._
 
 import scala.collection.mutable
+import scala.scalajs.js
 
 object Widget {
   object List {
@@ -100,8 +101,72 @@ object Widget {
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
-      // TODO define bind()
-      ???
+      def bind[T, X <: List.Item[X]](map: ReadMap[T, ReadChannel[String]], selection: Channel[T]) = {
+        import Aggregate.Change
+        import Aggregate.Position
+
+        val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
+
+        def render(t: (T, ReadChannel[String])) = {
+          val elem = HTML.Input.Select.Option()
+          val text = HTML.Text().bind(t._2)
+          elem.rendered.appendChild(text.rendered)
+          elem
+        }
+
+        def selected(): dom.HTMLSelectElement = {
+          val idx = castRendered.selectedIndex
+
+          // TODO Remove casts
+          // See https://github.com/scala-js/scala-js/issues/1384#issuecomment-66908750
+          // and https://github.com/scala-js/scala-js-dom/pull/78
+          rendered
+            .asInstanceOf[js.Dynamic]
+            .options
+            .asInstanceOf[js.Array[dom.HTMLSelectElement]]
+            .apply(idx)
+        }
+
+        val mapping = mutable.Map.empty[T, HTML.Input.Select.Option]
+
+        def resolveT(elem: dom.HTMLSelectElement): T =
+          mapping.find(_._2.rendered == elem).get._1
+
+        val obs = selection.attach { select ⇒
+          mapping(select).rendered.setAttribute("selected", "")
+        }
+
+        rendered.onchange =
+          (e: dom.Event) => selection.produce(resolveT(selected()), obs)
+
+        map.chChanges.attach {
+          case Change.Insert(Position.Head(), elem) =>
+            mapping += elem._1 -> render(elem)
+            rendered.insertBefore(mapping(elem._1).rendered, rendered.firstChild)
+
+          case Change.Insert(Position.Last(), elem) =>
+            mapping += elem._1 -> render(elem)
+            rendered.appendChild(mapping(elem._1).rendered)
+
+          case Change.Insert(Position.Before(before), elem) =>
+            mapping += elem._1 -> render(elem)
+            rendered.insertBefore(mapping(elem._1).rendered, mapping(before._1).rendered)
+
+          case Change.Insert(Position.After(after), elem) =>
+            mapping += elem._1 -> render(elem)
+            rendered.insertBefore(mapping(elem._1).rendered, mapping(after._1).rendered.nextSibling)
+
+          case Change.Remove(elem) =>
+            rendered.removeChild(mapping(elem._1).rendered)
+            mapping -= elem._1
+
+          case Change.Clear() =>
+            mapping.clear()
+            DOM.clear(rendered)
+        }
+
+        self
+      }
     }
   }
 
@@ -280,7 +345,7 @@ trait Widget[T <: Widget[T]] { self: T =>
   def cssCh(tag: ReadChannel[String]) = {
     var cur: Option[String] = None
 
-    tag.attach(value => {
+    tag.attach { value =>
       val tags = rendered.className.split(" ").toSet
       val changed =
         if (cur.isDefined) tags - cur.get + value
@@ -288,7 +353,7 @@ trait Widget[T <: Widget[T]] { self: T =>
       cur = Some(value)
 
       rendered.className = changed.mkString(" ")
-    })
+    }
 
     self
   }
@@ -303,15 +368,25 @@ trait Widget[T <: Widget[T]] { self: T =>
     self
   }
 
+  def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
+    value.attach {
+      case Some(v) ⇒ rendered.setAttribute(key, v)
+      case None ⇒ rendered.removeAttribute(key)
+    }
+
+    self
+  }
+
   def show(value: ReadChannel[Boolean], remove: Boolean = true) = {
-    value.attach(cur =>
+    value.attach { cur =>
       if (remove) {
         rendered.style.display =
           if (cur) "block" else "none"
       } else {
         rendered.style.visibility =
           if (cur) "visible" else "hidden"
-      })
+      }
+    }
 
     self
   }

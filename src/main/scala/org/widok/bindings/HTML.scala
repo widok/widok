@@ -52,8 +52,19 @@ object HTML {
     }
   }
 
-  case class Text(value: String) extends Widget[Text] {
+  case class Text(value: String = "") extends Widget[Text] {
     val rendered = DOM.createText(value)
+      .asInstanceOf[org.scalajs.dom.HTMLElement]
+
+    def bind(ch: ReadChannel[String]): Text = {
+      ch.attach { value ⇒
+        rendered
+          .asInstanceOf[dom.Text]
+          .replaceWholeText(value)
+      }
+
+      this
+    }
   }
 
   case class Raw(html: String) extends Widget[Raw] {
@@ -140,7 +151,23 @@ object HTML {
       rendered.setAttribute("type", "checkbox")
     }
 
-    case class Select(options: Seq[String], selected: Int = -1) extends Widget.Input.Select[Select] {
+    object Select {
+      case class Option() extends Widget[Option] {
+        val rendered = DOM.createElement("option")
+          .asInstanceOf[dom.HTMLElement]
+
+        def bind(ch: ReadChannel[Boolean]) = {
+          val obs = ch.map { selected ⇒
+            if (selected) Some("")
+            else None
+          }
+
+          attributeCh("selected", obs)
+        }
+      }
+    }
+
+    case class Select(options: Seq[String] = Seq.empty, selected: Int = -1) extends Widget.Input.Select[Select] {
       val rendered = DOM.createElement("select")
       options.zipWithIndex.foreach { case (cur, idx) =>
         val elem = DOM.createElement("option")
