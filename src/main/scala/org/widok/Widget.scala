@@ -109,8 +109,12 @@ object Widget {
 
         def render(t: (T, ReadChannel[String])) = {
           val elem = HTML.Input.Select.Option()
-          val text = HTML.Text().bind(t._2)
-          elem.rendered.appendChild(text.rendered)
+          elem.rendered.appendChild(HTML.Text("").rendered)
+          t._2.attach { v ⇒
+            elem.rendered.replaceChild(
+              HTML.Text(v).rendered,
+              elem.rendered.firstChild)
+          }
           elem
         }
 

@@ -52,19 +52,9 @@ object HTML {
     }
   }
 
-  case class Text(value: String = "") extends Widget[Text] {
-    val rendered = DOM.createText(value)
+  case class Text(value: String) extends Widget[Text] {
+    val rendered = dom.document.createTextNode(value)
       .asInstanceOf[org.scalajs.dom.HTMLElement]
-
-    def bind(ch: ReadChannel[String]): Text = {
-      ch.attach { value ⇒
-        rendered
-          .asInstanceOf[dom.Text]
-          .replaceWholeText(value)
-      }
-
-      this
-    }
   }
 
   case class Raw(html: String) extends Widget[Raw] {
