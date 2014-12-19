@@ -51,6 +51,21 @@ trait ReadChannel[T]
   /** Flush data and call f for each element */
   def flush(f: T => Unit)
 
+  def merge(ch: ReadChannel[T]): ReadChannel[T] = {
+    val that = this
+    val res = new RootChannel[T] {
+      def flush(f: T => Unit) {
+        that.flush(t ⇒ this := t)
+        ch.flush(t ⇒ this := t)
+      }
+    }
+
+    res << this
+    res << ch
+
+    res
+  }
+
   def child(): ReadChannel[T] =
     forkUni(t => Result.Next(Some(t)))
 

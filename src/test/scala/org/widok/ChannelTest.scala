@@ -334,4 +334,20 @@ object ChannelTest extends FunSuite {
     ch := 1
     Assert.isEquals(out, 1)
   }
+
+  test("merge()") {
+    val ch = Var[Int](5)
+    val ch2 = Channel[Int]()
+
+    var out = -1
+    ch.merge(ch2).attach(out = _)
+
+    Assert.isEquals(out, 5)
+
+    ch := 1
+    Assert.isEquals(out, 1)
+
+    ch2 := 2
+    Assert.isEquals(out, 2)
+  }
 }
