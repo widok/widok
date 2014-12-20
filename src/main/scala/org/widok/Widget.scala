@@ -136,13 +136,6 @@ object Widget {
         def resolveT(elem: dom.HTMLSelectElement): T =
           mapping.find(_._2.rendered == elem).get._1
 
-        val obs = selection.attach { select ⇒
-          mapping(select).rendered.setAttribute("selected", "")
-        }
-
-        rendered.onchange =
-          (e: dom.Event) => selection.produce(resolveT(selected()), obs)
-
         map.chChanges.attach {
           case Change.Insert(Position.Head(), elem) =>
             mapping += elem._1 -> render(elem)
@@ -168,6 +161,13 @@ object Widget {
             mapping.clear()
             DOM.clear(rendered)
         }
+
+        val obs = selection.attach { select ⇒
+          mapping(select).rendered.setAttribute("selected", "")
+        }
+
+        rendered.onchange =
+          (e: dom.Event) => selection.produce(resolveT(selected()), obs)
 
         self
       }
