@@ -29,14 +29,15 @@ trait ChildMap[A, B] extends OrderedMap[A, B] {
 
   def value(key: Ref[A]): B = mapping(key).get
 
-  def get: Seq[Ref[B]] = parent.get.map(handle => mapping(handle))
+  def get: Seq[Ref[B]] = parent.get.flatMap(a => mapping.get(a))
 
-  def values: Seq[B] = parent.get.map(a => mapping(a).get)
+  def values: Seq[B] = parent.get.flatMap(a => mapping.get(a).map(_.get))
 
   def contains(value: B) = ???
 
   def foreach(f: B => Unit) {
-    parent.get.foreach(element => f(mapping(element).get))
+    parent.get.foreach(element =>
+      if (mapping.isDefinedAt(element)) f(mapping(element).get))
   }
 
   def update(key: Ref[A], value: B) {

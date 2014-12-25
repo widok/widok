@@ -32,4 +32,16 @@ object MapTest extends FunSuite {
     map.update(buf.get(2), 3)
     Assert.isEquals(state, true)
   }
+
+  test("mapToCh()") {
+    val buf = Buffer(0, 1, 2)
+    val chs = List(Var("a"), Var("b"), Var("c"))
+    val map = buf.mapToCh[String] { value =>
+      chs(value).map(str => if (str.nonEmpty) Some(str) else None)
+    }
+
+    Assert.isEquals(map.values, Seq("a", "b", "c"))
+    chs(1) := ""
+    Assert.isEquals(map.values, Seq("a", "c"))
+  }
 }
