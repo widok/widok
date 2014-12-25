@@ -83,18 +83,33 @@ object ChannelTest extends FunSuite {
   test("take()") {
     val ch = Channel[Int]()
 
-    var sum = 0
-    ch.take(2).attach(sum += _)
-
+    var items = mutable.ArrayBuffer.empty[Int]
+    ch.take(2).attach(items += _)
     expect(ch.children.size).toBe(1)
+
     ch := 1
     ch := 2
 
+    expect(items).toBe(Seq(1, 2))
     expect(ch.children.size).toBe(0)
+
     ch := 3
     ch := 4
 
-    expect(sum).toBe(1 + 2)
+    expect(items).toBe(Seq(1, 2))
+  }
+
+  test("take()") {
+    val ch = Var[Int](0)
+
+    var items = mutable.ArrayBuffer.empty[Int]
+    ch.take(2).attach(items += _)
+
+    ch := 1
+    ch := 2
+    ch := 3
+
+    expect(items).toBe(Seq(0, 1))
   }
 
   test("skip()") {
@@ -349,5 +364,17 @@ object ChannelTest extends FunSuite {
 
     ch2 := 2
     Assert.isEquals(out, 2)
+  }
+
+  test("tail()") {
+    val ch = Var[Int](42)
+
+    var out = -1
+    ch.tail.attach(out = _)
+
+    Assert.isEquals(out, -1)
+
+    ch := 43
+    Assert.isEquals(out, 43)
   }
 }

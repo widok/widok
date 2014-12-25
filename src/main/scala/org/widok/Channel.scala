@@ -140,13 +140,13 @@ trait ReadChannel[T]
   def skip(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
-    forkUni { value =>
+    forkUni(value => {
       if (cnt > 0) { cnt -= 1; Result.Next(None) }
 
       // TODO Create a new result type which continues processing
       // the stream without calling this callback.
       else Result.Next(Some(value))
-    }
+    }, silent = true)
   }
 
   def head: ReadChannel[T] = forkUni(value => Result.Done(Some(value)))
