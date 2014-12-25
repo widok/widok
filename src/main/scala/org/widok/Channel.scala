@@ -7,6 +7,8 @@ import org.widok.Helpers.Identity
 object Channel {
   type Observer[T, U] = T => Result[U]
 
+  def fromBuf[T](chs: Buffer[Var[T]]) = ???
+
   def apply[T](): Channel[T] =
     new RootChannel[T] {
       def flush(f: T => Unit) { }
@@ -29,7 +31,7 @@ trait ReadChannel[T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
   with IterateFunctions[T]
-  with SizeFunctions[T]
+  with SizeFunctions
   with Disposable
 {
   import Channel.Observer
@@ -52,11 +54,10 @@ trait ReadChannel[T]
   def flush(f: T => Unit)
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
-    val that = this
     val res = new RootChannel[T] {
       def flush(f: T => Unit) {
-        that.flush(t ⇒ this := t)
-        ch.flush(t ⇒ this := t)
+        ReadChannel.this.flush(t => this := t)
+        ch.flush(t => this := t)
       }
     }
 
@@ -81,9 +82,9 @@ trait ReadChannel[T]
       Result.Next(None)
     }, silent = true)
 
-  def buffer: VarBuf[T] = {
-    val buf = VarBuf[T]()
-    attach(buf += Var(_))
+  def buffer: Buffer[T] = {
+    val buf = Buffer[T]()
+    attach(value => buf.append(value))
     buf
   }
 
@@ -95,8 +96,8 @@ trait ReadChannel[T]
     ch
   }
 
-  def forkUniState[U](observer: Observer[T, U], onFlush: ⇒ Option[U]): ReadChannel[U] = {
-    val ch = UniChildChannel[T, U](this, observer, Some(() ⇒ onFlush))
+  def forkUniState[U](observer: Observer[T, U], onFlush: => Option[U]): ReadChannel[U] = {
+    val ch = UniChildChannel[T, U](this, observer, Some(() => onFlush))
     children += ch.asInstanceOf[ChildChannel[T, Any]] // TODO Get rid of cast
     flush(ch.process)
     ch
@@ -123,8 +124,6 @@ trait ReadChannel[T]
       if (f(value)) Result.Next(Some(value))
       else Result.Next(None)
     }
-
-  def filterCh(f: ReadChannel[T => Boolean]): ReadChannel[T] = ???
 
   def partition(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) =
     (filter(f), filter((!(_: Boolean)).compose(f)))
@@ -210,6 +209,8 @@ trait ReadChannel[T]
     }, Some(accum))
   }
 
+  def find(f: T => Boolean): ReadChannel[Option[T]] = ???
+
   def exists(f: T => Boolean): ReadChannel[Boolean] =
     forkUni { value =>
       if (f(value)) Result.Done(Some(true))
@@ -265,6 +266,12 @@ trait WriteChannel[T] {
   private[widok] val children: mutable.Queue[ChildChannel[T, Any]]
 
   def flush(f: T => Unit)
+
+  def setter(value: T): WriteChannel[_] = {
+    val ch = Channel()
+    ch.attach(_ => this := value)
+    ch
+  }
 
   def produce(value: T) {
     children.dequeueAll { child =>
@@ -325,12 +332,12 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
     res
   }
 
-  def biMap[U](f: T ⇒ U, g: U ⇒ T): Channel[U] =
+  def biMap[U](f: T => U, g: U => T): Channel[U] =
     forkBi(
       fwdValue => Result.Next(Some(f(fwdValue))),
       bwdValue => Result.Next(Some(g(bwdValue))))
 
-  def partialBiMap[U](f: T ⇒ U, g: U ⇒ Option[T]): Channel[U] =
+  def partialBiMap[U](f: T => U, g: U => Option[T]): Channel[U] =
     forkBi(
       fwdValue => Result.Next(Some(f(fwdValue))),
       bwdValue => Result.Next(g(bwdValue)))
@@ -351,9 +358,8 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
   }
 
   def +(write: WriteChannel[T]): Channel[T] = {
-    val that = this
     val res = new RootChannel[T] {
-      def flush(f: T => Unit) { that.flush(f) }
+      def flush(f: T => Unit) { Channel.this.flush(f) }
     }
     val ignore = write << res
     this <<>> (res, ignore)
@@ -429,7 +435,7 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
                                  observer: Channel.Observer[T, U],
-                                 onFlush: Option[() ⇒ Option[U]])
+                                 onFlush: Option[() => Option[U]])
   extends ChildChannel[T, U]
 {
   private var inProcess = false

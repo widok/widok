@@ -27,28 +27,28 @@ object Widget {
       self
     }
 
-    def bind[T, X <: List.Item[X]](aggregate: Aggregate[T])(f: T => List.Item[X]) = {
+    def bind[T, X <: List.Item[X]](aggregate: Aggregate[T])(f: Ref[T] => List.Item[X]) = {
       import Aggregate.Change
       import Aggregate.Position
 
-      val mapping = mutable.Map.empty[T, dom.Node]
+      val mapping = mutable.Map.empty[Ref[T], dom.Node]
 
-      aggregate.chChanges.attach {
-        case Change.Insert(Position.Head(), elem) =>
-          mapping += elem -> rendered.insertBefore(f(elem).rendered, rendered.firstChild)
+      aggregate.changes.attach {
+        case Change.Insert(Position.Head(), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, rendered.firstChild)
 
-        case Change.Insert(Position.Last(), elem) =>
-          mapping += elem -> rendered.appendChild(f(elem).rendered)
+        case Change.Insert(Position.Last(), element) =>
+          mapping += element -> rendered.appendChild(f(element).rendered)
 
-        case Change.Insert(Position.Before(before), elem) =>
-          mapping += elem -> rendered.insertBefore(f(elem).rendered, mapping(before))
+        case Change.Insert(Position.Before(reference), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference))
 
-        case Change.Insert(Position.After(after), elem) =>
-          mapping += elem -> rendered.insertBefore(f(elem).rendered, mapping(after).nextSibling)
+        case Change.Insert(Position.After(reference), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference).nextSibling)
 
-        case Change.Remove(elem) =>
-          rendered.removeChild(mapping(elem))
-          mapping -= elem
+        case Change.Remove(element) =>
+          rendered.removeChild(mapping(element))
+          mapping -= element
 
         case Change.Clear() =>
           mapping.clear()
@@ -101,16 +101,17 @@ object Widget {
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
-      def bind[T, X <: List.Item[X]](map: ReadMap[T, ReadChannel[String]], selection: Channel[T]) = {
+      def bind[T, X <: List.Item[X]](map: BufMap[T, ReadChannel[String]], selection: Channel[Ref[T]]) = {
         import Aggregate.Change
         import Aggregate.Position
 
         val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
 
-        def render(t: (T, ReadChannel[String])) = {
+        // TOOD Could this be simplified if we had Change.Update?
+        def render(str: ReadChannel[String]): HTML.Input.Select.Option = {
           val elem = HTML.Input.Select.Option()
           elem.rendered.appendChild(HTML.Text("").rendered)
-          t._2.attach { v ⇒
+          str.attach { v =>
             elem.rendered.replaceChild(
               HTML.Text(v).rendered,
               elem.rendered.firstChild)
@@ -131,39 +132,48 @@ object Widget {
             .apply(idx)
         }
 
-        val mapping = mutable.Map.empty[T, HTML.Input.Select.Option]
+        val mapping = mutable.Map.empty[Ref[ReadChannel[String]], HTML.Input.Select.Option]
 
-        def resolveT(elem: dom.HTMLSelectElement): T =
-          mapping.find(_._2.rendered == elem).get._1
+        def resolveT(elem: dom.HTMLSelectElement): Ref[T] = {
+          val m = mapping.find(_._2.rendered == elem)
+          assert(m.isDefined, s"Mapping contains DOM element $elem")
+          map.mapping.find(_._2 == m.get._1).get._1
+        }
 
-        map.chChanges.attach {
-          case Change.Insert(Position.Head(), elem) =>
-            mapping += elem._1 -> render(elem)
-            rendered.insertBefore(mapping(elem._1).rendered, rendered.firstChild)
+        map.changes.attach {
+          case Change.Insert(Position.Head(), element) =>
+            mapping += element -> render(element.get)
+            rendered.insertBefore(mapping(element).rendered, rendered.firstChild)
 
-          case Change.Insert(Position.Last(), elem) =>
-            mapping += elem._1 -> render(elem)
-            rendered.appendChild(mapping(elem._1).rendered)
+          case Change.Insert(Position.Last(), element) =>
+            mapping += element -> render(element.get)
+            rendered.appendChild(mapping(element).rendered)
 
-          case Change.Insert(Position.Before(before), elem) =>
-            mapping += elem._1 -> render(elem)
-            rendered.insertBefore(mapping(elem._1).rendered, mapping(before._1).rendered)
+          case Change.Insert(Position.Before(reference), element) =>
+            mapping += element -> render(element.get)
+            rendered.insertBefore(mapping(element).rendered, mapping(reference).rendered)
 
-          case Change.Insert(Position.After(after), elem) =>
-            mapping += elem._1 -> render(elem)
-            rendered.insertBefore(mapping(elem._1).rendered, mapping(after._1).rendered.nextSibling)
+          case Change.Insert(Position.After(reference), element) =>
+            mapping += element -> render(element.get)
+            rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
 
-          case Change.Remove(elem) =>
-            rendered.removeChild(mapping(elem._1).rendered)
-            mapping -= elem._1
+          case Change.Remove(element) =>
+            rendered.removeChild(mapping(element).rendered)
+            mapping -= element
 
           case Change.Clear() =>
             mapping.clear()
             DOM.clear(rendered)
         }
 
-        val obs = selection.attach { select ⇒
-          mapping(select).rendered.setAttribute("selected", "")
+        val obs = selection.attach { select =>
+          assert(map.mapping.contains(select), s"Mapping contains selection $select")
+          val ch = map.mapping(select)
+
+          assert(mapping.contains(ch), s"Mapping contains selection channel $select")
+          val opt = mapping(ch)
+
+          opt.rendered.setAttribute("selected", "")
         }
 
         rendered.onchange =
@@ -374,8 +384,8 @@ trait Widget[T <: Widget[T]] { self: T =>
 
   def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
     value.attach {
-      case Some(v) ⇒ rendered.setAttribute(key, v)
-      case None ⇒ rendered.removeAttribute(key)
+      case Some(v) => rendered.setAttribute(key, v)
+      case None => rendered.removeAttribute(key)
     }
 
     self

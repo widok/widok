@@ -5,133 +5,107 @@ import cgta.otest.FunSuite
 object AggregateSpec extends FunSuite {
   import ChannelSpec._
 
-  def forallBuf[T](f: VarBuf[Int] => (ReadChannel[T], ReadChannel[T]), testEmptyList: Boolean = true) {
+  def forallBuf[T](f: Buffer[Int] => (ReadChannel[T], ReadChannel[T]), testEmptyList: Boolean = true) {
     val elems = Seq(1, 2, 3)
 
-    val varbuf = VarBuf[Int]()
+    val buffer = Buffer[Int]()
 
     elems.foreach { elem =>
-      val (lch, rch) = f(varbuf)
-      varbuf += elem
+      val (lch, rch) = f(buffer)
+      buffer += elem
       assertEquals(lch, rch)
       tick()
     }
 
     if (testEmptyList) {
-      val varbuf2 = VarBuf[Int]()
-      val (lch, rch) = f(varbuf2)
+      val buffer2 = Buffer[Int]()
+      val (lch, rch) = f(buffer2)
       assertEquals(lch, rch)
       tick()
     }
   }
 
-  def forallBufSeq[T](f: VarBuf[Int] => (Seq[ReadChannel[T]], () => Seq[T])): Unit = {
+  def forallBufSeq[T](f: Buffer[Int] => (ReadBuffer[T], () => Seq[T])) {
     val elems = Seq(1, 2, 3)
 
-    val varbuf = VarBuf[Int]()
+    val buffer = Buffer[Int]()
 
     /** Set up handler before insertion */
     elems.foreach { elem =>
-      val (lch, fr) = f(varbuf)
-      varbuf += elem
-      val r = fr()
-      Assert.equals(lch.size, r.size)
-      lch.zip(r).foreach { case (a, b) =>
-        assertConstantEquals(a, b)
-        tick()
-      }
+      val (buf, seq) = f(buffer)
+      buffer += elem
+      Assert.isEquals(buf.values, seq())
     }
 
     /** Set up handler after insertion */
+    buffer.clear()
     elems.foreach { elem =>
-      varbuf += elem
-      val (lch, fr) = f(varbuf)
-      val r = fr()
-      Assert.equals(lch.size, r.size)
-      lch.zip(r).foreach { case (a, b) =>
-        assertConstantEquals(a, b)
-        tick()
-      }
+      buffer += elem
+      val (buf, seq) = f(buffer)
+      Assert.isEquals(buf.values, seq())
     }
 
     /** Inserting after */
-    varbuf.clear()
+    buffer.clear()
     elems.foreach { elem =>
-      val (lch, fr) = f(varbuf)
+      val (buf, seq) = f(buffer)
 
-      val fst = varbuf += elem
-      varbuf += elem + 1
-      varbuf.insertAfter(fst, elem + 2)
+      val fst = buffer += elem
+      val snd = buffer += elem + 1
+      val trd = buffer.insertAfter(fst, elem + 2)
 
-      val r = fr()
-      Assert.equals(lch.size, r.size)
-
-      lch.zip(r).foreach { case (a, b) =>
-        assertConstantEquals(a, b)
-        tick()
-      }
+      Assert.isEquals(buf.values, seq())
     }
 
     /** Inserting before */
+    buffer.clear()
     elems.foreach { elem =>
-      val (lch, fr) = f(varbuf)
+      val (buf, seq) = f(buffer)
 
-      val fst = varbuf += elem
-      val snd = varbuf.insertBefore(fst, elem + 1)
+      val fst = buffer += elem
+      val snd = buffer += elem + 1
+      val trd = buffer.insertBefore(snd, elem + 2)
 
-      val r = fr()
-      Assert.equals(lch.size, r.size)
-
-      lch.zip(r).foreach { case (a, b) =>
-        assertConstantEquals(a, b)
-        tick()
-      }
+      Assert.isEquals(buf.values, seq())
     }
 
     /** Deleting */
+    buffer.clear()
     elems.foreach { elem =>
-      val (lch, fr) = f(varbuf)
+      val (buf, seq) = f(buffer)
 
-      val fst = varbuf += elem
-      val snd = varbuf += elem
+      val fst = buffer += elem
+      val snd = buffer += elem
+      Assert.isEquals(buf.values, seq())
 
-      val r = fr()
-      Assert.equals(lch.size, r.size)
-
-      varbuf -= fst
-      val rAfter = fr()
-      Assert.equals(lch.size, rAfter.size)
-
-      lch.zip(rAfter).foreach { case (a, b) =>
-        assertConstantEquals(a, b)
-        tick()
-      }
+      buffer -= fst
+      Assert.isEquals(buf.values, seq())
     }
 
     /** TODO Also check updating. */
   }
 
   test("head") {
-    forallBuf(varbuf => (varbuf.head.isEmpty, varbuf.isEmpty), testEmptyList = false)
+    forallBuf(buffer => (buffer.head.isEmpty, buffer.isEmpty), testEmptyList = false)
   }
 
   test("headOption") {
-    forallBuf(varbuf => (varbuf.headOption.partialMap { case Some(v) => v }, varbuf.head))
+    forallBuf(buffer => (buffer.headOption.partialMap { case Some(v) => v }, buffer.head))
   }
 
   test("lastOption") {
-    forallBuf(varbuf => (varbuf.lastOption.partialMap { case Some(v) => v }, varbuf.last))
+    forallBuf(buffer => (buffer.lastOption.partialMap { case Some(v) => v }, buffer.last))
   }
 
   test("last") {
-    forallBuf(varbuf => (varbuf.last.isEmpty, varbuf.isEmpty), testEmptyList = false)
+    forallBuf(buffer => (buffer.last.isEmpty, buffer.isEmpty), testEmptyList = false)
   }
 
   test("map") {
-    forallBufSeq(varbuf => (varbuf.map(_ * 3).materialise, () => varbuf.toSeq.map(_.get * 3)))
+    forallBufSeq(buffer => (buffer.map(_ * 3), () => buffer.values.map(_ * 3)))
   }
 
   test("filter") {
-    forallBufSeq(varbuf => (varbuf.filter(_ > 1).materialise, () => varbuf.toSeq.map(_.get).filter(_ > 1)))
+    forallBufSeq(buffer => (buffer.filter(_ > 1), () => buffer.values.filter(_ > 1)))
   }
 }

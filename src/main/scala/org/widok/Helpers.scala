@@ -32,3 +32,12 @@ object Helpers {
     }
   }
 }
+
+/**
+ * Reference to a constant value; similar to pointers in low-level languages.
+ * To be used when a value is to be identified by its instance as opposed to
+ * its contents.
+ */
+case class Ref[T](get: T) extends Helpers.Identity {
+  override def toString = get.toString
+}

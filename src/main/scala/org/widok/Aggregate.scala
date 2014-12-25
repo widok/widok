@@ -1,5 +1,7 @@
 package org.widok
 
+import scala.collection.mutable
+
 /**
  * An aggregate models a read-only collection of elements as a stream of changes.
  */
@@ -9,8 +11,8 @@ object Aggregate {
       this match {
         case Position.Head() => Position.Head[U]()
         case Position.Last() => Position.Last[U]()
-        case Position.Before(elem) => Position.Before[U](f(elem))
-        case Position.After(elem) => Position.After[U](f(elem))
+        case Position.Before(reference) => Position.Before[U](f(reference))
+        case Position.After(reference) => Position.After[U](f(reference))
       }
     }
   }
@@ -18,49 +20,98 @@ object Aggregate {
   object Position {
     case class Head[T]() extends Position[T]
     case class Last[T]() extends Position[T]
-    case class Before[T](elem: T) extends Position[T]
-    case class After[T](elem: T) extends Position[T]
+    case class Before[T](reference: T) extends Position[T]
+    case class After[T](reference: T) extends Position[T]
   }
 
   trait Change[T]
   object Change {
-    case class Insert[T](position: Position[T], handle: T) extends Change[T]
-    case class Remove[T](handle: T) extends Change[T]
+    case class Insert[T](position: Position[T], element: T) extends Change[T]
+    case class Remove[T](element: T) extends Change[T]
     case class Clear[T]() extends Change[T]
   }
 }
 
-trait Aggregate[T] extends SizeFunctions[T] {
+trait Aggregate[T]
+  extends SizeFunctions
+  with FoldFunctions[T]
+  with IterateFunctions[T]
+  with SequentialFunctions[T]
+{
   import Aggregate.Change
 
-  private[widok] val chChanges: Channel[Change[T]]
-
-  def foreach(f: T => Unit)
-
-  /* Downcasts ``chChanges`` in order to drop writing permissions. */
-  def changes: ReadChannel[Change[T]] = chChanges
-
-  def currentSize: Int
-
-  def mapTo[U](f: T => U): FunctMap[T, U] = FunctMap(this, f)
-  def toVarMap[U](default: U): VarMap[T, U] = VarMap(this, default)
-  def toOptMap[U]: OptMap[T, U] = OptMap(this)
+  /* TODO Downcast to ReadChannel in order to drop writing permissions. */
+  val changes: Channel[Change[Ref[T]]]
 
   def size: ReadChannel[Int] =
-    chChanges.forkUniState(change =>
-      Result.Next(Some(currentSize)),
-      Some(currentSize)
+    changes.forkUniState(change =>
+      Result.Next(Some(get.size)),
+      Some(get.size)
     ).distinct
 
   def isEmpty: ReadChannel[Boolean] =
-    chChanges.forkUniState(
-      change => Result.Next(Some(currentSize == 0)),
-      Some(currentSize == 0)
+    changes.forkUniState(
+      change => Result.Next(Some(get.isEmpty)),
+      Some(get.isEmpty)
     ).distinct
 
   def nonEmpty: ReadChannel[Boolean] =
-    chChanges.forkUniState(change =>
-      Result.Next(Some(currentSize != 0)),
-      Some(currentSize != 0)
+    changes.forkUniState(change =>
+      Result.Next(Some(get.nonEmpty)),
+      Some(get.nonEmpty)
     ).distinct
+
+  def find(f: T => Boolean): ReadChannel[Option[T]] = ???
+
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
+
+  def exists(f: T => Boolean): ReadChannel[Boolean] = {
+    val matching = new mutable.HashSet[Ref[T]]()
+    val state = LazyVar(matching.nonEmpty)
+
+    changes.attach {
+      case Change.Insert(position, element) =>
+        if (f(element.get)) {
+          matching.add(element)
+          state.produce()
+        }
+
+      case Change.Remove(element) =>
+        if (matching.contains(element)) {
+          matching.remove(element)
+          state.produce()
+        }
+
+      case Change.Clear() =>
+        matching.clear()
+        state.produce()
+    }
+
+    state
+  }
+
+  def forall(f: T => Boolean): ReadChannel[Boolean] = {
+    val falseIds = new mutable.HashSet[Ref[T]]()
+    val state = LazyVar(falseIds.isEmpty)
+
+    changes.attach {
+      case Change.Insert(_, element) =>
+        if (!f(element.get)) {
+          falseIds.add(element)
+          state.produce()
+        }
+
+      case Change.Remove(element) =>
+        if (falseIds.contains(element)) {
+          falseIds.remove(element)
+          state.produce()
+        }
+
+      case Change.Clear() =>
+        falseIds.clear()
+        state.produce()
+    }
+
+    state
+  }
 }

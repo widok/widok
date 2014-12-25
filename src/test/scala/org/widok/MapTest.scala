@@ -4,8 +4,8 @@ import cgta.otest.FunSuite
 
 object MapTest extends FunSuite {
   test("size()") {
-    val buf = VarBuf(1, 2, 3)
-    val map = buf.toOptMap[Int]
+    val buf = Buffer(1, 2, 3)
+    val map = buf.mapTo(_ => -1)
 
     var size = 0
     map.size.attach(size = _)
@@ -16,16 +16,20 @@ object MapTest extends FunSuite {
   }
 
   test("forall()") {
-    val buf = VarBuf(1, 2, 3)
-    val map = buf.toOptMap[Int]
+    val buf = Buffer(1, 2, 3)
+    val map = buf.mapTo(_ => -1)
 
     var state = false
-    map.forall(_.isDefined).attach(state = _)
+    map.forall(_ != -1).attach(state = _)
     Assert.isEquals(state, false)
 
-    map(buf(0)) := 1
-    map(buf(1)) := 2
-    map(buf(2)) := 3
+    map.update(buf.get(0), 1)
+    Assert.isEquals(state, false)
+
+    map.update(buf.get(1), 2)
+    Assert.isEquals(state, false)
+
+    map.update(buf.get(2), 3)
     Assert.isEquals(state, true)
   }
 }
