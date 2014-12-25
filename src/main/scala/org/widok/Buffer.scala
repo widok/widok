@@ -55,6 +55,9 @@ trait ReadBuffer[T]
 
   def mapTo[U](f: T => U): BufMap[T, U] = BufMap(this, f)
 
+  def mapToCh[U](f: T => ReadChannel[Option[U]]): OptBufMap[T, U] =
+    OptBufMap(this, f)
+
   def get: Seq[Ref[T]] = elements
 
   def value(index: Int): T = elements(index).get
@@ -258,13 +261,18 @@ trait ReadBuffer[T]
     val values = mutable.HashMap.empty[Ref[T], Option[U]]
     val attached = mutable.HashMap.empty[Ref[T], ReadChannel[Unit]]
 
-    def valueChange(handle: Ref[T], value: Option[U]) {
+    def rerender() {
       res.clear()
-      values += handle -> value
       elements.foreach { handle =>
         if (values.isDefinedAt(handle) && values(handle).isDefined)
           res += values(handle).get
       }
+    }
+
+    def valueChange(handle: Ref[T], value: Option[U]) {
+      // TODO Use Change.Update
+      values += handle -> value
+      rerender()
     }
 
     changes.attach {
@@ -277,11 +285,13 @@ trait ReadBuffer[T]
         attached(element).dispose()
         attached -= element
         values -= element
+        rerender()
 
       case Change.Clear() =>
         attached.foreach { case (_, ch) => ch.dispose() }
         attached.clear()
         values.clear()
+        rerender()
     }
 
     res

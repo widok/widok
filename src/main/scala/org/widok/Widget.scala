@@ -101,25 +101,18 @@ object Widget {
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
-      def bind[T, X <: List.Item[X]](map: BufMap[T, ReadChannel[String]], selection: Channel[Ref[T]]) = {
+      def bind[T, X <: List.Item[X]](map: ChildMap[T, String], selection: Channel[Ref[T]]) = {
         import Aggregate.Change
         import Aggregate.Position
 
-        val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
-
-        // TOOD Could this be simplified if we had Change.Update?
-        def render(str: ReadChannel[String]): HTML.Input.Select.Option = {
+        def render(str: String): HTML.Input.Select.Option = {
           val elem = HTML.Input.Select.Option()
-          elem.rendered.appendChild(HTML.Text("").rendered)
-          str.attach { v =>
-            elem.rendered.replaceChild(
-              HTML.Text(v).rendered,
-              elem.rendered.firstChild)
-          }
+          elem.rendered.appendChild(HTML.Text(str).rendered)
           elem
         }
 
         def selected(): dom.HTMLSelectElement = {
+          val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
           val idx = castRendered.selectedIndex
 
           // TODO Remove casts
@@ -132,13 +125,7 @@ object Widget {
             .apply(idx)
         }
 
-        val mapping = mutable.Map.empty[Ref[ReadChannel[String]], HTML.Input.Select.Option]
-
-        def resolveT(elem: dom.HTMLSelectElement): Ref[T] = {
-          val m = mapping.find(_._2.rendered == elem)
-          assert(m.isDefined, s"Mapping contains DOM element $elem")
-          map.mapping.find(_._2 == m.get._1).get._1
-        }
+        val mapping = mutable.Map.empty[Ref[String], HTML.Input.Select.Option]
 
         map.changes.attach {
           case Change.Insert(Position.Head(), element) =>
@@ -156,6 +143,10 @@ object Widget {
           case Change.Insert(Position.After(reference), element) =>
             mapping += element -> render(element.get)
             rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
+
+          /*case Change.Update(reference, element) =>
+            val rendered = mapping(reference).rendered
+            rendered.replaceChild(HTML.Text(element.get).rendered, rendered.firstChild)*/
 
           case Change.Remove(element) =>
             rendered.removeChild(mapping(element).rendered)
@@ -176,8 +167,12 @@ object Widget {
           opt.rendered.setAttribute("selected", "")
         }
 
-        rendered.onchange =
-          (e: dom.Event) => selection.produce(resolveT(selected()), obs)
+        rendered.onchange = (e: dom.Event) => {
+          val m = mapping.find(_._2.rendered == selected())
+          assert(m.isDefined, s"Mapping contains selected DOM element")
+          val found = map.mapping.find(_._2 == m.get._1).get._1
+          selection.produce(found, obs)
+        }
 
         self
       }
