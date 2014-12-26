@@ -337,9 +337,9 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
       fwdValue => Result.Next(Some(f(fwdValue))),
       bwdValue => Result.Next(Some(g(bwdValue))))
 
-  def partialBiMap[U](f: T => U, g: U => Option[T]): Channel[U] =
+  def partialBiMap[U](f: T => Option[U], g: U => Option[T]): Channel[U] =
     forkBi(
-      fwdValue => Result.Next(Some(f(fwdValue))),
+      fwdValue => Result.Next(f(fwdValue)),
       bwdValue => Result.Next(g(bwdValue)))
 
   /** Synchronise ``this`` and ``other``. */
