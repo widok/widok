@@ -422,7 +422,7 @@ trait Widget[T <: Widget[T]] { self: T =>
     value.attach { cur =>
       if (remove) {
         rendered.style.display =
-          if (cur) "block" else "none"
+          if (cur) "" else "none"
       } else {
         rendered.style.visibility =
           if (cur) "visible" else "hidden"
