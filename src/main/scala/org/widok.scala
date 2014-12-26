@@ -43,6 +43,11 @@ package object widok {
   implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindWidget(value)
 
+  implicit def WidgetBufferToWidget[T <: Widget[_]](value: ReadBuffer[T]): HTML.IterableContainer.Inline =
+    HTML.IterableContainer.Inline().bind(value) { row =>
+      HTML.IterableContainer.Item(row.get)
+    }
+
   implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindOptWidget(value)
 

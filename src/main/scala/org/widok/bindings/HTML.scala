@@ -222,4 +222,18 @@ object HTML {
       val rendered = DOM.createElement("span", contents: _*)
     }
   }
+
+  object IterableContainer {
+    case class Generic(contents: Item*) extends Widget.List[Generic] {
+      val rendered = DOM.createElement("div", contents: _*)
+    }
+
+    case class Inline(contents: Item*) extends Widget.List[Inline] {
+      val rendered = DOM.createElement("span", contents: _*)
+    }
+
+    case class Item(contents: Widget[_]*) extends Widget.List.Item[Item] {
+      val rendered = DOM.createElement("span", contents: _*)
+    }
+  }
 }
