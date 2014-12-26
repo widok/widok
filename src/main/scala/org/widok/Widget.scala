@@ -101,15 +101,27 @@ object Widget {
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
-      def bind[T, X <: List.Item[X]](map: ChildMap[T, String], selection: Channel[Ref[T]]) = {
+      private var optDefault = Option.empty[HTML.Input.Select.Option]
+
+      private def addOption(str: String): HTML.Input.Select.Option = {
+        val elem = HTML.Input.Select.Option()
+        elem.rendered.appendChild(HTML.Text(str).rendered)
+        elem
+      }
+
+      /* All manually added elements will be ignored by bind() */
+      def default(caption: String) = {
+        assert(optDefault.isEmpty, "default() can only be used once")
+        assert(!rendered.hasChildNodes(), "DOM modified externally")
+        val opt = addOption(caption)
+        rendered.appendChild(opt.rendered)
+        optDefault = Some(opt)
+        self
+      }
+
+      def bind[T, X <: List.Item[X]](map: ChildMap[T, String], selection: Channel[Option[Ref[T]]]) = {
         import Aggregate.Change
         import Aggregate.Position
-
-        def render(str: String): HTML.Input.Select.Option = {
-          val elem = HTML.Input.Select.Option()
-          elem.rendered.appendChild(HTML.Text(str).rendered)
-          elem
-        }
 
         def selected(): dom.HTMLSelectElement = {
           val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
@@ -129,19 +141,27 @@ object Widget {
 
         map.changes.attach {
           case Change.Insert(Position.Head(), element) =>
-            mapping += element -> render(element.get)
-            rendered.insertBefore(mapping(element).rendered, rendered.firstChild)
+            mapping += element -> addOption(element.get)
+
+            if (optDefault.isEmpty)
+              rendered.insertBefore(
+                mapping(element).rendered,
+                rendered.firstChild)
+            else
+              rendered.insertBefore(
+                mapping(element).rendered,
+                optDefault.get.rendered)
 
           case Change.Insert(Position.Last(), element) =>
-            mapping += element -> render(element.get)
+            mapping += element -> addOption(element.get)
             rendered.appendChild(mapping(element).rendered)
 
           case Change.Insert(Position.Before(reference), element) =>
-            mapping += element -> render(element.get)
+            mapping += element -> addOption(element.get)
             rendered.insertBefore(mapping(element).rendered, mapping(reference).rendered)
 
           case Change.Insert(Position.After(reference), element) =>
-            mapping += element -> render(element.get)
+            mapping += element -> addOption(element.get)
             rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
 
           /*case Change.Update(reference, element) =>
@@ -153,25 +173,33 @@ object Widget {
             mapping -= element
 
           case Change.Clear() =>
+            mapping.foreach { case (_, value) =>
+              rendered.removeChild(value.rendered) }
             mapping.clear()
-            DOM.clear(rendered)
         }
 
         val obs = selection.attach { select =>
-          assert(map.mapping.contains(select), s"Mapping contains selection $select")
-          val ch = map.mapping(select)
+          if (select.isEmpty) {
+            if (optDefault.nonEmpty)
+              optDefault.get.rendered.setAttribute("selected", "")
+          } else {
+            assert(map.mapping.contains(select.get), s"Mapping contains selection $select")
+            val ch = map.mapping(select.get)
 
-          assert(mapping.contains(ch), s"Mapping contains selection channel $select")
-          val opt = mapping(ch)
+            assert(mapping.contains(ch), s"Mapping contains selection channel $select")
+            val opt = mapping(ch)
 
-          opt.rendered.setAttribute("selected", "")
+            opt.rendered.setAttribute("selected", "")
+          }
         }
 
         rendered.onchange = (e: dom.Event) => {
           val m = mapping.find(_._2.rendered == selected())
-          assert(m.isDefined, s"Mapping contains selected DOM element")
-          val found = map.mapping.find(_._2 == m.get._1).get._1
-          selection.produce(found, obs)
+
+          if (m.isDefined) {
+            val found = map.mapping.find(_._2 == m.get._1).get._1
+            selection.produce(Some(found), obs)
+          } else selection.produce(None, obs)
         }
 
         self
