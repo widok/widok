@@ -212,7 +212,7 @@ trait ReadBuffer[T]
 
   def view[U](lens: T => ReadChannel[U]): ReadBuffer[T] = {
     flatMapCh { t =>
-      lens(t).map(x => Some(t))
+      lens(t.get).map(x => Some(t))
     }
   }
 
@@ -256,20 +256,20 @@ trait ReadBuffer[T]
 
   def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] = ???
 
-  def flatMapCh[U](f: T => ReadChannel[Option[U]]): ReadBuffer[U] = {
+  def flatMapCh[U](f: Ref[T] => ReadChannel[Option[Ref[U]]]): ReadBuffer[U] = {
     val res = Buffer[U]()
-    val values = mutable.HashMap.empty[Ref[T], Option[U]]
+    val values = mutable.HashMap.empty[Ref[T], Option[Ref[U]]]
     val attached = mutable.HashMap.empty[Ref[T], ReadChannel[Unit]]
 
     def rerender() {
       res.clear()
       elements.foreach { handle =>
         if (values.isDefinedAt(handle) && values(handle).isDefined)
-          res += values(handle).get
+          res.append(values(handle).get)
       }
     }
 
-    def valueChange(handle: Ref[T], value: Option[U]) {
+    def valueChange(handle: Ref[T], value: Option[Ref[U]]) {
       // TODO Use Change.Update
       values += handle -> value
       rerender()
@@ -278,7 +278,7 @@ trait ReadBuffer[T]
     changes.attach {
       case Change.Insert(position, element) =>
         values += element -> None
-        val ch = f(element.get)
+        val ch = f(element)
         attached += element -> ch.attach(value => valueChange(element, value))
 
       case Change.Remove(element) =>

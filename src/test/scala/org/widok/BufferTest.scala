@@ -46,4 +46,16 @@ object BufferTest extends FunSuite {
     val y = x.concat(Buffer())
     Assert.isEquals(x.get, y.get)
   }
+
+  test("flatMapCh()") {
+    /* Ensure that references are preserved. */
+    val x = Buffer(1, 2, 3)
+    val y = x.flatMapCh[Int](value => x.watch(value))
+    Assert.isEquals(x.get, y.get)
+
+    val fst = x.get.head
+    x.remove(fst)
+    x.prepend(fst)
+    Assert.isEquals(x.get, y.get)
+  }
 }

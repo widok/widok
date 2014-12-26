@@ -61,6 +61,7 @@ trait Aggregate[T]
       Some(get.nonEmpty)
     ).distinct
 
+  /* TODO Instantiate FoldFunctions[Ref[T]] */
   def find(f: T => Boolean): ReadChannel[Option[T]] = ???
 
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
@@ -114,4 +115,12 @@ trait Aggregate[T]
 
     state
   }
+
+  def watch(reference: Ref[T]): ReadChannel[Option[Ref[T]]] =
+    changes.partialMap {
+      /* TODO Support value changes via Change.Update */
+      case Change.Insert(_, element) if element == reference => Some(element)
+      case Change.Remove(element) if element == reference => None
+      case Change.Clear() => None
+    }
 }

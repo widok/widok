@@ -97,6 +97,9 @@ trait SequentialFunctions[T] {
   def get: Seq[Ref[T]]
   def values: Seq[T]
   def foreach(f: T => Unit)
+
+  /** Observe the existence and the value changes of the given element. */
+  def watch(reference: Ref[T]): ReadChannel[Option[Ref[T]]]
 }
 
 trait IterateFunctions[T] {
@@ -131,6 +134,7 @@ trait OrderFunctions[T] {
   def apply(index: Index): T = value(index)
 }
 
+/** TODO Implement by Aggregate */
 trait UpdateFunctions[T] {
   def update(f: T => T)
   def clear()
