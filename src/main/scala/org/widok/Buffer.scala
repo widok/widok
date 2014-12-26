@@ -247,8 +247,8 @@ trait ReadBuffer[T]
 
     changes.merge(buf.changes).attach { _ =>
       res.clear()
-      foreach(t => res.append(t))
-      buf.foreach(t => res.append(t))
+      get.foreach(t => res.append(t))
+      buf.get.foreach(t => res.append(t))
     }
 
     res

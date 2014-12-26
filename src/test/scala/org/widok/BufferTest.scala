@@ -39,4 +39,11 @@ object BufferTest extends FunSuite {
     Buffer().size.attach(cur = _)
     Assert.isEquals(cur, 0)
   }
+
+  test("concat()") {
+    /* Ensure that references are preserved. */
+    val x = Buffer(1, 2, 3)
+    val y = x.concat(Buffer())
+    Assert.isEquals(x.get, y.get)
+  }
 }
