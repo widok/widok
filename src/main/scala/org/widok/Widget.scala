@@ -139,6 +139,17 @@ object Widget {
 
         val mapping = mutable.Map.empty[Ref[String], HTML.Input.Select.Option]
 
+        def onSelect(select: Option[Ref[T]]) {
+          if (select.isEmpty) {
+            if (optDefault.nonEmpty)
+              optDefault.get.rendered.setAttribute("selected", "")
+          } else (for {
+            selection <- select
+            ch <- map.mapping.get(selection)
+            opt <- mapping.get(ch)
+          } yield opt).foreach(_.rendered.setAttribute("selected", ""))
+        }
+
         map.changes.attach {
           case Change.Insert(Position.Head(), element) =>
             mapping += element -> addOption(element.get)
@@ -152,17 +163,23 @@ object Widget {
                 mapping(element).rendered,
                 optDefault.get.rendered)
 
+            // TODO Flush only if selection was invalidated by Remove() or Clear()
+            selection.flush(onSelect)
+
           case Change.Insert(Position.Last(), element) =>
             mapping += element -> addOption(element.get)
             rendered.appendChild(mapping(element).rendered)
+            selection.flush(onSelect)
 
           case Change.Insert(Position.Before(reference), element) =>
             mapping += element -> addOption(element.get)
             rendered.insertBefore(mapping(element).rendered, mapping(reference).rendered)
+            selection.flush(onSelect)
 
           case Change.Insert(Position.After(reference), element) =>
             mapping += element -> addOption(element.get)
             rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
+            selection.flush(onSelect)
 
           /*case Change.Update(reference, element) =>
             val rendered = mapping(reference).rendered
@@ -178,20 +195,7 @@ object Widget {
             mapping.clear()
         }
 
-        val obs = selection.attach { select =>
-          if (select.isEmpty) {
-            if (optDefault.nonEmpty)
-              optDefault.get.rendered.setAttribute("selected", "")
-          } else {
-            assert(map.mapping.contains(select.get), s"Mapping contains selection $select")
-            val ch = map.mapping(select.get)
-
-            assert(mapping.contains(ch), s"Mapping contains selection channel $select")
-            val opt = mapping(ch)
-
-            opt.rendered.setAttribute("selected", "")
-          }
-        }
+        val obs = selection.attach(onSelect)
 
         rendered.onchange = (e: dom.Event) => {
           val m = mapping.find(_._2.rendered == selected())
