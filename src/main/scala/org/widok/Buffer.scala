@@ -45,7 +45,7 @@ trait ReadBuffer[T]
   extends Aggregate[T]
   with OrderFunctions[T]
   with FilterFunctions[ReadBuffer, T]
-  with MapFunctions[ReadBuffer, T]
+  with MapFunctions[ReadBuffer, Ref[T]]
   with BoundedStreamFunctions[ReadBuffer, T]
 {
   import Aggregate.Change
@@ -216,19 +216,19 @@ trait ReadBuffer[T]
     }
   }
 
-  def map[U](f: T => U): ReadBuffer[U] = {
+  def map[U](f: Ref[T] => U): ReadBuffer[U] = {
     val buf = Buffer[U]()
     val mapping = new mutable.HashMap[Ref[T], Ref[U]]()
 
     changes.attach {
       case Change.Insert(Position.Head(), element) =>
-        mapping += (element -> buf.prepend(f(element.get)))
+        mapping += (element -> buf.prepend(f(element)))
       case Change.Insert(Position.Last(), element) =>
-        mapping += (element -> buf.append(f(element.get)))
+        mapping += (element -> buf.append(f(element)))
       case Change.Insert(Position.Before(handle), element) =>
-        mapping += (before(handle) -> buf.insertBefore(mapping(handle), f(element.get)))
+        mapping += (before(handle) -> buf.insertBefore(mapping(handle), f(element)))
       case Change.Insert(Position.After(handle), element) =>
-        mapping += (after(handle) -> buf.insertAfter(mapping(handle), f(element.get)))
+        mapping += (after(handle) -> buf.insertAfter(mapping(handle), f(element)))
       case Change.Remove(element) =>
         buf.remove(mapping(element))
         mapping -= element
@@ -240,7 +240,7 @@ trait ReadBuffer[T]
     buf
   }
 
-  def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] = ???
+  def partialMap[U](f: PartialFunction[Ref[T], U]): ReadBuffer[U] = ???
 
   def concat(buf: ReadBuffer[T]): ReadBuffer[T] = {
     val res = Buffer[T]()
@@ -254,7 +254,7 @@ trait ReadBuffer[T]
     res
   }
 
-  def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] = ???
+  def flatMap[U](f: Ref[T] => ReadBuffer[U]): ReadBuffer[U] = ???
 
   def flatMapCh[U](f: Ref[T] => ReadChannel[Option[Ref[U]]]): ReadBuffer[U] = {
     val res = Buffer[U]()
@@ -297,11 +297,11 @@ trait ReadBuffer[T]
     res
   }
 
-  def takeUntil(ch: ReadChannel[_]): ReadBuffer[T] = ???
+  def takeUntil(ch: ReadChannel[_]): ReadBuffer[Ref[T]] = ???
 
-  def equal(value: T): ReadChannel[Boolean] = ???
+  def equal(element: Ref[T]): ReadChannel[Boolean] = ???
 
-  def unequal(value: T): ReadChannel[Boolean] = ???
+  def unequal(element: Ref[T]): ReadChannel[Boolean] = ???
 
   def insertions: ReadChannel[T] = changes.partialMap {
     case Change.Insert(_, element) => element.get

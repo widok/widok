@@ -102,7 +102,7 @@ object AggregateSpec extends FunSuite {
   }
 
   test("map") {
-    forallBufSeq(buffer => (buffer.map(_ * 3), () => buffer.values.map(_ * 3)))
+    forallBufSeq(buffer => (buffer.map(_.get * 3), () => buffer.values.map(_ * 3)))
   }
 
   test("filter") {
