@@ -43,10 +43,8 @@ package object widok {
   implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindWidget(value)
 
-  implicit def WidgetBufferToWidget[T <: Widget[_]](value: ReadBuffer[T]): HTML.IterableContainer.Inline =
-    HTML.IterableContainer.Inline().bind(value) { row =>
-      HTML.IterableContainer.Item(row.get)
-    }
+  implicit def WidgetBufferToWidget[T <: Widget[_]](value: Aggregate[T]): HTML.List.Items =
+    HTML.List.Items(value.asInstanceOf[Aggregate[Widget[_]]]) // TODO Why do we have to cast?
 
   implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindOptWidget(value)

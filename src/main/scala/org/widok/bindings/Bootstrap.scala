@@ -27,7 +27,7 @@ object Bootstrap {
       case object Danger extends Style { val cssTag = "text-danger" }
     }
 
-    def apply(styles: Style*)(contents: Widget[_]*) =
+    def apply(styles: Style*)(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css(styles.map(_.cssTag): _*)
   }
@@ -76,12 +76,12 @@ object Bootstrap {
       .css("glyphicon", glyphicon.cssTag)
       .attribute("title", caption)
 
-  def HorizontalForm(contents: Widget[_]*) =
+  def HorizontalForm(contents: View*) =
     HTML.Form(contents: _*)
       .css("form-horizontal")
       .attribute("role", "form")
 
-  def FormGroup(role: Role = Role.None)(contents: Widget[_]*) = {
+  def FormGroup(role: Role = Role.None)(contents: View*) = {
     val res = HTML.Container.Generic(contents: _*)
       .css("form-group")
 
@@ -89,11 +89,11 @@ object Bootstrap {
     else res.attribute("role", role.value)
   }
 
-  def InputGroup(contents: Widget[_]*) =
+  def InputGroup(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("input-group")
 
-  def ControlLabel(contents: Widget[_]*) =
+  def ControlLabel(contents: View*) =
     HTML.Label(contents: _*)
       .css("control-label")
 
@@ -108,14 +108,14 @@ object Bootstrap {
       case object Danger extends Style { override def toString = "label-danger" }
     }
 
-    def apply(style: ReadChannel[Label.Style])(contents: Widget[_]*) =
+    def apply(style: ReadChannel[Label.Style])(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("label")
         .cssCh(style.map(_.toString))
   }
 
   // TODO Improve design.
-  def Fix(contents: Widget[_]*) =
+  def Fix(contents: View*) =
     HTML.Container.Generic(
       HTML.Container.Inline("Fix")
         .css("label label-warning"),
@@ -155,7 +155,7 @@ object Bootstrap {
 
     // For better usability all buttons should have icons. Therefore
     // None is not the default value.
-    def apply(icon: Glyphicon, size: Size = Size.Normal, `type`: Type = Type.Default)(contents: Widget[_]*) = {
+    def apply(icon: Glyphicon, size: Size = Size.Normal, `type`: Type = Type.Default)(contents: View*) = {
       val btn =
         if (icon == Glyphicon.None) HTML.Button(contents: _*)
         else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
@@ -164,27 +164,27 @@ object Bootstrap {
     }
   }
 
-  def Footer(contents: Widget[_]*) =
+  def Footer(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("footer")
 
-  def Container(contents: Widget[_]*) =
+  def Container(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("container")
 
-  def PageHeader(contents: Widget[_]*) =
+  def PageHeader(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("page-header")
 
-  def Lead(contents: Widget[_]*) =
+  def Lead(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("lead")
 
-  def PullRight(contents: Widget[_]*) =
+  def PullRight(contents: View*) =
     HTML.Container.Inline(contents: _*)
       .css("pull-right")
 
-  def MutedText(contents: Widget[_]*) =
+  def MutedText(contents: View*) =
     HTML.Paragraph(contents: _*)
       .css("text-muted")
 
@@ -212,7 +212,7 @@ object Bootstrap {
         .css("nav nav-pills")
         .attribute("role", "tablist")
 
-    def Item(active: ReadChannel[Boolean] = Channel())(contents: Widget[_]*) =
+    def Item(active: ReadChannel[Boolean] = Channel())(contents: View*) =
       HTML.List.Item(contents: _*)
         .cssCh(active, "active")
         .asInstanceOf[HTML.List.Item] // TODO Workaround
@@ -239,7 +239,7 @@ object Bootstrap {
       }
     }
 
-    def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: Widget[_]*) =
+    def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: View*) =
       HTML.Navigation(contents: _*)
         .css("navbar", "navbar-default", position.cssTag(fixed))
         .attribute("role", "navigation")
@@ -252,19 +252,19 @@ object Bootstrap {
        ).css("navbar-toggle collapsed")
         .attribute("type", "button")
 
-    def Header(contents: Widget[_]*) =
+    def Header(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("navbar-header")
 
-    def Brand(contents: Widget[_]*) =
+    def Brand(contents: View*) =
       HTML.Anchor(contents: _*)
         .css("navbar-brand")
 
-    def Collapse(contents: Widget[_]*) =
+    def Collapse(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("collapse", "navbar-collapse")
 
-    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: Widget[_]*) =
+    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: View*) =
       HTML.List.Item(
         HTML.Anchor(contents: _*)
           .url(url)
@@ -287,21 +287,21 @@ object Bootstrap {
       HTML.List.Unordered(contents: _*)
         .css("nav", "navbar-nav")
 
-    def Form(contents: Widget[_]*) =
+    def Form(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("navbar-form")
 
-    def Right(contents: Widget[_]*) =
+    def Right(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css("navbar-right")
 
-    def Navigation(contents: Widget[_]*) =
+    def Navigation(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("nav", "navbar-nav")
   }
 
   // TODO Find a better solution.
-  case class Checkbox(contents: Widget[_]*) extends Widget[Checkbox] {
+  case class Checkbox(contents: View*) extends Widget[Checkbox] {
     val checkbox = HTML.Input.Checkbox()
 
     val rendered =
@@ -327,12 +327,12 @@ object Bootstrap {
     case object Danger extends AlertType { val cssTag = "alert-danger" }
   }
 
-  def Alert(alertType: AlertType)(contents: Widget[_]*) =
+  def Alert(alertType: AlertType)(contents: View*) =
     HTML.Container.Generic(contents: _*)
       .css(s"alert ${alertType.cssTag}")
       .attribute("role", "alert")
 
-  def Panel(contents: Widget[_]*) =
+  def Panel(contents: View*) =
     HTML.Container.Generic(
       HTML.Container.Generic(
         contents: _*
@@ -346,7 +346,7 @@ object Bootstrap {
         .rendered
     }
 
-    case class PageItem[T <: PageItem[T]](contents: Widget[_]*) extends Widget.List.Item[T] {
+    case class PageItem[T <: PageItem[T]](contents: View*) extends Widget.List.Item[T] {
       val widget = HTML.Anchor(contents: _*)
         .css("list-group-item")
       val rendered = widget.rendered
@@ -365,7 +365,7 @@ object Bootstrap {
     }
 
     // clearfix is needed in conjunction with PullRight()
-    case class Item[T <: Item[T]](contents: Widget[_]*) extends Widget.List.Item[T] {
+    case class Item[T <: Item[T]](contents: View*) extends Widget.List.Item[T] {
       val widget = HTML.Container.Generic(contents: _*)
         .css("list-group-item", "clearfix")
       val rendered = widget.rendered
@@ -376,11 +376,11 @@ object Bootstrap {
       }
     }
 
-    def ItemHeading(contents: Widget[_]*) =
+    def ItemHeading(contents: View*) =
       HTML.Heading.Level4(contents: _*)
         .css("list-group-item-heading")
 
-    def ItemText(contents: Widget[_]*) =
+    def ItemText(contents: View*) =
       HTML.Paragraph(contents: _*)
         .css("list-group-item-text")
   }
@@ -394,11 +394,11 @@ object Bootstrap {
       case object Large extends ColumnType { val cssTag = "col-lg" }
     }
 
-    def Column(columnType: ColumnType, level: Int)(contents: Widget[_]*) =
+    def Column(columnType: ColumnType, level: Int)(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css(s"${columnType.cssTag}-$level")
 
-    def Row(contents: Widget[_]*) =
+    def Row(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("row")
   }

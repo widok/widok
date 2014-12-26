@@ -302,8 +302,23 @@ object Event {
   }
 }
 
-trait Widget[T <: Widget[T]] { self: T =>
+trait View {
+  def render(parent: dom.Node, offset: dom.Node)
+}
+
+case class Inline(contents: Widget[_]*) extends View {
+  def render(parent: dom.Node, offset: dom.Node) {
+    contents.foreach(_.render(parent, parent.lastChild))
+  }
+}
+
+trait Widget[T <: Widget[T]] extends View { self: T =>
   val rendered: dom.HTMLElement
+
+  def render(parent: dom.Node, offset: dom.Node) {
+    /* TODO Don't ignore offset. */
+    parent.appendChild(rendered)
+  }
 
   /** @note May only be used once. */
   // TODO Add assertions
