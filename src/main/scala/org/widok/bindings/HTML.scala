@@ -5,6 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.HTMLInputElement
 
 import scala.collection.mutable
+import scala.scalajs.js
 
 object HTML {
   trait Cursor
@@ -141,6 +142,26 @@ object HTML {
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
+    }
+
+    case class File() extends Widget[File] {
+      val rendered = DOM.createElement("input")
+        .asInstanceOf[HTMLInputElement]
+
+      def accept(value: String) = {
+        rendered.setAttribute("accept", value)
+        this
+      }
+
+      def bind(writeChannel: WriteChannel[String]) = {
+        rendered.addEventListener(
+          "change",
+          (e: dom.Event) => writeChannel.produce(rendered.value),
+          useCapture = false)
+        this
+      }
+
+      rendered.setAttribute("type", "file")
     }
 
     object Select {
