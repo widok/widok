@@ -4,13 +4,13 @@ trait BasePage {
   def view(): View
 
   def render() {
-    (for {
-      page <- DOM.getElement("page")
-    } yield {
-      DOM.clear(page)
-      view().render(page, page.lastChild)
-    }).orElse {
-      sys.error("DOM element not found. The JavaScript files must be loaded at the end of the HTML document.")
+    DOM.getElement("page") match {
+      case Some(page) =>
+        DOM.clear(page)
+        view().render(page, page.lastChild)
+      case None =>
+        sys.error("DOM element not found. The JavaScript files must be loaded " +
+          "at the end of the HTML document.")
     }
   }
 }

@@ -1,39 +1,37 @@
 package org.widok
 
 import org.scalajs.dom
-import org.scalajs.dom.HTMLElement
-
-import scala.scalajs.js
+import org.scalajs.dom.extensions.PimpedNodeList
 
 object DOM {
-  def createElement(tagName: String, contents: Seq[View] = Seq.empty): HTMLElement = {
+  def createElement(tagName: String,
+                    contents: Seq[View] = Seq.empty): dom.HTMLElement =
+  {
     val elem = dom.document.createElement(tagName)
     contents.foreach(_.render(elem, elem.lastChild))
     // TODO remove cast
-    elem.asInstanceOf[HTMLElement]
+    elem.asInstanceOf[dom.HTMLElement]
   }
 
-  def getElement(id: String): Option[HTMLElement] =
-    // TODO remove cast
-    Option(dom.document.getElementById(id).asInstanceOf[HTMLElement])
+  def getElement(id: String): Option[dom.Element] =
+    Option(dom.document.getElementById(id))
 
-  def clear(elem: HTMLElement) {
+  def clear(elem: dom.Node) {
     while (elem.lastChild != null)
       elem.removeChild(elem.lastChild)
   }
 
-  def elements(name: String, parent: HTMLElement): List[HTMLElement] =
+  def elements(name: String, parent: dom.Element): List[dom.Node] =
     parent
       .getElementsByTagName(name)
-      .asInstanceOf[js.Array[HTMLElement]]
       .toList
 
-  def screenCoordinates(elem: HTMLElement): Position = {
+  def screenCoordinates(elem: dom.HTMLElement): Position = {
     var pos = Position(elem.offsetLeft, elem.offsetTop)
     var iter = elem
 
     while (iter.offsetParent != null) {
-      val parent = iter.offsetParent.asInstanceOf[HTMLElement]
+      val parent = iter.offsetParent.asInstanceOf[dom.HTMLElement]
 
       pos = Position(
         top = pos.top + parent.offsetLeft,
@@ -48,7 +46,7 @@ object DOM {
     pos
   }
 
-  def clientCoordinates(element: HTMLElement) = {
+  def clientCoordinates(element: dom.HTMLElement) = {
     val boundingClientRect = element.getBoundingClientRect()
 
     Coordinates(
@@ -58,8 +56,11 @@ object DOM {
       left = boundingClientRect.left + dom.window.pageXOffset)
   }
 
-  // Positions an element around a host element. Can be used to implement tooltips.
-  def position(element: HTMLElement, hostElement: HTMLElement, placement: Placement) {
+  /** Positions an element around a host element. Can be used to implement tooltips. */
+  def position(element: dom.HTMLElement,
+               hostElement: dom.HTMLElement,
+               placement: Placement)
+  {
     val elemPosition = clientCoordinates(element)
     val hostPosition = clientCoordinates(hostElement)
 
