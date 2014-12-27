@@ -2,9 +2,7 @@ package org.widok
 
 import org.scalajs.dom
 
-import scala.scalajs.js
 import scala.scalajs.js.URIUtils
-import scala.scalajs.js.annotation.RawJSType
 
 case class Route(path: String, page: Page) extends Ordered[Route] {
   val routeParts = path.split('/')
@@ -32,11 +30,11 @@ case class Route(path: String, page: Page) extends Ordered[Route] {
 
   def matches(queryParts: Seq[String]) =
     if (routeParts.length != queryParts.length) false
-    else routeParts.zip(queryParts).forall({
+    else routeParts.zip(queryParts).forall{
       case (rt, qry) if rt == qry => true
       case (rt, qry) if rt.startsWith(":") => true
       case _ => false
-    })
+    }
 
   def parseArguments(queryParts: Seq[String]) =
     routeParts.zip(queryParts).foldLeft(Map.empty[String, String]) { (acc, cur) =>
@@ -82,8 +80,11 @@ case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty
   }
 }
 
-case class Router(unorderedRoutes: Set[Route], startPath: String = "/", fallback: Option[Route] = None) {
-  // Checks whether no two elements in ``unorderedRoutes`` are symmetric.
+case class Router(unorderedRoutes: Set[Route],
+                  startPath: String = "/",
+                  fallback: Option[Route] = None)
+{
+  /** Checks whether no two elements in ``unorderedRoutes`` are symmetric. */
   assume((for {
     x <- unorderedRoutes
     y <- unorderedRoutes.filter(_ != x)
@@ -91,27 +92,19 @@ case class Router(unorderedRoutes: Set[Route], startPath: String = "/", fallback
 
   val routes = unorderedRoutes.toSeq.sorted.reverse
 
-  // TODO See also https://github.com/scala-js/scala-js-dom/issues/53
-  @RawJSType
-  case class HashChangeEvent(newURL: String, oldURL: String)
-
   def matchingRoute(queryParts: Seq[String]) =
     routes.find(_.matches(queryParts))
 
-  // Starts listening on the hash change event and triggers routes.
+  /** Starts listening on the hash change event and triggers routes. */
   def listen() {
-    dom.window.addEventListener("hashchange", { (e: dom.Event) =>
-      val event = e.asInstanceOf[HashChangeEvent]
-      dispatchPath(event.newURL,
-        if (event.oldURL == "") None
-        else Some(event.oldURL))
-    }, false)
-
-    if (dom.window.location.hash.isEmpty) {
-      dom.window.location.hash = startPath
-    } else {
-      dispatchPath(dom.window.location.hash)
+    dom.window.onhashchange = { (e: dom.HashChangeEvent) =>
+      dispatchPath(e.newURL,
+        if (e.oldURL == "") None
+        else Some(e.oldURL))
     }
+
+    if (dom.window.location.hash.isEmpty) dom.window.location.hash = startPath
+    else dispatchPath(dom.window.location.hash)
   }
 
   /**
@@ -151,6 +144,5 @@ case class Router(unorderedRoutes: Set[Route], startPath: String = "/", fallback
 
 object Router {
   def decode(query: String) = URIUtils.decodeURIComponent(query)
-
   def parseQuery(uri: String) = Helpers.after(uri, '#').map(decode)
 }
