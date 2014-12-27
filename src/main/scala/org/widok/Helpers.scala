@@ -32,4 +32,5 @@ sealed class Ref[T](val get: T) {
 
 object Ref {
   def apply[T](get: T) = new Ref[T](get)
+  def unapply[T](ref: Ref[T]): Option[T] = Some(ref.get)
 }
