@@ -13,6 +13,11 @@ object DOM {
     elem.asInstanceOf[dom.HTMLElement]
   }
 
+  def insertAfter(parent: dom.Node, reference: dom.Node, node: dom.Node) {
+    if (reference == null || reference.nextSibling == null) parent.appendChild(node)
+    else parent.insertBefore(node, reference.nextSibling)
+  }
+
   def getElement(id: String): Option[dom.Element] =
     Option(dom.document.getElementById(id))
 

@@ -44,7 +44,9 @@ object Widget {
           mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference))
 
         case Change.Insert(Position.After(reference), element) =>
-          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference).nextSibling)
+          val after = f(element).rendered
+          DOM.insertAfter(rendered, mapping(reference), after)
+          mapping += element -> after
 
         case Change.Remove(element) =>
           rendered.removeChild(mapping(element))
@@ -178,7 +180,9 @@ object Widget {
 
           case Change.Insert(Position.After(reference), element) =>
             mapping += element -> addOption(element.get)
-            rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
+            DOM.insertAfter(rendered,
+              mapping(reference).rendered,
+              mapping(element).rendered)
             selection.flush(onSelect)
 
           /*case Change.Update(reference, element) =>
@@ -316,8 +320,7 @@ trait Widget[T <: Widget[T]] extends View { self: T =>
   val rendered: dom.HTMLElement
 
   def render(parent: dom.Node, offset: dom.Node) {
-    /* TODO Don't ignore offset. */
-    parent.appendChild(rendered)
+    DOM.insertAfter(parent, offset, rendered)
   }
 
   /** @note May only be used once. */
