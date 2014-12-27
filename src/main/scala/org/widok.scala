@@ -28,27 +28,30 @@ package object widok {
 
   implicit def StringToWidget(value: String) = HTML.Text(value)
 
-  implicit def StringChannelToWidget[T <: String](value: Channel[T]) =
+  implicit def StringChannelToWidget[T <: String](value: ReadChannel[T]) =
     HTML.Container.Inline().bindString(value)
 
-  implicit def IntChannelToWidget[T <: Int](value: Channel[T]) =
+  implicit def IntChannelToWidget[T <: Int](value: ReadChannel[T]) =
     HTML.Container.Inline().bindInt(value)
 
-  implicit def DoubleChannelToWidget[T <: Double](value: Channel[T]) =
+  implicit def DoubleChannelToWidget[T <: Double](value: ReadChannel[T]) =
     HTML.Container.Inline().bindDouble(value)
 
-  implicit def BooleanChannelToWidget[T <: Boolean](value: Channel[T]) =
+  implicit def BooleanChannelToWidget[T <: Boolean](value: ReadChannel[T]) =
     HTML.Container.Inline().bindBoolean(value)
 
-  implicit def WidgetChannelToWidget[T <: Widget[_]](value: Channel[T]) =
+  implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindWidget(value)
 
-  implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]](value: Channel[T]) =
+  implicit def WidgetBufferToWidget[T <: Widget[_]](value: Aggregate[T]): HTML.List.Items =
+    HTML.List.Items(value.asInstanceOf[Aggregate[Widget[_]]]) // TODO Why do we have to cast?
+
+  implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) =
     HTML.Container.Inline().bindOptWidget(value)
 
   implicit def InstantiatedRouteToString(route: InstantiatedRoute): String = route.uri()
 
-  implicit def FunctionToChannel[T](f: T => Unit): Channel[T] = {
+  implicit def FunctionToWriteChannel[T](f: T => Unit): WriteChannel[T] = {
     val ch = Channel[T]()
     ch.attach(f)
     ch

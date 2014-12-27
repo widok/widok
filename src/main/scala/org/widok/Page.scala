@@ -1,16 +1,14 @@
 package org.widok
 
 trait BasePage {
-  def contents(): Seq[Widget[_]]
+  def view(): View
 
   def render() {
     (for {
       page <- DOM.getElement("page")
     } yield {
       DOM.clear(page)
-
-      contents().foreach(elem =>
-        page.appendChild(elem.rendered))
+      view().render(page, page.lastChild)
     }).orElse {
       sys.error("DOM element not found. The JavaScript files must be loaded at the end of the HTML document.")
     }

@@ -7,6 +7,7 @@ import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
 import org.widok.bindings._
 
 import scala.collection.mutable
+import scala.scalajs.js
 
 object Widget {
   object List {
@@ -14,33 +15,45 @@ object Widget {
   }
 
   trait List[V <: List[V]] extends Widget[List[V]] { self: V =>
-    def bind[T](channel: Channel[Seq[T]])(f: T => List.Item[_]) = {
-      channel.attach(list => {
+    def bind[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
+      channel.attach { list =>
         DOM.clear(rendered)
 
         list.foreach { cur =>
           rendered.appendChild(f(cur).rendered)
         }
-      })
+      }
 
       self
     }
 
-    def bind[T, X <: List.Item[X]](aggregate: Aggregate[T])(f: Channel[T] => List.Item[X]) = {
-      var map = mutable.Map[Channel[T], List.Item[_]]()
+    def bind[T, X <: List.Item[X]](aggregate: Aggregate[T])(f: Ref[T] => List.Item[X]) = {
+      import Aggregate.Change
+      import Aggregate.Position
 
-      aggregate.attach(new Aggregate.Observer[T] {
-        def append(cur: Channel[T]) {
-          val li = f(cur)
-          rendered.appendChild(li.rendered)
-          map += (cur -> li)
-        }
+      val mapping = mutable.Map.empty[Ref[T], dom.Node]
 
-        def remove(cur: Channel[T]) {
-          rendered.removeChild(map(cur).rendered)
-          map -= cur
-        }
-      })
+      aggregate.changes.attach {
+        case Change.Insert(Position.Head(), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, rendered.firstChild)
+
+        case Change.Insert(Position.Last(), element) =>
+          mapping += element -> rendered.appendChild(f(element).rendered)
+
+        case Change.Insert(Position.Before(reference), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference))
+
+        case Change.Insert(Position.After(reference), element) =>
+          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference).nextSibling)
+
+        case Change.Remove(element) =>
+          rendered.removeChild(mapping(element))
+          mapping -= element
+
+        case Change.Clear() =>
+          mapping.clear()
+          DOM.clear(rendered)
+      }
 
       self
     }
@@ -63,10 +76,8 @@ object Widget {
        *             produce only if enter was pressed.
        * @return
        */
-      def bind(data: Channel[String], flush: Channel[Unit] = Channel(), live: Boolean = false) = {
-        val obs = (text: String) => rendered.value = text
-
-        data.attach(obs)
+      def bind(data: Channel[String], flush: ReadChannel[Unit] = Channel(), live: Boolean = false) = {
+        val obs = data.attach((text: String) => rendered.value = text)
         flush.attach(_ => data.produce(rendered.value, obs))
 
         rendered.onkeyup = (e: KeyboardEvent) =>
@@ -80,10 +91,8 @@ object Widget {
     trait Checkbox[V <: Checkbox[V]] extends Widget[Checkbox[V]] { self: V =>
       val rendered: HTMLInputElement
 
-      def bind(data: Channel[Boolean], flush: Channel[Unit] = Channel()) = {
-        val obs = (checked: Boolean) => rendered.checked = checked
-
-        data.attach(obs)
+      def bind(data: Channel[Boolean], flush: ReadChannel[Unit] = Channel()) = {
+        val obs = data.attach(rendered.checked = _)
         flush.attach(_ => data.produce(rendered.checked, obs))
 
         rendered.onchange = (e: dom.Event) => data.produce(rendered.checked, obs)
@@ -92,65 +101,171 @@ object Widget {
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
-      // TODO define bind()
+      private var optDefault = Option.empty[HTML.Input.Select.Option]
+
+      private def addOption(str: String): HTML.Input.Select.Option = {
+        val elem = HTML.Input.Select.Option()
+        elem.rendered.appendChild(HTML.Text(str).rendered)
+        elem
+      }
+
+      /* All manually added elements will be ignored by bind() */
+      def default(caption: String) = {
+        assert(optDefault.isEmpty, "default() can only be used once")
+        assert(!rendered.hasChildNodes(), "DOM modified externally")
+        val opt = addOption(caption)
+        rendered.appendChild(opt.rendered)
+        optDefault = Some(opt)
+        self
+      }
+
+      def bind[T, X <: List.Item[X]](map: ChildMap[T, String], selection: Channel[Option[Ref[T]]]) = {
+        import Aggregate.Change
+        import Aggregate.Position
+
+        def selected(): dom.HTMLSelectElement = {
+          val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
+          val idx = castRendered.selectedIndex
+
+          // TODO Remove casts
+          // See https://github.com/scala-js/scala-js/issues/1384#issuecomment-66908750
+          // and https://github.com/scala-js/scala-js-dom/pull/78
+          rendered
+            .asInstanceOf[js.Dynamic]
+            .options
+            .asInstanceOf[js.Array[dom.HTMLSelectElement]]
+            .apply(idx)
+        }
+
+        val mapping = mutable.Map.empty[Ref[String], HTML.Input.Select.Option]
+
+        def onSelect(select: Option[Ref[T]]) {
+          if (select.isEmpty) {
+            if (optDefault.nonEmpty)
+              optDefault.get.rendered.setAttribute("selected", "")
+          } else (for {
+            selection <- select
+            ch <- map.mapping.get(selection)
+            opt <- mapping.get(ch)
+          } yield opt).foreach(_.rendered.setAttribute("selected", ""))
+        }
+
+        map.changes.attach {
+          case Change.Insert(Position.Head(), element) =>
+            mapping += element -> addOption(element.get)
+
+            if (optDefault.isEmpty)
+              rendered.insertBefore(
+                mapping(element).rendered,
+                rendered.firstChild)
+            else
+              rendered.insertBefore(
+                mapping(element).rendered,
+                optDefault.get.rendered)
+
+            // TODO Flush only if selection was invalidated by Remove() or Clear()
+            selection.flush(onSelect)
+
+          case Change.Insert(Position.Last(), element) =>
+            mapping += element -> addOption(element.get)
+            rendered.appendChild(mapping(element).rendered)
+            selection.flush(onSelect)
+
+          case Change.Insert(Position.Before(reference), element) =>
+            mapping += element -> addOption(element.get)
+            rendered.insertBefore(mapping(element).rendered, mapping(reference).rendered)
+            selection.flush(onSelect)
+
+          case Change.Insert(Position.After(reference), element) =>
+            mapping += element -> addOption(element.get)
+            rendered.insertBefore(mapping(reference).rendered, mapping(reference).rendered.nextSibling)
+            selection.flush(onSelect)
+
+          /*case Change.Update(reference, element) =>
+            val rendered = mapping(reference).rendered
+            rendered.replaceChild(HTML.Text(element.get).rendered, rendered.firstChild)*/
+
+          case Change.Remove(element) =>
+            rendered.removeChild(mapping(element).rendered)
+            mapping -= element
+
+          case Change.Clear() =>
+            mapping.foreach { case (_, value) =>
+              rendered.removeChild(value.rendered) }
+            mapping.clear()
+        }
+
+        val obs = selection.attach(onSelect)
+
+        rendered.onchange = (e: dom.Event) => {
+          val m = mapping.find(_._2.rendered == selected())
+
+          if (m.isDefined) {
+            val found = map.mapping.find(_._2 == m.get._1).get._1
+            selection.produce(Some(found), obs)
+          } else selection.produce(None, obs)
+        }
+
+        self
+      }
     }
   }
 
   trait Button[V <: Button[V]] extends Widget[Button[V]] { self: V =>
-    def bind(data: Channel[Unit]) = {
+    def bind(data: WriteChannel[Unit]) = {
       rendered.onclick = (e: dom.Event) => data.produce(())
       self
     }
   }
 
   trait Anchor[V <: Anchor[V]] extends Widget[Anchor[V]] { self: V =>
-    def bind(data: Channel[Unit]) = {
+    def bind(data: WriteChannel[Unit]) = {
       rendered.onclick = (e: dom.Event) => data.produce(())
       self
     }
   }
 
   trait Container[V <: Container[V]] extends Widget[Container[V]] { self: V =>
-    def bindString[T <: String](value: Channel[T]) = {
+    def bindString[T <: String](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
     }
 
-    def bindInt[T <: Int](value: Channel[T]) = {
+    def bindInt[T <: Int](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
     }
 
-    def bindDouble[T <: Double](value: Channel[T]) = {
+    def bindDouble[T <: Double](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
     }
 
-    def bindBoolean[T <: Boolean](value: Channel[T]) = {
+    def bindBoolean[T <: Boolean](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
     }
 
-    def bindWidget[T <: Widget[_]](value: Channel[T]) = {
-      value.attach(cur => {
+    def bindWidget[T <: Widget[_]](value: ReadChannel[T]) = {
+      value.attach { cur =>
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         rendered.appendChild(cur.rendered)
-      })
+      }
 
       self
     }
 
-    def bindOptWidget[T <: Option[Widget[_]]](value: Channel[T]) = {
-      value.attach(cur => {
+    def bindOptWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) = {
+      value.attach { cur =>
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         if (cur.isDefined) rendered.appendChild(cur.get.rendered)
-      })
+      }
 
       self
     }
 
-    // Bind HTML.
-    def bindRaw[T](value: Channel[String]) = {
+    /** Bind HTML. */
+    def bindRaw[T](value: ReadChannel[String]) = {
       value.attach(cur => rendered.innerHTML = cur)
       self
     }
@@ -187,12 +302,27 @@ object Event {
   }
 }
 
-trait Widget[T <: Widget[T]] { self: T =>
+trait View {
+  def render(parent: dom.Node, offset: dom.Node)
+}
+
+case class Inline(contents: Widget[_]*) extends View {
+  def render(parent: dom.Node, offset: dom.Node) {
+    contents.foreach(_.render(parent, parent.lastChild))
+  }
+}
+
+trait Widget[T <: Widget[T]] extends View { self: T =>
   val rendered: dom.HTMLElement
 
-  // May only be used once.
+  def render(parent: dom.Node, offset: dom.Node) {
+    /* TODO Don't ignore offset. */
+    parent.appendChild(rendered)
+  }
+
+  /** @note May only be used once. */
   // TODO Add assertions
-  def bindMouse(event: Event.Mouse, writeChannel: Channel[dom.MouseEvent]) = {
+  def bindMouse(event: Event.Mouse, writeChannel: WriteChannel[dom.MouseEvent]) = {
     import Event.Mouse._
     event match {
       case Click => rendered.onclick = (e: dom.MouseEvent) => writeChannel.produce(e)
@@ -210,9 +340,9 @@ trait Widget[T <: Widget[T]] { self: T =>
     self
   }
 
-  // May only be used once.
+  /** @note May only be used once. */
   // TODO Add assertions
-  def bindKey(event: Event.Key, writeChannel: Channel[dom.KeyboardEvent]) = {
+  def bindKey(event: Event.Key, writeChannel: WriteChannel[dom.KeyboardEvent]) = {
     import Event.Key._
     event match {
       case Up => rendered.onkeyup = (e: dom.KeyboardEvent) => writeChannel.produce(e)
@@ -223,9 +353,9 @@ trait Widget[T <: Widget[T]] { self: T =>
     self
   }
 
-  // May only be used once.
+  /** @note May only be used once. */
   // TODO Add assertions
-  def bindTouch(event: Event.Touch, writeChannel: Channel[dom.TouchEvent]) = {
+  def bindTouch(event: Event.Touch, writeChannel: WriteChannel[dom.TouchEvent]) = {
     import Event.Touch._
     val ev = event match {
       case Start => "ontouchstart"
@@ -268,10 +398,10 @@ trait Widget[T <: Widget[T]] { self: T =>
     self
   }
 
-  def cssCh(tag: Channel[String]) = {
+  def cssCh(tag: ReadChannel[String]) = {
     var cur: Option[String] = None
 
-    tag.attach(value => {
+    tag.attach { value =>
       val tags = rendered.className.split(" ").toSet
       val changed =
         if (cur.isDefined) tags - cur.get + value
@@ -279,12 +409,12 @@ trait Widget[T <: Widget[T]] { self: T =>
       cur = Some(value)
 
       rendered.className = changed.mkString(" ")
-    })
+    }
 
     self
   }
 
-  def cssCh(state: Channel[Boolean], cssTags: String*) = {
+  def cssCh(state: ReadChannel[Boolean], cssTags: String*) = {
     state.attach(value => css(value, cssTags: _*))
     self
   }
@@ -294,15 +424,25 @@ trait Widget[T <: Widget[T]] { self: T =>
     self
   }
 
-  def show(value: Channel[Boolean], remove: Boolean = true) = {
-    value.attach(cur =>
+  def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
+    value.attach {
+      case Some(v) => rendered.setAttribute(key, v)
+      case None => rendered.removeAttribute(key)
+    }
+
+    self
+  }
+
+  def show(value: ReadChannel[Boolean], remove: Boolean = true) = {
+    value.attach { cur =>
       if (remove) {
         rendered.style.display =
-          if (cur) "block" else "none"
+          if (cur) "" else "none"
       } else {
         rendered.style.visibility =
           if (cur) "visible" else "hidden"
-      })
+      }
+    }
 
     self
   }

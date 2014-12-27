@@ -16,6 +16,7 @@ object Build extends sbt.Build {
     .settings(scalaJSSettings: _*)
     .settings(instrumentSettings: _*)
     .settings(typelevelDefaultSettings: _*)
+    .settings(cgta.otest.OtestPlugin.settingsSjs: _*)
     .settings(
       TypelevelKeys.signArtifacts := true,
       TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
@@ -25,8 +26,8 @@ object Build extends sbt.Build {
       resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/content/alexander-myltsev/maven",
       libraryDependencies ++= Seq(
         "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
-        "org.scala-lang.modules.scalajs" %% "scalajs-jasmine-test-framework" % scalaJSVersion % "test",
-        "name.myltsev" %% "shapeless_sjs0.5" % "2.0.0"
+        "name.myltsev" %% "shapeless_sjs0.5" % "2.0.0",
+        "biz.cgta" %%% "otest-sjs" % "0.1.14" % "test"
       ),
       organization := buildOrganisation,
       scalaVersion := buildScalaVersion,

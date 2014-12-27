@@ -7,16 +7,11 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.RawJSType
 
 object DOM {
-  def createElement(tagName: String, contents: Widget[_]*) = {
+  def createElement(tagName: String, contents: Seq[View] = Seq.empty) = {
     val elem = dom.document.createElement(tagName)
-    contents.foreach(cur => elem.appendChild(cur.rendered))
+    contents.foreach(_.render(elem, elem.lastChild))
     elem
   }
-
-  def createText(value: String) =
-    dom.document.createTextNode(value)
-      // TODO Workaround
-      .asInstanceOf[org.scalajs.dom.HTMLElement]
 
   def getElement(id: String): Option[HTMLElement] =
     Option(dom.document.getElementById(id))
