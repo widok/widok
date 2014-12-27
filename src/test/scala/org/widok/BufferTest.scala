@@ -1,20 +1,20 @@
 package org.widok
 
-import cgta.otest.FunSuite
+import minitest._
 
-object BufferTest extends FunSuite {
+object BufferTest extends SimpleTestSuite {
   test("forall()") {
     val buf = Buffer(1, 2, 3)
 
     var state = false
     buf.forall(_ > 0).attach(state = _)
-    Assert.isEquals(state, true)
+    assertEquals(state, true)
 
     buf += 0
-    Assert.isEquals(state, false)
+    assertEquals(state, false)
 
     buf.remove(buf.get.last)
-    Assert.isEquals(state, true)
+    assertEquals(state, true)
   }
 
   test("filter().lastOption") {
@@ -28,34 +28,34 @@ object BufferTest extends FunSuite {
     buf += 2
     buf += 3
 
-    Assert.isEquals(last, 3)
+    assertEquals(last, 3)
     buf.remove(buf.get(2))
 
-    Assert.isEquals(last, 2)
+    assertEquals(last, 2)
   }
 
   test("size()") {
     var cur = -1
     Buffer().size.attach(cur = _)
-    Assert.isEquals(cur, 0)
+    assertEquals(cur, 0)
   }
 
   test("concat()") {
     /* Ensure that references are preserved. */
     val x = Buffer(1, 2, 3)
     val y = x.concat(Buffer())
-    Assert.isEquals(x.get, y.get)
+    assertEquals(x.get, y.get)
   }
 
   test("flatMapCh()") {
     /* Ensure that references are preserved. */
     val x = Buffer(1, 2, 3)
     val y = x.flatMapCh[Int](value => x.watch(value))
-    Assert.isEquals(x.get, y.get)
+    assertEquals(x.get, y.get)
 
     val fst = x.get.head
     x.remove(fst)
     x.prepend(fst)
-    Assert.isEquals(x.get, y.get)
+    assertEquals(x.get, y.get)
   }
 }

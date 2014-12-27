@@ -2,8 +2,6 @@ package org.widok
 
 import scala.collection.mutable
 
-import org.widok.Helpers.Identity
-
 object Channel {
   type Observer[T, U] = T => Result[U]
 
@@ -25,8 +23,7 @@ object Result {
 }
 
 trait ReadChannel[T]
-  extends Identity
-  with StreamFunctions[ReadChannel, T]
+  extends StreamFunctions[ReadChannel, T]
   with FilterFunctions[ReadChannel, T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
@@ -239,7 +236,6 @@ trait ReadChannel[T]
   }
 
   def writeTo(write: WriteChannel[T]): Channel[T] = {
-    assert(this != write)
     val res = Channel[T]()
     val ignore = write << res
     res << (this, ignore)
@@ -640,7 +636,8 @@ trait StateChannel[T] extends Channel[T] {
     res
   }
 
-  def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
+  // Shapeless has not been built yet for Scala.js 0.6.0
+  /*def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
     lens(f(shapeless.lens[T]))
 
   /** Two-way lens that propagates back changes to all observers. */
@@ -649,7 +646,7 @@ trait StateChannel[T] extends Channel[T] {
     forkBi(
       fwdValue => { cur = Some(fwdValue); Result.Next(Some(l.get(fwdValue))) },
       bwdValue => Result.Next(Some(l.set(cur.get)(bwdValue))))
-  }
+  }*/
 
   def dispose() {
     children.foreach(_.dispose())

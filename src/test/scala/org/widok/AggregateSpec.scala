@@ -1,8 +1,8 @@
 package org.widok
 
-import cgta.otest.FunSuite
+import minitest._
 
-object AggregateSpec extends FunSuite {
+object AggregateSpec extends SimpleTestSuite {
   import ChannelSpec._
 
   def forallBuf[T](f: Buffer[Int] => (ReadChannel[T], ReadChannel[T]), testEmptyList: Boolean = true) {
@@ -13,14 +13,14 @@ object AggregateSpec extends FunSuite {
     elems.foreach { elem =>
       val (lch, rch) = f(buffer)
       buffer += elem
-      assertEquals(lch, rch)
+      assertEqualsCh(lch, rch)
       tick()
     }
 
     if (testEmptyList) {
       val buffer2 = Buffer[Int]()
       val (lch, rch) = f(buffer2)
-      assertEquals(lch, rch)
+      assertEqualsCh(lch, rch)
       tick()
     }
   }
@@ -34,7 +34,7 @@ object AggregateSpec extends FunSuite {
     elems.foreach { elem =>
       val (buf, seq) = f(buffer)
       buffer += elem
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
     }
 
     /** Set up handler after insertion */
@@ -42,7 +42,7 @@ object AggregateSpec extends FunSuite {
     elems.foreach { elem =>
       buffer += elem
       val (buf, seq) = f(buffer)
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
     }
 
     /** Inserting after */
@@ -54,7 +54,7 @@ object AggregateSpec extends FunSuite {
       val snd = buffer += elem + 1
       val trd = buffer.insertAfter(fst, elem + 2)
 
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
     }
 
     /** Inserting before */
@@ -66,7 +66,7 @@ object AggregateSpec extends FunSuite {
       val snd = buffer += elem + 1
       val trd = buffer.insertBefore(snd, elem + 2)
 
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
     }
 
     /** Deleting */
@@ -76,10 +76,10 @@ object AggregateSpec extends FunSuite {
 
       val fst = buffer += elem
       val snd = buffer += elem
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
 
       buffer -= fst
-      Assert.isEquals(buf.values, seq())
+      assertEquals(buf.values, seq())
     }
 
     /** TODO Also check updating. */

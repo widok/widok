@@ -1,10 +1,10 @@
 package org.widok
 
-import cgta.otest.FunSuite
+import minitest._
 
 import scala.collection.mutable
 
-object OptTest extends FunSuite {
+object OptTest extends SimpleTestSuite {
   test("foldLeft()") {
     val elems = mutable.ArrayBuffer.empty[Int]
 
@@ -14,7 +14,7 @@ object OptTest extends FunSuite {
     count.attach(elems += _)
     count.attach(elems += _)
 
-    Assert.isEquals(elems, mutable.ArrayBuffer(1, 1))
+    assertEquals(elems, mutable.ArrayBuffer(1, 1))
   }
 
   test("flatMap()") {
@@ -34,7 +34,7 @@ object OptTest extends FunSuite {
     ch := 2
     x := "c"
 
-    Assert.isEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2"))
+    assertEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2"))
   }
 
   test("size()") {
@@ -49,7 +49,7 @@ object OptTest extends FunSuite {
     ch := "b"
     ch := "c"
 
-    Assert.isEquals(elems, mutable.ArrayBuffer(1, 0, 1, 2))
+    assertEquals(elems, mutable.ArrayBuffer(1, 0, 1, 2))
   }
 
   test("values()") {
@@ -62,6 +62,6 @@ object OptTest extends FunSuite {
     ch.clear()
     ch := 2
 
-    Assert.isEquals(elems, mutable.ArrayBuffer(None, Some(1), None, Some(2)))
+    assertEquals(elems, mutable.ArrayBuffer(None, Some(1), None, Some(2)))
   }
 }

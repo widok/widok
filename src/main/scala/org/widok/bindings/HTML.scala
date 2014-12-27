@@ -209,34 +209,46 @@ object HTML {
     }
 
     case class Items(aggregate: Aggregate[Widget[_]]) extends Widget.List.Item[Items] {
-      val rendered: dom.HTMLElement = null
+      val rendered: dom.HTMLElement = DOM.createElement(null)
 
       override def render(parent: dom.Node, offset: dom.Node) {
         import Aggregate.Change
         import Aggregate.Position
 
+        DOM.insertAfter(parent, offset, rendered)
+
         val mapping = mutable.Map.empty[Ref[Widget[_]], dom.Node]
+        var last: dom.Node = rendered
 
         aggregate.changes.attach {
           case Change.Insert(Position.Head(), element) =>
-            mapping += element -> parent.insertBefore(element.get.rendered, rendered)
+            DOM.insertAfter(parent, rendered, element.get.rendered)
+            mapping += element -> element.get.rendered
+            if (last == rendered) last = mapping(element)
 
           case Change.Insert(Position.Last(), element) =>
-            mapping += element -> parent.appendChild(element.get.rendered)
+            DOM.insertAfter(parent, last, element.get.rendered)
+            mapping += element -> element.get.rendered
+            last = mapping(element)
 
           case Change.Insert(Position.Before(reference), element) =>
-            mapping += element -> parent.insertBefore(element.get.rendered, mapping(reference))
+            parent.insertBefore(element.get.rendered, mapping(reference))
+            mapping += element -> element.get.rendered
 
           case Change.Insert(Position.After(reference), element) =>
-            mapping += element -> parent.insertBefore(element.get.rendered, mapping(reference).nextSibling)
+            DOM.insertAfter(parent, mapping(reference), element.get.rendered)
+            mapping += element -> element.get.rendered
+            if (last == mapping(reference)) last = mapping(element)
 
           case Change.Remove(element) =>
+            if (last == mapping(element)) last = mapping(element).previousSibling
             parent.removeChild(mapping(element))
             mapping -= element
 
           case Change.Clear() =>
             mapping.foreach { case (_, value) => parent.removeChild(value) }
             mapping.clear()
+            last = rendered
         }
       }
     }

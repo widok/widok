@@ -1,9 +1,10 @@
 package org.widok
 
-import scala.collection.mutable
-import cgta.otest.FunSuite
+import minitest._
 
-object ChannelSpec extends FunSuite {
+import scala.collection.mutable
+
+object ChannelSpec extends SimpleTestSuite {
   var tickExpr: () => Unit = () => ()
 
   def tick() {
@@ -12,13 +13,13 @@ object ChannelSpec extends FunSuite {
   }
 
   /** Checks whether two channels behave in the same way. */
-  def assertEquals[T](ch: ReadChannel[T], ch2: ReadChannel[T], parent: Option[Channel[Int]] = None) {
+  def assertEqualsCh[T](ch: ReadChannel[T], ch2: ReadChannel[T], parent: Option[Channel[Int]] = None) {
     val left = mutable.ArrayBuffer[T]()
     val right = mutable.ArrayBuffer[T]()
 
     tickExpr = () => {
-      Assert.isEquals(left, right,
-        "Both channels produce the same values",
+      assert(left == right,
+        "Both channels produce the same values; " +
         "Channel type: " + parent.map(_.getClass))
     }
 
@@ -30,9 +31,8 @@ object ChannelSpec extends FunSuite {
   def assertConstantEquals[T](ch: ReadChannel[T], value: T) {
     val left = mutable.ArrayBuffer[T]()
 
-    tickExpr = () => {
-      Assert.isEquals(left, mutable.ArrayBuffer(value), "Channel produces one value")
-    }
+    tickExpr = () =>
+      assert(left == mutable.ArrayBuffer(value), "Channel produces one value")
 
     ch.attach { value => left += value }
   }
@@ -50,7 +50,7 @@ object ChannelSpec extends FunSuite {
       val ch = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch, value)
-        assertEquals(lch, rch, Some(ch))
+        assertEqualsCh(lch, rch, Some(ch))
         ch := value
         tick()
       }
@@ -61,7 +61,7 @@ object ChannelSpec extends FunSuite {
       val ch2 = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch2, value * 2)
-        assertEquals(lch, rch, Some(ch))
+        assertEqualsCh(lch, rch, Some(ch))
         ch2 := value
         tick()
       }
@@ -72,7 +72,7 @@ object ChannelSpec extends FunSuite {
     /* Check whether law holds for no values produced. */
     val ch = Channel[Int]()
     val (lch, rch) = f(ch)
-    assertEquals(lch, rch)
+    assertEqualsCh(lch, rch)
     tick()
 
     forallChVal((ch, _) => f(ch))
@@ -89,7 +89,7 @@ object ChannelSpec extends FunSuite {
   /* TODO Generalise values */
   test("head") {
     // TODO Use Channel.fromSeq()
-    assertEquals(Var(42).head, Var(42))
+    assertEqualsCh(Var(42).head, Var(42))
     forallCh(ch => (ch.head, ch.take(1)))
   }
 
@@ -98,29 +98,29 @@ object ChannelSpec extends FunSuite {
   }
 
   test("isEmpty") {
-    assertEquals(Var(42).isEmpty, Var(false))
-    assertEquals(Opt().isEmpty, Var(true))
+    assertEqualsCh(Var(42).isEmpty, Var(false))
+    assertEqualsCh(Opt().isEmpty, Var(true))
     forallCh(ch => (ch.isEmpty, ch.nonEmpty.map(!_)))
     forallCh(ch => (ch.nonEmpty, ch.head.map(_ => true)))
   }
 
   test("size") {
-    assertEquals(Var(42).size, Var(1))
-    assertEquals(Opt().size, Var(0))
-    assertEquals(Opt(1).size, Var(1))
+    assertEqualsCh(Var(42).size, Var(1))
+    assertEqualsCh(Opt().size, Var(0))
+    assertEqualsCh(Opt(1).size, Var(1))
     forallCh(ch => (ch.size, ch.foldLeft(0) { case (acc, cur) => acc + 1 }))
   }
 
   test("Opt") {
     forallCh(ch => (ch.toOpt, ch))
 
-    assertEquals(Opt().isDefined.head, Var(false))
-    assertEquals(Opt(42).isDefined.head, Var(true))
+    assertEqualsCh(Opt().isDefined.head, Var(false))
+    assertEqualsCh(Opt(42).isDefined.head, Var(true))
 
-    assertEquals(Opt().isDefined, Opt().nonEmpty)
-    assertEquals(Opt(42).isDefined, Opt(42).nonEmpty)
+    assertEqualsCh(Opt().isDefined, Opt().nonEmpty)
+    assertEqualsCh(Opt(42).isDefined, Opt(42).nonEmpty)
 
-    assertEquals(Opt(42), Var(42))
-    assertEquals(Opt(), Channel())
+    assertEqualsCh(Opt(42), Var(42))
+    assertEqualsCh(Opt(), Channel())
   }
 }
