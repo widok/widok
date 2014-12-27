@@ -1,9 +1,9 @@
 package org.widok
 
-import cgta.otest.FunSuite
+import minitest._
 
-object RouterTest extends FunSuite {
-  def expect(a: Any) = new Object { def toBe(b: Any) = Assert.isEquals(a, b) }
+object RouterTest extends SimpleTestSuite {
+  def expect(a: Any) = new Object { def toBe(b: Any) = assertEquals(a, b) }
 
   test("compare()") {
     val route = Route("/", null)

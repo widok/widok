@@ -1,9 +1,9 @@
 package org.widok
 
-import cgta.otest.FunSuite
+import minitest._
 
-object LazyVarTest extends FunSuite {
-  def expect(a: Any) = new Object { def toBe(b: Any) = Assert.isEquals(a, b) }
+object LazyVarTest extends SimpleTestSuite {
+  def expect(a: Any) = new Object { def toBe(b: Any) = assertEquals(a, b) }
 
   test("apply()") {
     var v = 23

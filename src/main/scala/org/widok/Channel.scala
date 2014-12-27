@@ -640,7 +640,8 @@ trait StateChannel[T] extends Channel[T] {
     res
   }
 
-  def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
+  // Shapeless has not been built yet for Scala.js 0.6.0
+  /*def value[U](f: shapeless.Lens[T, T] => shapeless.Lens[T, U]) =
     lens(f(shapeless.lens[T]))
 
   /** Two-way lens that propagates back changes to all observers. */
@@ -649,7 +650,7 @@ trait StateChannel[T] extends Channel[T] {
     forkBi(
       fwdValue => { cur = Some(fwdValue); Result.Next(Some(l.get(fwdValue))) },
       bwdValue => Result.Next(Some(l.set(cur.get)(bwdValue))))
-  }
+  }*/
 
   def dispose() {
     children.foreach(_.dispose())

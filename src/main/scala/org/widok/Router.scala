@@ -3,6 +3,7 @@ package org.widok
 import org.scalajs.dom
 
 import scala.scalajs.js
+import scala.scalajs.js.URIUtils
 import scala.scalajs.js.annotation.RawJSType
 
 case class Route(path: String, page: Page) extends Ordered[Route] {
@@ -149,7 +150,7 @@ case class Router(unorderedRoutes: Set[Route], startPath: String = "/", fallback
 }
 
 object Router {
-  def decode(query: String) = js.decodeURIComponent(query)
+  def decode(query: String) = URIUtils.decodeURIComponent(query)
 
   def parseQuery(uri: String) = Helpers.after(uri, '#').map(decode)
 }

@@ -1,20 +1,21 @@
 package org.widok
 
 import org.scalajs.dom
-import org.scalajs.dom.{HTMLElement, MouseEvent}
+import org.scalajs.dom.HTMLElement
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.RawJSType
 
 object DOM {
-  def createElement(tagName: String, contents: Seq[View] = Seq.empty) = {
+  def createElement(tagName: String, contents: Seq[View] = Seq.empty): HTMLElement = {
     val elem = dom.document.createElement(tagName)
     contents.foreach(_.render(elem, elem.lastChild))
-    elem
+    // TODO remove cast
+    elem.asInstanceOf[HTMLElement]
   }
 
   def getElement(id: String): Option[HTMLElement] =
-    Option(dom.document.getElementById(id))
+    // TODO remove cast
+    Option(dom.document.getElementById(id).asInstanceOf[HTMLElement])
 
   def clear(elem: HTMLElement) {
     while (elem.lastChild != null)
@@ -26,13 +27,6 @@ object DOM {
       .getElementsByTagName(name)
       .asInstanceOf[js.Array[HTMLElement]]
       .toList
-
-  // TODO See also https://github.com/scala-js/scala-js-dom/issues/51
-  @RawJSType
-  class PimpedMouseEvent extends MouseEvent {
-    val pageX: Int = -1
-    val pageY: Int = -1
-  }
 
   def screenCoordinates(elem: HTMLElement): Position = {
     var pos = Position(elem.offsetLeft, elem.offsetTop)
