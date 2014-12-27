@@ -6,7 +6,7 @@ import org.typelevel.sbt.TypelevelPlugin._
 
 object Build extends sbt.Build {
   val buildOrganisation = "io.github.widok"
-  val buildScalaVersion = "2.11.2"
+  val buildScalaVersion = "2.11.4"
   val buildScalaOptions = Seq(
     "-unchecked", "-deprecation",
     "-encoding", "utf8")
