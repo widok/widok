@@ -1,6 +1,5 @@
 import sbt._
 import sbt.Keys._
-import scoverage.ScoverageSbtPlugin._
 import scala.scalajs.sbtplugin.ScalaJSPlugin._
 import org.typelevel.sbt.Developer
 import org.typelevel.sbt.TypelevelPlugin._
@@ -14,7 +13,6 @@ object Build extends sbt.Build {
 
   lazy val main = Project(id = "widok", base = file("."))
     .settings(scalaJSSettings: _*)
-    .settings(instrumentSettings: _*)
     .settings(typelevelDefaultSettings: _*)
     .settings(cgta.otest.OtestPlugin.settingsSjs: _*)
     .settings(
