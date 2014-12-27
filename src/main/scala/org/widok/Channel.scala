@@ -2,8 +2,6 @@ package org.widok
 
 import scala.collection.mutable
 
-import org.widok.Helpers.Identity
-
 object Channel {
   type Observer[T, U] = T => Result[U]
 
@@ -25,8 +23,7 @@ object Result {
 }
 
 trait ReadChannel[T]
-  extends Identity
-  with StreamFunctions[ReadChannel, T]
+  extends StreamFunctions[ReadChannel, T]
   with FilterFunctions[ReadChannel, T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
@@ -239,7 +236,6 @@ trait ReadChannel[T]
   }
 
   def writeTo(write: WriteChannel[T]): Channel[T] = {
-    assert(this != write)
     val res = Channel[T]()
     val ignore = write << res
     res << (this, ignore)

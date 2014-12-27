@@ -16,28 +16,20 @@ object Helpers {
   implicit class IterableWithAvg[T: Numeric](data: Iterable[T]) {
     def avg = average(data)
   }
-
-  // See https://github.com/scala-js/scala-js/issues/1027
-  trait Identity {
-    private[this] val hash: Int = Identity.nextID()
-    override def hashCode(): Int = hash
-    override def equals(other: Any) = this.hashCode() == other.hashCode()
-  }
-
-  object Identity {
-    private[this] var lastID: Int = 0
-    private def nextID(): Int = {
-      lastID += 1
-      lastID
-    }
-  }
 }
 
 /**
- * Reference to a constant value; similar to pointers in low-level languages.
- * To be used when a value is to be identified by its instance as opposed to
- * its contents.
+ * Ref makes references to values explicit. In Scala, objects may have different
+ * equality semantics. For example, case classes always implement structural
+ * equality, but ordinary classes not necessarily. To use different instances of
+ * the same value in a hash table, all objects must be wrapped. Ref is a simple
+ * solution for this and ensures that physical equality is always performed as
+ * hashCode cannot be overridden.
  */
-case class Ref[T](get: T) extends Helpers.Identity {
+sealed class Ref[T](val get: T) {
   override def toString = get.toString
+}
+
+object Ref {
+  def apply[T](get: T) = new Ref[T](get)
 }
