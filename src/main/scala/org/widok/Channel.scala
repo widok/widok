@@ -5,8 +5,6 @@ import scala.collection.mutable
 object Channel {
   type Observer[T, U] = T => Result[U]
 
-  def fromBuf[T](chs: Buffer[Var[T]]) = ???
-
   def apply[T](): Channel[T] =
     new RootChannel[T] {
       def flush(f: T => Unit) { }
@@ -49,6 +47,9 @@ trait ReadChannel[T]
 
   /** Flush data and call f for each element */
   def flush(f: T => Unit)
+
+  def publish(ch: WriteChannel[T]): ReadChannel[Unit] = ch.subscribe(this)
+  def >>(ch: WriteChannel[T]) = publish(ch)
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
     val res = new RootChannel[T] {
@@ -312,12 +313,15 @@ trait WriteChannel[T] {
   }
 
   /** Redirect stream from ``other`` to ``this``. */
-  def <<(other: ReadChannel[T]): ReadChannel[Unit] =
-    other.attach(this := _)
+  def subscribe(ch: ReadChannel[T]): ReadChannel[Unit] =
+    ch.attach(this := _)
 
-  def <<[U](other: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
-    other.attach(produce(_, ignore))
+  def subscribe[U](ch: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
+    ch.attach(produce(_, ignore))
 
+  def <<(ch: ReadChannel[T]): ReadChannel[Unit] = subscribe(ch)
+  def <<[U](ch: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
+    subscribe(ch, ignore)
   def :=(v: T) = produce(v)
 }
 
@@ -339,19 +343,22 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
       bwdValue => Result.Next(g(bwdValue)))
 
   /** Synchronise ``this`` and ``other``. */
-  def <<>>(other: Channel[T]) {
+  def bind(other: Channel[T]) {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther))
     obsOther = other.attach(produce(_, obsThis))
     flush(obsThis.asInstanceOf[UniChildChannel[Any, Any]].process)
   }
 
-  def <<>>(other: Channel[T], ignoreOther: ReadChannel[Unit]) {
+  def bind(other: Channel[T], ignoreOther: ReadChannel[Unit]) {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther, ignoreOther))
     obsOther = other.attach(produce(_, obsThis))
     flush(obsThis.asInstanceOf[UniChildChannel[Any, Any]].process)
   }
+
+  def <<>>(other: Channel[T]) { bind(other) }
+  def <<>>(other: Channel[T], ignoreOther: ReadChannel[Unit]) { bind(other, ignoreOther) }
 
   def +(write: WriteChannel[T]): Channel[T] = {
     val res = new RootChannel[T] {
