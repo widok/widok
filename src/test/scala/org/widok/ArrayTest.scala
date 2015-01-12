@@ -47,4 +47,11 @@ object ArrayTest extends SimpleTestSuite {
 
     assertEquals(arr.size, 2)
   }
+
+  test("remove") {
+    val arr = Array[Int]()
+    intercept[AssertionError] {
+      arr -= 1
+    }
+  }
 }

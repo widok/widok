@@ -18,6 +18,11 @@ case class Array[T]() {
   def contains(value: T): Boolean = indexOf(value) != -1
   def foreach(f: T => Unit) { elements.toList.foreach(f) }
   def clear() { elements.length = 0 }
+
   def +=(item: T) { elements.push(item) }
-  def -=(item: T) { elements.splice(indexOf(item), 1) }
+  def -=(item: T) {
+    val idx = indexOf(item)
+    assert(idx != -1)
+    elements.splice(idx, 1)
+  }
 }

@@ -266,8 +266,6 @@ trait ReadChannel[T]
       }
     }, cur)
   }
-
-  def attached: Boolean
 }
 
 trait WriteChannel[T] {
@@ -390,8 +388,6 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 {
   private var bound: ReadChannel[U] = null
 
-  def attached: Boolean = parent.children.contains(this)
-
   def onChannel(ch: Option[ReadChannel[U]]) {
     if (bound != null) {
       bound.dispose()
@@ -420,7 +416,6 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def dispose() {
-    assert(attached)
     parent.detach(this)
 
     if (bound != null) bound.dispose()
@@ -439,8 +434,6 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   extends ChildChannel[T, U]
 {
   private var inProcess = false
-
-  def attached: Boolean = parent.children.contains(this)
 
   def process(value: T) {
     assert(!inProcess, "Cycle found")
@@ -464,7 +457,6 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def dispose() {
-    assert(attached)
     parent.detach(this)
 
     children.foreach(_.dispose())
@@ -480,8 +472,6 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
                                 bwd: Channel.Observer[U, T])
   extends ChildChannel[T, U]
 {
-  def attached: Boolean = parent.children.contains(this)
-
   val back = silentAttach { value =>
     bwd(value) match {
       case Result.Next(resultValue) =>
@@ -508,7 +498,6 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
   }
 
   def dispose() {
-    assert(attached)
     parent.detach(this)
 
     back.dispose()
@@ -526,8 +515,6 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
 {
   private var bound: Channel[U] = null
   private var ignore: ReadChannel[Unit] = null
-
-  def attached: Boolean = parent.children.contains(this)
 
   val back = silentAttach { value =>
     if (bound != null && ignore != null) bound.produce(value, ignore)
@@ -562,7 +549,6 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def dispose() {
-    assert(attached)
     parent.detach(this)
 
     if (bound != null) bound.dispose()
@@ -602,8 +588,6 @@ trait RootChannel[T]
   with ChannelDefaultSize[T]
   with ChannelDefaultEmpty[T]
 {
-  def attached: Boolean = false
-
   def dispose() {
     children.foreach(_.dispose())
     children.clear()
@@ -611,8 +595,6 @@ trait RootChannel[T]
 }
 
 trait StateChannel[T] extends Channel[T] {
-  def attached: Boolean = false
-
   def update(f: T => T) {
     flush(t => this := f(t))
   }
