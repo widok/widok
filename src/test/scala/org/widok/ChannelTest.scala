@@ -276,6 +276,54 @@ object ChannelTest extends SimpleTestSuite {
     expect(value == (24, 43)).toBe(true)
   }
 
+  test("flatMap()") {
+    val ch = Channel[Int]()
+
+    val ch2 = Var(0)
+    var values = mutable.ArrayBuffer.empty[Int]
+    ch2.attach(values += _)
+
+    val fmap = ch.flatMap(_ => ch2)
+
+    var cur = -1
+    fmap.attach(cur = _)
+
+    ch := 1
+    assertEquals(cur, 0)
+    assertEquals(values, mutable.ArrayBuffer(0))
+
+    ch := 2
+    ch2 := 2 /* Previous handlers attached to ch2 must be still valid. */
+    assertEquals(cur, 2)
+    assertEquals(values, mutable.ArrayBuffer(0, 2))
+  }
+
+  test("flatMap()") {
+    val ch = Channel[Int]()
+
+    val ch2 = Var(2)
+    val ch3 = Var(3)
+
+    val fmap = ch.flatMap {
+      case 0 => ch2
+      case 1 => ch3
+    }
+
+    var cur = -1
+    fmap.attach(cur = _)
+
+    ch := 0
+    assertEquals(cur, 2)
+    ch2 := 42
+    assertEquals(cur, 42)
+
+    ch := 1
+    assertEquals(cur, 3)
+    ch3 := 42
+    ch2 := 50 /* ch2 should not be attached anymore to flatMap(). */
+    assertEquals(cur, 42)
+  }
+
   test("flatMapCh()") {
     val ch = Channel[Var[Int]]()
     val a = ch.flatMapCh(cur => cur)

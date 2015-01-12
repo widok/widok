@@ -387,16 +387,17 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   extends ChildChannel[T, U]
 {
   private var bound: ReadChannel[U] = null
+  private var subscr: ReadChannel[Unit] = null
 
   def onChannel(ch: Option[ReadChannel[U]]) {
-    if (bound != null) {
-      bound.dispose()
-      bound = null
-    }
+    if (subscr != null) subscr.dispose()
 
     if (ch.isDefined) {
       bound = ch.get
-      bound.attach(this := _)
+      subscr = bound.attach(this := _)
+    } else {
+      subscr = null
+      bound = null
     }
   }
 
@@ -418,7 +419,7 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   def dispose() {
     parent.detach(this)
 
-    if (bound != null) bound.dispose()
+    if (subscr != null) subscr.dispose()
 
     children.foreach(_.dispose())
     children.clear()
@@ -514,22 +515,22 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
   extends ChildChannel[T, U]
 {
   private var bound: Channel[U] = null
-  private var ignore: ReadChannel[Unit] = null
+  private var subscr: ReadChannel[Unit] = null
 
   val back = silentAttach { value =>
-    if (bound != null && ignore != null) bound.produce(value, ignore)
+    if (bound != null && subscr != null) bound.produce(value, subscr)
   }
 
   def onChannel(ch: Option[Channel[U]]) {
-    if (bound != null) {
-      bound.dispose()
-      bound = null
-    }
+    if (subscr != null) subscr.dispose()
 
     if (ch.isDefined) {
       bound = ch.get
-      ignore = bound.silentAttach(produce(_, back))
+      subscr = bound.silentAttach(produce(_, back))
       bound.flush(produce(_, back))
+    } else {
+      bound = null
+      subscr = null
     }
   }
 
@@ -551,7 +552,7 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
   def dispose() {
     parent.detach(this)
 
-    if (bound != null) bound.dispose()
+    if (subscr != null) subscr.dispose()
 
     back.dispose()
 
