@@ -28,3 +28,23 @@ object LazyVar {
     override def toString = s"LazyVar(${v.toString})"
   }
 }
+
+/** Every produced value on the channel ``change`` indicates that the underlying
+  * variable was modified and the current value can be retrieved via ``get``.
+  * If a value v is produced on the resulting channel instead, then set(v) is called.
+  */
+object PtrVar {
+  def apply[T](change: ReadChannel[_], get: => T, set: T => Unit) = new StateChannel[T]
+    with ChannelDefaultSize[T]
+  {
+    val sub = attach(set)
+    change.attach(_ => produce())
+
+    def flush(f: T => Unit) { f(get) }
+    def produce() { produce(get, sub) }
+    def isEmpty: ReadChannel[Boolean] = Var(false)
+    def nonEmpty: ReadChannel[Boolean] = Var(true)
+
+    override def toString = s"PtrVar(${get.toString})"
+  }
+}
