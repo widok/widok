@@ -24,4 +24,27 @@ object ArrayTest extends SimpleTestSuite {
     arr.clear()
     assertEquals(arr.isEmpty, true)
   }
+
+  test("foreach with in-place modifications") {
+    val arr = Array[Int]()
+    arr += 1
+    arr += 2
+    arr += 3
+
+    arr.foreach { cur =>
+      arr -= cur
+    }
+
+    assertEquals(arr.isEmpty, true)
+  }
+
+  test("foreach with in-place modifications (2)") {
+    val arr = Array[Int]()
+    arr += 1
+
+    /* Should not iterate over newly added elements. */
+    arr.foreach(arr += _)
+
+    assertEquals(arr.size, 2)
+  }
 }
