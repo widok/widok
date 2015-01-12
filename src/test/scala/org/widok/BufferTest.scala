@@ -58,4 +58,15 @@ object BufferTest extends SimpleTestSuite {
     x.prepend(fst)
     assertEquals(x.get, y.get)
   }
+
+  test("removeAll()") {
+    val x = Buffer(1, 2, 3)
+    val add = Buffer(4, 5, 6)
+    x ++= add
+    val y = x.filter(_ <= 3)
+
+    x.removeAll(y)
+
+    assertEquals(x.get, add.get)
+  }
 }

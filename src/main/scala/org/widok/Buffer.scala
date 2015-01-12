@@ -369,29 +369,33 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
     changes := Change.Insert(Position.After(reference), element)
   }
 
+  /** Remove an element by its reference. */
   def remove(element: Ref[T]) {
     val position = elements.indexOf(element)
     elements.remove(position)
     changes := Change.Remove(element)
   }
 
+  /** Remove all elements. */
   def clear() {
     elements.clear()
     changes := Change.Clear()
   }
 
+  /** Replace all elements. */
   def set(elements: Seq[Ref[T]]) {
     clear()
     elements.foreach(append)
   }
 
+  /** Add all references from ``buf``. */
   def appendAll(buf: ReadBuffer[T]) {
-    buf.foreach(t => append(t))
+    buf.get.foreach(append)
   }
 
-  /** Remove all elements that ``buf`` contains. */
+  /** Remove all references from ``buf``. */
   def removeAll(buf: ReadBuffer[T]) {
-    buf.get.foreach(t => remove(t))
+    buf.get.toList.foreach(remove)
   }
 
   def applyChange(change: Change[Ref[T]]) {
