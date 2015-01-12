@@ -9,6 +9,16 @@ object Channel {
     new RootChannel[T] {
       def flush(f: T => Unit) { }
     }
+
+  /** Combine a read with a write channel. */
+  def apply[T](read: ReadChannel[T], write: WriteChannel[T]): Channel[T] = {
+    val res = new RootChannel[T] {
+      def flush(f: T => Unit) { read.flush(f) }
+    }
+    val pub = res.publish(write)
+    res.subscribe(read, pub)
+    res
+  }
 }
 
 trait Result[T] {
@@ -49,6 +59,7 @@ trait ReadChannel[T]
   def flush(f: T => Unit)
 
   def publish(ch: WriteChannel[T]): ReadChannel[Unit] = ch.subscribe(this)
+  def publish[U](ch: WriteChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = ch.subscribe(this, ignore)
   def >>(ch: WriteChannel[T]) = publish(ch)
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
@@ -342,7 +353,7 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
       fwdValue => Result.Next(f(fwdValue)),
       bwdValue => Result.Next(g(bwdValue)))
 
-  /** Synchronise ``this`` and ``other``. */
+  /** Two-way binding; synchronises ``this`` and ``other``. */
   def bind(other: Channel[T]) {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther))
