@@ -8,20 +8,13 @@ case class Array[T]() {
 
   def size: Int = elements.length
   def isEmpty: Boolean = elements.length == 0
-
-  /* TODO See also https://github.com/scala-js/scala-js/issues/1447 */
-  def indexOf(value: T): Int =
-    elements.asInstanceOf[js.Dynamic]
-      .indexOf(value.asInstanceOf[js.Dynamic])
-      .asInstanceOf[Int]
-
-  def contains(value: T): Boolean = indexOf(value) != -1
+  def indexOf(value: T): Int = elements.indexOf(value)
+  def contains(value: T): Boolean = elements.indexOf(value) != -1
   def foreach(f: T => Unit) { elements.toList.foreach(f) }
   def clear() { elements.length = 0 }
-
   def +=(item: T) { elements.push(item) }
   def -=(item: T) {
-    val idx = indexOf(item)
+    val idx = elements.indexOf(item)
     assert(idx != -1)
     elements.splice(idx, 1)
   }
