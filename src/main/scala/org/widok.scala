@@ -63,4 +63,57 @@ package object widok {
     ch.attach(f)
     ch
   }
+
+  /** Short aliases for HTML tags
+    * See also http://stackoverflow.com/questions/21831497/type-aliasing-a-case-class-in-scala-2-10
+    */
+  object html {
+    val section = bindings.HTML.Section
+    val header = bindings.HTML.Header
+    val footer = bindings.HTML.Footer
+    val nav = bindings.HTML.Navigation
+
+    val h1 = bindings.HTML.Heading.Level1
+    val h2 = bindings.HTML.Heading.Level2
+    val h3 = bindings.HTML.Heading.Level3
+    val h4 = bindings.HTML.Heading.Level4
+    val h5 = bindings.HTML.Heading.Level5
+    val h6 = bindings.HTML.Heading.Level6
+
+    val p = bindings.HTML.Paragraph
+    val b = bindings.HTML.Text.Bold
+    val strong = bindings.HTML.Text.Bold
+    val small = bindings.HTML.Text.Small
+
+    val br = bindings.HTML.LineBreak
+    val hr = bindings.HTML.HorizontalLine
+
+    val div = bindings.HTML.Container.Generic
+    val span = bindings.HTML.Container.Inline
+
+    val form = bindings.HTML.Form
+    val button = bindings.HTML.Button
+    val label = bindings.HTML.Label
+    val a = bindings.HTML.Anchor
+    val img = bindings.HTML.Image
+
+    val checkbox = bindings.HTML.Input.Checkbox
+    val file = bindings.HTML.Input.File
+    val select = bindings.HTML.Input.Select
+    val text = bindings.HTML.Input.Text
+    val option = bindings.HTML.Input.Select.Option
+
+    val ul = bindings.HTML.List.Unordered
+    val ol = bindings.HTML.List.Ordered
+    val li = bindings.HTML.List.Item
+
+    val table = bindings.HTML.Table
+    val thead = bindings.HTML.Table.Head
+    val th = bindings.HTML.Table.HeadColumn
+    val tbody = bindings.HTML.Table.Body
+    val tr = bindings.HTML.Table.Row
+    val td = bindings.HTML.Table.Column
+
+    val cursor = bindings.HTML.Cursor
+  }
 }
