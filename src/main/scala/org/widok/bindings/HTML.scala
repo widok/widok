@@ -74,7 +74,7 @@ object HTML {
     val rendered = DOM.createElement("br")
   }
 
-  case class Button(contents: View*) extends Widget.Button[Button] {
+  case class Button(contents: View*) extends Widget[Button] {
     val rendered = DOM.createElement("button", contents)
   }
 
@@ -94,7 +94,7 @@ object HTML {
     val rendered = DOM.createElement("nav", contents)
   }
 
-  case class Anchor(contents: View*) extends Widget.Anchor[Anchor] {
+  case class Anchor(contents: View*) extends Widget[Anchor] {
     val rendered = DOM.createElement("a", contents)
 
     def url(value: String) = {

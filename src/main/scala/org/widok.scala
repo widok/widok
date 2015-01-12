@@ -27,19 +27,23 @@ package object widok {
   implicit def StringToWidget(value: String): HTML.Text = HTML.Text(value)
 
   implicit def StringChannelToWidget[T <: String](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().bindString(value)
+    HTML.Container.Inline = HTML.Container.Inline().subscribe(value)
 
   implicit def IntChannelToWidget[T <: Int](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().bindInt(value)
+    HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
 
   implicit def DoubleChannelToWidget[T <: Double](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().bindDouble(value)
+    HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
 
   implicit def BooleanChannelToWidget[T <: Boolean](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().bindBoolean(value)
+    HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
 
   implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().bindWidget(value)
+    HTML.Container.Inline = HTML.Container.Inline().widget(value)
+
+  implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]]
+    (value: ReadChannel[T]): HTML.Container.Inline =
+      HTML.Container.Inline().optWidget(value)
 
   implicit def WidgetAggregateToWidget[T <: Widget[_]](agg: Aggregate[T]):
     /* TODO Why do we have to cast? */
@@ -50,10 +54,6 @@ package object widok {
       /* TODO This could be optimised by creating fewer DOM nodes. */
       HTML.List.Items(buf
         .map(x => HTML.Text(x.get)))
-
-  implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]]
-    (value: ReadChannel[T]): HTML.Container.Inline =
-      HTML.Container.Inline().bindOptWidget(value)
 
   implicit def InstantiatedRouteToString(route: InstantiatedRoute): String =
     route.uri()

@@ -192,13 +192,13 @@ object Bootstrap {
     case class Tab(name: String)
 
     def renderTabs(tabs: Seq[Tab], currentTab: Channel[Tab]) = {
-      val renderedTabs = tabs.map(tab =>
-        Bootstrap.Navigation.Item(currentTab.map(_ == tab))(
-          HTML.Anchor(tab.name)
-            .bind((_: Unit) => currentTab := tab)
-            .cursor(HTML.Cursor.Pointer)
-        )
-      )
+      val renderedTabs = tabs.map { tab =>
+        val anchor = HTML.Anchor(tab.name).cursor(HTML.Cursor.Pointer)
+        anchor.click.attach(_ => currentTab := tab)
+
+        Bootstrap.Navigation.Item(currentTab.map(_ == tab))(anchor)
+      }
+
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
@@ -312,11 +312,6 @@ object Bootstrap {
         )
       ).css("checkbox")
        .rendered
-
-    def bind(data: Channel[Boolean], flush: Channel[Unit] = Channel()) = {
-      checkbox.bind(data, flush)
-      this
-    }
   }
 
   trait AlertType { val cssTag: String }

@@ -2,7 +2,6 @@ package org.widok
 
 import org.scalajs.dom
 import org.scalajs.dom.extensions.KeyCode
-import org.scalajs.dom.{HTMLInputElement, KeyboardEvent}
 
 import org.widok.bindings._
 
@@ -15,7 +14,7 @@ object Widget {
   }
 
   trait List[V <: List[V]] extends Widget[List[V]] { self: V =>
-    def bind[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
+    def subscribe[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
       channel.attach { list =>
         DOM.clear(rendered)
 
@@ -63,43 +62,32 @@ object Widget {
 
   object Input {
     trait Text[V <: Text[V]] extends Widget[Text[V]] { self: V =>
-      val rendered: HTMLInputElement
+      val rendered: dom.HTMLInputElement
 
-      /**
-       * Provides two-way binding.
-       *
-       * @param data
-       *              The channel to read from and to.
-       * @param flush
-       *              If the channel produces data, this flushes the current
-       *              value of the input field.
-       * @param live
-       *             Produce every single character if true, otherwise
-       *             produce only if enter was pressed.
-       * @return
-       */
-      def bind(data: Channel[String], flush: ReadChannel[Unit] = Channel(), live: Boolean = false) = {
-        val obs = data.attach((text: String) => rendered.value = text)
-        flush.attach(_ => data.produce(rendered.value, obs))
+      /** Produce current value after enter was pressed. */
+      lazy val value = PtrVar[String](
+        keyUp.filter(_.keyCode == KeyCode.enter),
+        rendered.value, rendered.value = _)
 
-        rendered.onkeyup = (e: KeyboardEvent) =>
-          if (e.keyCode == KeyCode.enter || live)
-            data.produce(rendered.value, obs)
+      /** Produce current value after every key press. */
+      lazy val liveValue = PtrVar[String](
+        keyUp, rendered.value, rendered.value = _)
 
-        self
-      }
+      def bind(ch: Channel[String]) = { value.bind(ch); self }
+      def attach(f: String => Unit) = { value.attach(f); self }
+
+      def bindLive(ch: Channel[String]) = { liveValue.bind(ch); self }
+      def attachLive(f: String => Unit) = { liveValue.attach(f); self }
     }
 
     trait Checkbox[V <: Checkbox[V]] extends Widget[Checkbox[V]] { self: V =>
-      val rendered: HTMLInputElement
+      val rendered: dom.HTMLInputElement
 
-      def bind(data: Channel[Boolean], flush: ReadChannel[Unit] = Channel()) = {
-        val obs = data.attach(rendered.checked = _)
-        flush.attach(_ => data.produce(rendered.checked, obs))
+      lazy val checked = PtrVar[Boolean](change,
+        rendered.checked, rendered.checked = _)
 
-        rendered.onchange = (e: dom.Event) => data.produce(rendered.checked, obs)
-        self
-      }
+      def bind(ch: Channel[Boolean]) = { checked.bind(ch); self }
+      def attach(f: Boolean => Unit) = { checked.attach(f); self }
     }
 
     trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
@@ -215,42 +203,19 @@ object Widget {
     }
   }
 
-  trait Button[V <: Button[V]] extends Widget[Button[V]] { self: V =>
-    def bind(data: WriteChannel[Unit]) = {
-      rendered.onclick = (e: dom.Event) => data.produce(())
-      self
-    }
-  }
-
-  trait Anchor[V <: Anchor[V]] extends Widget[Anchor[V]] { self: V =>
-    def bind(data: WriteChannel[Unit]) = {
-      rendered.onclick = (e: dom.Event) => data.produce(())
-      self
-    }
-  }
-
   trait Container[V <: Container[V]] extends Widget[Container[V]] { self: V =>
-    def bindString[T <: String](value: ReadChannel[T]) = {
+    def subscribe[T <: String](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
     }
 
-    def bindInt[T <: Int](value: ReadChannel[T]) = {
-      value.attach(cur => rendered.textContent = cur.toString)
+    /** Subscribe raw HTML. */
+    def raw[T](value: ReadChannel[String]) = {
+      value.attach(rendered.innerHTML = _)
       self
     }
 
-    def bindDouble[T <: Double](value: ReadChannel[T]) = {
-      value.attach(cur => rendered.textContent = cur.toString)
-      self
-    }
-
-    def bindBoolean[T <: Boolean](value: ReadChannel[T]) = {
-      value.attach(cur => rendered.textContent = cur.toString)
-      self
-    }
-
-    def bindWidget[T <: Widget[_]](value: ReadChannel[T]) = {
+    def widget[T <: Widget[_]](value: ReadChannel[T]) = {
       value.attach { cur =>
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         rendered.appendChild(cur.rendered)
@@ -259,7 +224,7 @@ object Widget {
       self
     }
 
-    def bindOptWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) = {
+    def optWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) = {
       value.attach { cur =>
         if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
         if (cur.isDefined) rendered.appendChild(cur.get.rendered)
@@ -267,42 +232,38 @@ object Widget {
 
       self
     }
-
-    /** Bind HTML. */
-    def bindRaw[T](value: ReadChannel[String]) = {
-      value.attach(cur => rendered.innerHTML = cur)
-      self
-    }
   }
 }
 
-object Event {
-  trait Mouse
-  object Mouse {
-    case object Click extends Mouse
-    case object DoubleClick extends Mouse
-    case object Leave extends Mouse
-    case object Enter extends Mouse
-    case object Out extends Mouse
-    case object Up extends Mouse
-    case object Over extends Mouse
-    case object Down extends Mouse
-    case object Move extends Mouse
-    case object ContextMenu extends Mouse
+object DOMChannel {
+  /* TODO As an optimisation, f(null) should be called when all children
+   * are detached from the channel. If a child gets added, then the callback
+   * handler needs to get reinitialised again.
+   */
+  def event(f: (dom.Event => Unit) => Unit): Channel[dom.Event] = {
+    val ev = Channel[dom.Event]()
+    f((e: dom.Event) => ev.produce(e))
+    ev
   }
 
-  trait Touch
-  object Touch {
-    case object Start extends Touch
-    case object Move extends Touch
-    case object End extends Touch
+  def keyboardEvent(f: (dom.KeyboardEvent => Unit) => Unit): Channel[dom.KeyboardEvent] = {
+    val ev = Channel[dom.KeyboardEvent]()
+    f((e: dom.KeyboardEvent) => ev.produce(e))
+    ev
   }
 
-  trait Key
-  object Key {
-    case object Down extends Key
-    case object Up extends Key
-    case object Press extends Key
+  def mouseEvent(f: (dom.MouseEvent => Unit) => Unit): Channel[dom.MouseEvent] = {
+    val ev = Channel[dom.MouseEvent]()
+    f((e: dom.MouseEvent) => ev.produce(e))
+    ev
+  }
+
+  def touchEvent(rendered: dom.HTMLElement, id: String): Channel[dom.TouchEvent] = {
+    val ev = Channel[dom.TouchEvent]()
+    rendered.addEventListener(id,
+      (e: dom.Event) => ev.produce(e.asInstanceOf[dom.TouchEvent]),
+      useCapture = false)
+    ev
   }
 }
 
@@ -323,56 +284,47 @@ trait Widget[T <: Widget[T]] extends View { self: T =>
     DOM.insertAfter(parent, offset, rendered)
   }
 
-  /** @note May only be used once. */
-  // TODO Add assertions
-  def bindMouse(event: Event.Mouse, writeChannel: WriteChannel[dom.MouseEvent]) = {
-    import Event.Mouse._
-    event match {
-      case Click => rendered.onclick = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case DoubleClick => rendered.ondblclick = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Leave => rendered.onmouseleave = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Enter => rendered.onmouseenter = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Out => rendered.onmouseout = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Up => rendered.onmouseup = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Over => rendered.onmouseover = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Down => rendered.onmousedown = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case Move => rendered.onmousemove = (e: dom.MouseEvent) => writeChannel.produce(e)
-      case ContextMenu => rendered.oncontextmenu = (e: dom.MouseEvent) => writeChannel.produce(e)
-    }
+  lazy val click = DOMChannel.mouseEvent(rendered.onclick = _)
+  lazy val doubleClick = DOMChannel.mouseEvent(rendered.ondblclick = _)
+  lazy val mouseLeave = DOMChannel.mouseEvent(rendered.onmouseleave = _)
+  lazy val mouseEnter = DOMChannel.mouseEvent(rendered.onmouseenter = _)
+  lazy val mouseOut = DOMChannel.mouseEvent(rendered.onmouseout = _)
+  lazy val mouseUp = DOMChannel.mouseEvent(rendered.onmouseup = _)
+  lazy val mouseOver = DOMChannel.mouseEvent(rendered.onmouseover = _)
+  lazy val mouseDown = DOMChannel.mouseEvent(rendered.onmousedown = _)
+  lazy val mouseMove = DOMChannel.mouseEvent(rendered.onmousemove = _)
+  lazy val contextMenu = DOMChannel.mouseEvent(rendered.oncontextmenu = _)
 
-    self
-  }
+  lazy val keyUp = DOMChannel.keyboardEvent(rendered.onkeyup = _)
+  lazy val keyDown = DOMChannel.keyboardEvent(rendered.onkeydown = _)
+  lazy val keyPress = DOMChannel.keyboardEvent(rendered.onkeypress = _)
 
-  /** @note May only be used once. */
-  // TODO Add assertions
-  def bindKey(event: Event.Key, writeChannel: WriteChannel[dom.KeyboardEvent]) = {
-    import Event.Key._
-    event match {
-      case Up => rendered.onkeyup = (e: dom.KeyboardEvent) => writeChannel.produce(e)
-      case Down => rendered.onkeydown = (e: dom.KeyboardEvent) => writeChannel.produce(e)
-      case Press => rendered.onkeypress = (e: dom.KeyboardEvent) => writeChannel.produce(e)
-    }
+  lazy val touchStart = DOMChannel.touchEvent(rendered, "ontouchstart")
+  lazy val touchMove = DOMChannel.touchEvent(rendered, "ontouchmove")
+  lazy val touchEnd = DOMChannel.touchEvent(rendered, "ontouchend")
 
-    self
-  }
+  lazy val change = DOMChannel.event(rendered.onchange = _)
 
-  /** @note May only be used once. */
-  // TODO Add assertions
-  def bindTouch(event: Event.Touch, writeChannel: WriteChannel[dom.TouchEvent]) = {
-    import Event.Touch._
-    val ev = event match {
-      case Start => "ontouchstart"
-      case Move => "ontouchmove"
-      case End => "ontouchend"
-    }
+  def onClick(f: dom.MouseEvent => Unit) = { click.attach(f); self }
+  def onDoubleClick(f: dom.MouseEvent => Unit) = { doubleClick.attach(f); self }
+  def onMouseLeave(f: dom.MouseEvent => Unit) = { mouseLeave.attach(f); self }
+  def onMouseEnter(f: dom.MouseEvent => Unit) = { mouseEnter.attach(f); self }
+  def onMouseOut(f: dom.MouseEvent => Unit) = { mouseOut.attach(f); self }
+  def onMouseUp(f: dom.MouseEvent => Unit) = { mouseUp.attach(f); self }
+  def onMouseOver(f: dom.MouseEvent => Unit) = { mouseOver.attach(f); self }
+  def onMouseDown(f: dom.MouseEvent => Unit) = { mouseDown.attach(f); self }
+  def onMouseMove(f: dom.MouseEvent => Unit) = { mouseMove.attach(f); self }
+  def onContextMenu(f: dom.MouseEvent => Unit) = { contextMenu.attach(f); self }
 
-    rendered.addEventListener(
-      ev,
-      (e: dom.Event) => writeChannel.produce(e.asInstanceOf[dom.TouchEvent]),
-      useCapture = false)
+  def onKeyUp(f: dom.KeyboardEvent => Unit) = { keyUp.attach(f); self }
+  def onKeyDown(f: dom.KeyboardEvent => Unit) = { keyDown.attach(f); self }
+  def onKeyPress(f: dom.KeyboardEvent => Unit) = { keyPress.attach(f); self }
 
-    self
-  }
+  def onTouchStart(f: dom.TouchEvent => Unit) = { touchStart.attach(f); self }
+  def onTouchMove(f: dom.TouchEvent => Unit) = { touchMove.attach(f); self }
+  def onTouchEnd(f: dom.TouchEvent => Unit) = { touchEnd.attach(f); self }
+
+  def onChange(f: dom.Event => Unit) = { change.attach(f); self }
 
   def id(id: String) = {
     rendered.id = id
