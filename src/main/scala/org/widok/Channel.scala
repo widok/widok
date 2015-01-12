@@ -100,8 +100,8 @@ trait ReadChannel[T]
   }
 
   /** Uni-directional fork for values */
-  def forkUni[U](observer: Observer[T, U], silent: Boolean = false): ReadChannel[U] = {
-    val ch = UniChildChannel[T, U](this, observer, None)
+  def forkUni[U](observer: Observer[T, U], silent: Boolean = false, filterCycles: Boolean = false): ReadChannel[U] = {
+    val ch = UniChildChannel[T, U](this, observer, None, filterCycles)
     children += ch
     if (!silent) flush(ch.process)
     ch
@@ -135,6 +135,9 @@ trait ReadChannel[T]
       if (f(value)) Result.Next(Some(value))
       else Result.Next(None)
     }
+
+  def filterCycles: ReadChannel[T] =
+    forkUni(value => Result.Next(Some(value)), filterCycles = true)
 
   def partition(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) =
     (filter(f), filter((!(_: Boolean)).compose(f)))
@@ -431,13 +434,16 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
 /** Uni-directional child */
 case class UniChildChannel[T, U](parent: ReadChannel[T],
                                  observer: Channel.Observer[T, U],
-                                 onFlush: Option[() => Option[U]])
+                                 onFlush: Option[() => Option[U]],
+                                 doFilterCycles: Boolean = false)
   extends ChildChannel[T, U]
 {
   private var inProcess = false
 
   def process(value: T) {
-    assert(!inProcess, "Cycle found")
+    if (doFilterCycles) {
+      if (inProcess) return
+    } else assert(!inProcess, "Cycle found")
 
     inProcess = true
 
