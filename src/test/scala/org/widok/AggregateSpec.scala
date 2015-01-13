@@ -5,7 +5,7 @@ import minitest._
 object AggregateSpec extends SimpleTestSuite {
   import ChannelSpec._
 
-  def forallBuf[T](f: Buffer[Int] => (ReadChannel[T], ReadChannel[T]), testEmptyList: Boolean = true) {
+  def forallBuf[T](f: Buffer[Int] => (ReadChannel[T], ReadChannel[T])) {
     val elems = Seq(1, 2, 3)
 
     val buffer = Buffer[Int]()
@@ -17,12 +17,10 @@ object AggregateSpec extends SimpleTestSuite {
       tick()
     }
 
-    if (testEmptyList) {
-      val buffer2 = Buffer[Int]()
-      val (lch, rch) = f(buffer2)
-      assertEqualsCh(lch, rch)
-      tick()
-    }
+    val buffer2 = Buffer[Int]()
+    val (lch, rch) = f(buffer2)
+    assertEqualsCh(lch, rch)
+    tick()
   }
 
   def forallBufSeq[T](f: Buffer[Int] => (ReadBuffer[T], () => Seq[T])) {
@@ -86,7 +84,7 @@ object AggregateSpec extends SimpleTestSuite {
   }
 
   test("head") {
-    forallBuf(buffer => (buffer.head.isEmpty, buffer.isEmpty), testEmptyList = false)
+    forallBuf(buffer => (buffer.head.isEmpty, buffer.isEmpty))
   }
 
   test("headOption") {
@@ -98,7 +96,7 @@ object AggregateSpec extends SimpleTestSuite {
   }
 
   test("last") {
-    forallBuf(buffer => (buffer.last.isEmpty, buffer.isEmpty), testEmptyList = false)
+    forallBuf(buffer => (buffer.last.isEmpty, buffer.isEmpty))
   }
 
   test("map") {

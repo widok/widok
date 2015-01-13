@@ -426,4 +426,50 @@ object ChannelTest extends SimpleTestSuite {
     ch := 43
     assertEquals(out, 43)
   }
+
+  test("isEmpty()") {
+    val ch = Channel[Int]()
+
+    var states = mutable.ArrayBuffer.empty[Boolean]
+    ch.isEmpty.attach(states += _)
+
+    ch := 1
+    ch := 2
+
+    assertEquals(states, mutable.ArrayBuffer(true, false))
+  }
+
+  test("isEmpty()") {
+    val ch = Var[Int](2)
+
+    var states = mutable.ArrayBuffer.empty[Boolean]
+    ch.isEmpty.attach(states += _)
+
+    ch := 1
+
+    assertEquals(states, mutable.ArrayBuffer(false))
+  }
+
+  test("nonEmpty()") {
+    val ch = Channel[Int]()
+
+    var states = mutable.ArrayBuffer.empty[Boolean]
+    ch.nonEmpty.attach(states += _)
+
+    ch := 1
+    ch := 2
+
+    assertEquals(states, mutable.ArrayBuffer(false, true))
+  }
+
+  test("nonEmpty()") {
+    val ch = Var[Int](2)
+
+    var states = mutable.ArrayBuffer.empty[Boolean]
+    ch.nonEmpty.attach(states += _)
+
+    ch := 1
+
+    assertEquals(states, mutable.ArrayBuffer(true))
+  }
 }

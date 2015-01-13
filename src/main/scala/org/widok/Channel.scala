@@ -573,15 +573,21 @@ trait ChannelDefaultSize[T] {
 trait ChannelDefaultEmpty[T] {
   this: ReadChannel[T] =>
 
-  def isEmpty: ReadChannel[Boolean] =
-    forkUni { t =>
-      Result.Done(Some(false))
-    }
+  def isEmpty: ReadChannel[Boolean] = {
+    var state = true
+    forkUniState(
+      t => { state = false; Result.Done(Some(state)) },
+      Some(state)
+    )
+  }
 
-  def nonEmpty: ReadChannel[Boolean] =
-    forkUni { t =>
-      Result.Done(Some(true))
-    }
+  def nonEmpty: ReadChannel[Boolean] = {
+    var state = false
+    forkUniState(
+      t => { state = true; Result.Done(Some(state)) },
+      Some(state)
+    )
+  }
 }
 
 trait RootChannel[T]

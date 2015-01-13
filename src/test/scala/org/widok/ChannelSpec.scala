@@ -13,14 +13,12 @@ object ChannelSpec extends SimpleTestSuite {
   }
 
   /** Checks whether two channels behave in the same way. */
-  def assertEqualsCh[T](ch: ReadChannel[T], ch2: ReadChannel[T], parent: Option[Channel[Int]] = None) {
+  def assertEqualsCh[T](ch: ReadChannel[T], ch2: ReadChannel[T]) {
     val left = mutable.ArrayBuffer[T]()
     val right = mutable.ArrayBuffer[T]()
 
     tickExpr = () => {
-      assert(left == right,
-        "Both channels produce the same values; " +
-        "Channel type: " + parent.map(_.getClass))
+      assert(left == right, s"Both channels produce the same values [$left vs. $right]")
     }
 
     ch.attach { value => left += value }
@@ -50,7 +48,7 @@ object ChannelSpec extends SimpleTestSuite {
       val ch = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch, value)
-        assertEqualsCh(lch, rch, Some(ch))
+        assertEqualsCh(lch, rch)
         ch := value
         tick()
       }
@@ -61,7 +59,7 @@ object ChannelSpec extends SimpleTestSuite {
       val ch2 = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch2, value * 2)
-        assertEqualsCh(lch, rch, Some(ch))
+        assertEqualsCh(lch, rch)
         ch2 := value
         tick()
       }
@@ -101,7 +99,6 @@ object ChannelSpec extends SimpleTestSuite {
     assertEqualsCh(Var(42).isEmpty, Var(false))
     assertEqualsCh(Opt().isEmpty, Var(true))
     forallCh(ch => (ch.isEmpty, ch.nonEmpty.map(!_)))
-    forallCh(ch => (ch.nonEmpty, ch.head.map(_ => true)))
   }
 
   test("size") {
