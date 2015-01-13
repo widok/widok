@@ -1,16 +1,20 @@
 package org.widok
 
+import org.scalajs.dom
+
 trait BasePage {
+  val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.HTMLElement])
+
   def view(): View
 
   def render() {
-    DOM.getElement("page") match {
-      case Some(page) =>
-        DOM.clear(page)
-        view().render(page, page.lastChild)
-      case None =>
+    node.rendered match {
+      case null =>
         sys.error("DOM element not found. The JavaScript files must be loaded " +
           "at the end of the HTML document.")
+      case page =>
+        DOM.clear(page)
+        view().render(page, page.lastChild)
     }
   }
 }

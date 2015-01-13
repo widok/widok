@@ -277,7 +277,7 @@ case class Inline(contents: Widget[_]*) extends View {
   }
 }
 
-trait Widget[T <: Widget[T]] extends View { self: T =>
+trait Node extends View {
   val rendered: dom.HTMLElement
 
   def render(parent: dom.Node, offset: dom.Node) {
@@ -304,7 +304,16 @@ trait Widget[T <: Widget[T]] extends View { self: T =>
   lazy val touchEnd = DOMChannel.touchEvent(rendered, "ontouchend")
 
   lazy val change = DOMChannel.event(rendered.onchange = _)
+}
 
+object Node {
+  def apply(node: dom.HTMLElement): Node =
+    new Node {
+      val rendered = node
+    }
+}
+
+trait Widget[T <: Widget[T]] extends Node { self: T =>
   def onClick(f: dom.MouseEvent => Unit) = { click.attach(f); self }
   def onDoubleClick(f: dom.MouseEvent => Unit) = { doubleClick.attach(f); self }
   def onMouseLeave(f: dom.MouseEvent => Unit) = { mouseLeave.attach(f); self }
