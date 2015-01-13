@@ -280,12 +280,6 @@ trait WriteChannel[T] {
 
   def flush(f: T => Unit)
 
-  def setter(value: T): WriteChannel[_] = {
-    val ch = Channel()
-    ch.attach(_ => this := value)
-    ch
-  }
-
   def produce(value: T) {
     children.foreach(_.process(value))
   }
