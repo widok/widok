@@ -58,6 +58,11 @@ case class Opt[T]() extends StateChannel[T] {
     if (prevDefined) defined.produce()
   }
 
+  def set(value: Option[T]) {
+    if (value.isDefined) this := value.get
+    else clear()
+  }
+
   /** @note This method may only be called if the value is defined. */
   def get: T = cached.get
 
