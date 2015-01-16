@@ -7,7 +7,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Build extends sbt.Build {
   val buildOrganisation = "io.github.widok"
-  val buildScalaVersion = "2.11.4"
+  val buildScalaVersion = "2.11.5"
   val buildScalaOptions = Seq(
     "-unchecked", "-deprecation",
     "-encoding", "utf8")
@@ -23,7 +23,7 @@ object Build extends sbt.Build {
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scalajs-dom" % "0.7.0",
-        "org.monifu" %%% "minitest" % "0.7" % "test"
+        "org.monifu" %%% "minitest" % "0.10" % "test"
       ),
       testFrameworks += new TestFramework("minitest.runner.Framework"),
       organization := buildOrganisation,
