@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/widok/widok.svg)](https://travis-ci.org/widok/widok)
 
 # Widok
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/widok/widok?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Widok is a reactive web framework for Scala.js. Its key concepts are:
 
 - **Page:** the browser query is dispatched to a page which renders widgets
