@@ -82,6 +82,7 @@ package object widok {
 
     val p = bindings.HTML.Paragraph
     val b = bindings.HTML.Text.Bold
+    val i = bindings.HTML.Text.Italic
     val strong = bindings.HTML.Text.Bold
     val small = bindings.HTML.Text.Small
 

@@ -5,7 +5,6 @@ import org.scalajs.dom
 import org.scalajs.dom.HTMLInputElement
 
 import scala.collection.mutable
-import scala.scalajs.js
 
 object HTML {
   trait Cursor
@@ -48,6 +47,10 @@ object HTML {
   object Text {
     case class Bold(contents: View*) extends Widget[Bold] {
       val rendered = DOM.createElement("b", contents)
+    }
+
+    case class Italic(contents: View*) extends Widget[Italic] {
+      val rendered = DOM.createElement("i", contents)
     }
 
     case class Small(contents: View*) extends Widget[Small] {
