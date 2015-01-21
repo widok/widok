@@ -266,16 +266,22 @@ object Bootstrap {
           .url(url)
       ).cssCh(active, "active")
 
-    def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*): HTML.List.Item =
+    def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*): HTML.List.Item = {
+      val open = Var(false)
+
       HTML.List.Item(
         HTML.Anchor(
           HTML.Container.Inline(contentsCaption: _*),
           HTML.Container.Inline().css("caret")
-        ).css("dropdown-toggle"),
-        HTML.List.Unordered(contents: _*)
+        ).css("dropdown-toggle")
+
+        , HTML.List.Unordered(contents: _*)
           .css("dropdown-menu")
           .attribute("role", "menu")
       ).css("dropdown")
+        .cssCh(open, "open")
+        .onClick(_ => open := !open.get)
+    }
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
