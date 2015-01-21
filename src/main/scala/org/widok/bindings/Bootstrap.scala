@@ -123,20 +123,17 @@ object Bootstrap {
     ).css("alert alert-danger")
 
   object Input {
-    def Text() =
+    def Text(): HTML.Input.Text =
       HTML.Input.Text()
         .css("form-control")
-        .asInstanceOf[HTML.Input.Text] // Workaround
 
-    def Password() =
+    def Password(): HTML.Input.Password =
       HTML.Input.Password()
         .css("form-control")
-        .asInstanceOf[HTML.Input.Password] // Workaround
 
-    def Select(options: Seq[String], selected: Int = -1) =
+    def Select(options: Seq[String], selected: Int = -1): HTML.Input.Select =
       HTML.Input.Select(options, selected)
         .css("form-control")
-        .asInstanceOf[HTML.Input.Select] // Workaround
   }
 
   object Button {
@@ -217,10 +214,9 @@ object Bootstrap {
         .css("nav nav-pills")
         .attribute("role", "tablist")
 
-    def Item(active: ReadChannel[Boolean] = Channel())(contents: View*) =
+    def Item(active: ReadChannel[Boolean] = Channel())(contents: View*): HTML.List.Item =
       HTML.List.Item(contents: _*)
         .cssCh(active, "active")
-        .asInstanceOf[HTML.List.Item] // TODO Workaround
   }
 
   object NavigationBar {
@@ -269,14 +265,13 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("collapse", "navbar-collapse")
 
-    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: View*) =
+    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: View*): HTML.List.Item =
       HTML.List.Item(
         HTML.Anchor(contents: _*)
           .url(url)
       ).cssCh(active, "active")
-       .asInstanceOf[HTML.List.Item] // TODO Workaround
 
-    def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*) =
+    def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*): HTML.List.Item =
       HTML.List.Item(
         HTML.Anchor(
           HTML.Container.Inline(contentsCaption: _*),
@@ -286,7 +281,6 @@ object Bootstrap {
           .css("dropdown-menu")
           .attribute("role", "menu")
       ).css("dropdown")
-       .asInstanceOf[HTML.List.Item] // TODO Workaround
 
     def Elements(contents: HTML.List.Item*) =
       HTML.List.Unordered(contents: _*)
@@ -346,15 +340,13 @@ object Bootstrap {
         .rendered
     }
 
-    case class PageItem[T <: PageItem[T]](contents: View*) extends Widget.List.Item[T] {
+    case class PageItem(contents: View*) extends Widget.List.Item[PageItem] {
       val widget = HTML.Anchor(contents: _*)
         .css("list-group-item")
       val rendered = widget.rendered
 
       def url(value: String) = {
-        widget
-          .asInstanceOf[HTML.Anchor] // TODO Workaround
-          .url(value)
+        widget.url(value)
         this
       }
 
@@ -365,7 +357,7 @@ object Bootstrap {
     }
 
     // clearfix is needed in conjunction with PullRight()
-    case class Item[T <: Item[T]](contents: View*) extends Widget.List.Item[T] {
+    case class Item(contents: View*) extends Widget.List.Item[Item] {
       val widget = HTML.Container.Generic(contents: _*)
         .css("list-group-item", "clearfix")
       val rendered = widget.rendered

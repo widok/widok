@@ -120,7 +120,7 @@ object HTML {
   }
 
   object Input {
-    trait Textual[T] extends Widget.Input.Text[Textual[T]] { self: T =>
+    trait Textual[T] extends Widget.Input.Text[T] { self: T =>
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
 

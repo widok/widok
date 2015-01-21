@@ -10,10 +10,12 @@ import scala.scalajs.js
 
 object Widget {
   object List {
-    trait Item[T <: Item[T]] extends Widget[Item[T]]
+    trait Item[V] extends Widget[V] { self: V =>
+
+    }
   }
 
-  trait List[V <: List[V]] extends Widget[List[V]] { self: V =>
+  trait List[V] extends Widget[V] { self: V =>
     def subscribe[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
       channel.attach { list =>
         DOM.clear(rendered)
@@ -61,7 +63,7 @@ object Widget {
   }
 
   object Input {
-    trait Text[V <: Text[V]] extends Widget[Text[V]] { self: V =>
+    trait Text[V] extends Widget[V] { self: V =>
       val rendered: dom.HTMLInputElement
 
       /** Produce current value after enter was pressed. */
@@ -80,7 +82,7 @@ object Widget {
       def attachLive(f: String => Unit) = { liveValue.attach(f); self }
     }
 
-    trait Checkbox[V <: Checkbox[V]] extends Widget[Checkbox[V]] { self: V =>
+    trait Checkbox[V] extends Widget[V] { self: V =>
       val rendered: dom.HTMLInputElement
 
       lazy val checked = PtrVar[Boolean](change,
@@ -90,7 +92,7 @@ object Widget {
       def attach(f: Boolean => Unit) = { checked.attach(f); self }
     }
 
-    trait Select[V <: Select[V]] extends Widget[Select[V]] { self: V =>
+    trait Select[V] extends Widget[V] { self: V =>
       private var optDefault = Option.empty[HTML.Input.Select.Option]
 
       private def addOption(str: String): HTML.Input.Select.Option = {
@@ -203,7 +205,7 @@ object Widget {
     }
   }
 
-  trait Container[V <: Container[V]] extends Widget[Container[V]] { self: V =>
+  trait Container[V] extends Widget[V] { self: V =>
     def subscribe[T <: String](value: ReadChannel[T]) = {
       value.attach(cur => rendered.textContent = cur.toString)
       self
@@ -313,7 +315,7 @@ object Node {
     }
 }
 
-trait Widget[T <: Widget[T]] extends Node { self: T =>
+trait Widget[T] extends Node { self: T =>
   def onClick(f: dom.MouseEvent => Unit) = { click.attach(f); self }
   def onDoubleClick(f: dom.MouseEvent => Unit) = { doubleClick.attach(f); self }
   def onMouseLeave(f: dom.MouseEvent => Unit) = { mouseLeave.attach(f); self }
