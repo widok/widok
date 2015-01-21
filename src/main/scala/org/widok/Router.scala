@@ -68,7 +68,7 @@ case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty
    */
   def go() {
     val current = Router.decode(dom.window.location.hash) // TODO Is the decode() call necessary?
-    val target = this.uri()
+    val target = uri()
 
     if (current == target) {
       log("[router] Hash not changed, re-rendering manually")
@@ -84,6 +84,8 @@ case class Router(unorderedRoutes: Set[Route],
                   startPath: String = "/",
                   fallback: Option[Route] = None)
 {
+  val currentRoute = Opt[Route]()
+
   /** Checks whether no two elements in ``unorderedRoutes`` are symmetric. */
   assume((for {
     x <- unorderedRoutes
@@ -126,16 +128,22 @@ case class Router(unorderedRoutes: Set[Route],
     log(s"[router] Dispatching query $query")
     val queryParts = query.split('/')
 
+    currentRoute.toOption.foreach(_.page.destroy())
+    currentRoute.clear()
+
     matchingRoute(queryParts) match {
       case Some(route) =>
         log(s"[router] Found $route")
+        currentRoute := route
         val args = route.parseArguments(queryParts)
         route.page.render(InstantiatedRoute(route, args))
 
       case _ =>
         error("[router] Choosing fallback route")
         fallback match {
-          case Some(fb) => fb.page.render(InstantiatedRoute(fb))
+          case Some(fb) =>
+            currentRoute := fb
+            fb.page.render(InstantiatedRoute(fb))
           case None => error("[router] No route found")
         }
     }

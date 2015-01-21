@@ -17,6 +17,8 @@ trait BasePage {
         view().render(page, page.lastChild)
     }
   }
+
+  def destroy() { }
 }
 
 trait Page extends BasePage {
