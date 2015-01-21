@@ -128,6 +128,11 @@ object Bootstrap {
         .css("form-control")
         .asInstanceOf[HTML.Input.Text] // Workaround
 
+    def Password() =
+      HTML.Input.Password()
+        .css("form-control")
+        .asInstanceOf[HTML.Input.Password] // Workaround
+
     def Select(options: Seq[String], selected: Int = -1) =
       HTML.Input.Select(options, selected)
         .css("form-control")

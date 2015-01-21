@@ -102,6 +102,7 @@ package object widok {
     val file = bindings.HTML.Input.File
     val select = bindings.HTML.Input.Select
     val text = bindings.HTML.Input.Text
+    val password = bindings.HTML.Input.Password
     val option = bindings.HTML.Input.Select.Option
 
     val ul = bindings.HTML.List.Unordered

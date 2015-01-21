@@ -120,25 +120,32 @@ object HTML {
   }
 
   object Input {
-    case class Text() extends Widget.Input.Text[Text] {
+    trait Textual[T] extends Widget.Input.Text[Textual[T]] { self: T =>
       val rendered = DOM.createElement("input")
         .asInstanceOf[HTMLInputElement]
-      rendered.setAttribute("type", "text")
 
       def autofocus(value: Boolean) = {
         rendered.setAttribute("autofocus", "")
-        this
+        self
       }
 
       def placeholder(value: String) = {
         rendered.setAttribute("placeholder", value)
-        this
+        self
       }
+    }
+
+    case class Text() extends Textual[Text] {
+      rendered.setAttribute("type", "text")
 
       def autocomplete(value: Boolean) = {
         rendered.setAttribute("autocomplete", if (value) "on" else "off")
         this
       }
+    }
+
+    case class Password() extends Textual[Password] {
+      rendered.setAttribute("type", "password")
     }
 
     case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
