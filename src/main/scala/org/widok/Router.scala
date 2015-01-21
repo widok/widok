@@ -70,10 +70,8 @@ case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty
     val current = Router.decode(dom.window.location.hash) // TODO Is the decode() call necessary?
     val target = uri()
 
-    if (current == target) {
-      log("[router] Hash not changed, re-rendering manually")
-      route.page.render(this)
-    } else {
+    if (current == target) log("[router] Hash not changed")
+    else {
       log("[router] Location changed; changing browser hash")
       dom.window.location.hash = target
     }
