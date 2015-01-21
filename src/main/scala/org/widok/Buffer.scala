@@ -270,7 +270,7 @@ trait ReadBuffer[T]
     }
 
     def valueChange(handle: Ref[T], value: Option[Ref[U]]) {
-      // TODO Use Change.Update
+      // TODO Use Change.Update or Change.Remove
       values += handle -> value
       rerender()
     }
