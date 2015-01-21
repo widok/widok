@@ -2,7 +2,6 @@ package org.widok.bindings
 
 import org.widok._
 import org.scalajs.dom
-import org.scalajs.dom.HTMLInputElement
 
 import scala.collection.mutable
 
@@ -122,7 +121,7 @@ object HTML {
   object Input {
     trait Textual[T] extends Widget.Input.Text[T] { self: T =>
       val rendered = DOM.createElement("input")
-        .asInstanceOf[HTMLInputElement]
+        .asInstanceOf[dom.HTMLInputElement]
 
       def autofocus(value: Boolean) = {
         rendered.setAttribute("autofocus", "")
@@ -150,13 +149,13 @@ object HTML {
 
     case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
       val rendered = DOM.createElement("input")
-        .asInstanceOf[HTMLInputElement]
+        .asInstanceOf[dom.HTMLInputElement]
       rendered.setAttribute("type", "checkbox")
     }
 
     case class File() extends Widget[File] {
       val rendered = DOM.createElement("input")
-        .asInstanceOf[HTMLInputElement]
+        .asInstanceOf[dom.HTMLInputElement]
 
       def accept(value: String) = {
         rendered.setAttribute("accept", value)
