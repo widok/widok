@@ -4,7 +4,7 @@ import org.scalajs.dom
 
 import scala.scalajs.js.URIUtils
 
-case class Route(path: String, page: Page) extends Ordered[Route] {
+case class Route(path: String, page: () => Page) extends Ordered[Route] {
   val routeParts = path.split('/')
 
   def compare(that: Route): Int =
@@ -82,7 +82,7 @@ case class Router(unorderedRoutes: Set[Route],
                   startPath: String = "/",
                   fallback: Option[Route] = None)
 {
-  val currentRoute = Opt[Route]()
+  val currentPage = Opt[Page]()
 
   /** Checks whether no two elements in ``unorderedRoutes`` are symmetric. */
   assume((for {
@@ -126,22 +126,23 @@ case class Router(unorderedRoutes: Set[Route],
     log(s"[router] Dispatching query $query")
     val queryParts = query.split('/')
 
-    currentRoute.toOption.foreach(_.page.destroy())
-    currentRoute.clear()
+    currentPage.toOption.foreach(_.destroy())
+    currentPage.clear()
 
     matchingRoute(queryParts) match {
       case Some(route) =>
         log(s"[router] Found $route")
-        currentRoute := route
         val args = route.parseArguments(queryParts)
-        route.page.render(InstantiatedRoute(route, args))
+
+        currentPage := route.page()
+        currentPage.get.render(InstantiatedRoute(route, args))
 
       case _ =>
         error("[router] Choosing fallback route")
         fallback match {
           case Some(fb) =>
-            currentRoute := fb
-            fb.page.render(InstantiatedRoute(fb))
+            currentPage := fb.page()
+            currentPage.get.render(InstantiatedRoute(fb))
           case None => error("[router] No route found")
         }
     }
