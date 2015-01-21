@@ -35,7 +35,6 @@ object Bootstrap {
   // TODO Add missing ones.
   trait Glyphicon { val cssTag: String }
   object Glyphicon {
-    case object None extends Glyphicon { val cssTag = "" }
     case object Ok extends Glyphicon { val cssTag = "glyphicon-ok" }
     case object Star extends Glyphicon { val cssTag = "glyphicon-star" }
     case object Search extends Glyphicon { val cssTag = "glyphicon-search" }
@@ -155,15 +154,11 @@ object Bootstrap {
       case object Danger extends Type { val cssTag = "btn-danger" }
     }
 
-    // For better usability all buttons should have icons. Therefore
-    // None is not the default value.
-    def apply(icon: Glyphicon, size: Size = Size.Normal, `type`: Type = Type.Default)(contents: View*) = {
-      val btn =
-        if (icon == Glyphicon.None) HTML.Button(contents: _*)
-        else HTML.Button(Glyphicon(icon) :: contents.toList: _*)
-
-      btn.css("btn", `type`.cssTag, size.cssTag)
-    }
+    def apply(size: Size = Size.Normal,
+              `type`: Type = Type.Default)
+             (contents: View*) =
+      HTML.Button(contents: _*)
+        .css("btn", `type`.cssTag, size.cssTag)
   }
 
   def Footer(contents: View*) =
