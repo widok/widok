@@ -364,15 +364,18 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
+  /** The tags produced by the channel may consist of multiple space-separated
+    * CSS classes.
+    */
   def cssCh(tag: ReadChannel[String]) = {
-    var cur: Option[String] = None
+    var cur: Option[Set[String]] = None
 
     tag.attach { value =>
       val tags = rendered.className.split(" ").toSet
       val changed =
-        if (cur.isDefined) tags - cur.get + value
+        if (cur.isDefined) tags.diff(cur.get) + value
         else tags + value
-      cur = Some(value)
+      cur = Some(value.split(" ").toSet)
 
       rendered.className = changed.mkString(" ")
     }
