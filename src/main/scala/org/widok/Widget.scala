@@ -191,7 +191,7 @@ object Widget {
 
         val obs = selection.attach(onSelect)
 
-        rendered.onchange = (e: dom.Event) => {
+        change.attach { e =>
           val m = mapping.find(_._2.rendered == selected())
 
           if (m.isDefined) {
