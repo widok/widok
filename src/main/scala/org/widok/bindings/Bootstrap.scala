@@ -203,25 +203,30 @@ object Bootstrap {
         val anchor = HTML.Anchor(tab.name).cursor(HTML.Cursor.Pointer)
         anchor.click.attach(_ => currentTab := tab)
 
-        Bootstrap.Navigation.Item(currentTab.map(_ == tab))(anchor)
+        Bootstrap.Navigation.Item(anchor).active(currentTab.map(_ == tab))
       }
 
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
-    def Tabs(contents: HTML.List.Item*) =
+    def Tabs(contents: Bootstrap.Navigation.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav nav-tabs")
         .attribute("role", "tablist")
 
-    def Pills(contents: HTML.List.Item*) =
+    def Pills(contents: Bootstrap.Navigation.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav nav-pills")
         .attribute("role", "tablist")
 
-    def Item(active: ReadChannel[Boolean] = Channel())(contents: View*): HTML.List.Item =
-      HTML.List.Item(contents: _*)
-        .cssCh(active, "active")
+    case class Item(contents: View*) extends Widget.List.Item[Item] {
+      val rendered = DOM.createElement("li", contents)
+
+      def active(active: ReadChannel[Boolean]) = {
+        cssCh(active, "active")
+        this
+      }
+    }
   }
 
   object NavigationBar {
@@ -270,16 +275,11 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("collapse", "navbar-collapse")
 
-    def Leaf(url: String, active: Channel[Boolean] = Channel())(contents: View*): HTML.List.Item =
-      HTML.List.Item(
-        HTML.Anchor(contents: _*)
-          .url(url)
-      ).cssCh(active, "active")
-
-    def Branch(contentsCaption: Widget[_]*)(contents: HTML.List.Item*): HTML.List.Item = {
+    def Branch(contentsCaption: Widget[_]*)
+              (contents: Bootstrap.Navigation.Item*): Bootstrap.Navigation.Item = {
       val open = Var(false)
 
-      HTML.List.Item(
+      Bootstrap.Navigation.Item(
         HTML.Anchor(
           HTML.Container.Inline(contentsCaption: _*),
           HTML.Container.Inline().css("caret")
@@ -293,7 +293,7 @@ object Bootstrap {
         .onClick(_ => open := !open.get)
     }
 
-    def Elements(contents: HTML.List.Item*) =
+    def Elements(contents: Bootstrap.Navigation.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav", "navbar-nav")
 
