@@ -50,9 +50,14 @@ package object Bootstrap {
     def size(value: Size) = css(s"form-group-${value.cssSuffix}")
   }
 
-  def InputGroup(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("input-group")
+  case class InputGroup(contents: View*) extends Widget[InputGroup] {
+    val rendered = DOM.createElement("div", contents)
+    css("input-group")
+  }
+
+  object InputGroup {
+    def Addon(contents: View*) = HTML.Container.Inline().css("input-group-addon")
+  }
 
   def ControlLabel(contents: View*) =
     HTML.Label(contents: _*)
