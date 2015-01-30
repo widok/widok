@@ -15,7 +15,7 @@ object Widget {
     }
   }
 
-  trait List[V] extends Widget[V] { self: V =>
+  trait List[V, ListItem <: Widget[_]] extends Widget[V] { self: V =>
     def subscribe[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
       channel.attach { list =>
         DOM.clear(rendered)
@@ -28,7 +28,7 @@ object Widget {
       self
     }
 
-    def bind[T, X <: List.Item[X]](aggregate: Aggregate[T])(f: Ref[T] => List.Item[X]) = {
+    def bind[T](aggregate: Aggregate[T])(f: Ref[T] => ListItem) = {
       import Aggregate.Change
       import Aggregate.Position
 

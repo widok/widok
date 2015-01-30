@@ -205,11 +205,11 @@ object HTML {
   }
 
   object List {
-    case class Unordered(contents: Widget.List.Item[_]*) extends Widget.List[Unordered] {
+    case class Unordered(contents: Widget.List.Item[_]*) extends Widget.List[Unordered, List.Item] {
       val rendered = DOM.createElement("ul", contents)
     }
 
-    case class Ordered(contents: Widget.List.Item[_]*) extends Widget.List[Ordered] {
+    case class Ordered(contents: Widget.List.Item[_]*) extends Widget.List[Ordered, List.Item] {
       val rendered = DOM.createElement("ol", contents)
     }
 
@@ -264,7 +264,7 @@ object HTML {
   }
 
   object Table {
-    case class Head(contents: Row*) extends Widget.List[Head] {
+    case class Head(contents: Row*) extends Widget.List[Head, Row] {
       val rendered = DOM.createElement("thead", contents)
     }
 
@@ -272,7 +272,7 @@ object HTML {
       val rendered = DOM.createElement("th", contents)
     }
 
-    case class Body(contents: Row*) extends Widget.List[Body] {
+    case class Body(contents: Row*) extends Widget.List[Body, Row] {
       val rendered = DOM.createElement("tbody", contents)
     }
 

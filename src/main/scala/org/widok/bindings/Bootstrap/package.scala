@@ -46,10 +46,7 @@ package object Bootstrap {
     val rendered = DOM.createElement("div", contents)
     css("form-group")
 
-    def role(role: Role) = {
-      attribute("role", role.value)
-      this
-    }
+    def role(role: Role) = attribute("role", role.value)
   }
 
   def InputGroup(contents: View*) =
@@ -199,11 +196,7 @@ package object Bootstrap {
 
   case class Item(contents: View*) extends Widget.List.Item[Item] {
     val rendered = DOM.createElement("li", contents)
-
-    def active(active: ReadChannel[Boolean]) = {
-      cssCh(active, "active")
-      this
-    }
+    def active(active: ReadChannel[Boolean]) = cssCh(active, "active")
   }
 
   object NavigationBar {
@@ -322,7 +315,7 @@ package object Bootstrap {
     ) .css("panel panel-default")
 
   object ListGroup {
-    case class Group(contents: Widget.List.Item[_]*) extends Widget.List[Group] {
+    case class Group(contents: Widget.List.Item[_]*) extends Widget.List[Group, Widget.List.Item[_]] {
       val rendered = HTML.Container.Generic(contents: _*)
         .css("list-group")
         .rendered
@@ -333,15 +326,8 @@ package object Bootstrap {
         .css("list-group-item")
       val rendered = widget.rendered
 
-      def url(value: String) = {
-        widget.url(value)
-        this
-      }
-
-      def active(ch: Channel[Boolean]) = {
-        widget.cssCh(ch, "active")
-        this
-      }
+      def url(value: String) = { widget.url(value); this }
+      def active(ch: Channel[Boolean]) = cssCh(ch, "active")
     }
 
     // clearfix is needed in conjunction with PullRight()
@@ -350,10 +336,7 @@ package object Bootstrap {
         .css("list-group-item", "clearfix")
       val rendered = widget.rendered
 
-      def active(ch: Channel[Boolean]) = {
-        widget.cssCh(ch, "active")
-        this
-      }
+      def active(ch: Channel[Boolean]) = cssCh(ch, "active")
     }
 
     def ItemHeading(contents: View*) =
@@ -366,23 +349,26 @@ package object Bootstrap {
   }
 
   object Grid {
-    def Column(size: Size, level: Int)(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css(s"col-${size.cssSuffix}-$level")
+    case class Row(contents: Column*) extends Widget.List[Row, Column] {
+      val rendered = DOM.createElement("div", contents)
+      css("row")
+    }
 
-    def Row(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("row")
+    case class Column(contents: View*) extends Widget[Column] {
+      val rendered = DOM.createElement("div", contents)
+
+      def column(size: Size, level: Int) = css(s"col-${size.cssSuffix}-$level")
+      def offset(size: Size, level: Int) = css(s"col-${size.cssSuffix}-offset-$level")
+      def pull(size: Size, level: Int) = css(s"col-${size.cssSuffix}-pull-$level")
+      def push(size: Size, level: Int) = css(s"col-${size.cssSuffix}-push-$level")
+    }
   }
 
   case class Modal(contents: View*) extends Widget[Modal] {
     val rendered = DOM.createElement("div", contents)
     css("modal")
 
-    def fade(state: Boolean) = {
-      css(state, "fade")
-      this
-    }
+    def fade(state: Boolean) = css(state, "fade")
   }
 
   object Modal {
@@ -444,7 +430,7 @@ package object Bootstrap {
         .css("media-heading")
   }
 
-  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb] {
+  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb, Bootstrap.Item] {
     val rendered = DOM.createElement("ol", contents)
     css("breadcrumb")
   }
