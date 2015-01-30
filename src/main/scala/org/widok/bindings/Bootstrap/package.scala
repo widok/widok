@@ -327,8 +327,28 @@ package object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("panel-heading")
 
-    def Title(contents: View*) =
-      HTML.Container.Generic(contents: _*)
+    def Title1(contents: View*) =
+      HTML.Heading.Level1(contents: _*)
+        .css("panel-title")
+
+    def Title2(contents: View*) =
+      HTML.Heading.Level2(contents: _*)
+        .css("panel-title")
+
+    def Title3(contents: View*) =
+      HTML.Heading.Level3(contents: _*)
+        .css("panel-title")
+
+    def Title4(contents: View*) =
+      HTML.Heading.Level4(contents: _*)
+        .css("panel-title")
+
+    def Title5(contents: View*) =
+      HTML.Heading.Level5(contents: _*)
+        .css("panel-title")
+
+    def Title6(contents: View*) =
+      HTML.Heading.Level6(contents: _*)
         .css("panel-title")
 
     def Footer(contents: View*) =
