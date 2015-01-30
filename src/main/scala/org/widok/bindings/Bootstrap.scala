@@ -405,4 +405,41 @@ object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("row")
   }
+
+  case class Modal(contents: View*) extends Widget[Modal] {
+    val rendered = DOM.createElement("div", contents)
+    css("modal")
+
+    def fade(state: Boolean) = {
+      css(state, "fade")
+      this
+    }
+  }
+
+  object Modal {
+    def Title(contents: View*) =
+      HTML.Heading.Level4(contents: _*).css("modal-title")
+
+    def Dialog(contents: View*) =
+      HTML.Container.Generic(contents: _*).css("modal-dialog")
+
+    trait ContentElement extends Widget[ContentElement]
+    def Content(contents: ContentElement*) =
+      HTML.Container.Generic(contents: _*).css("modal-content")
+
+    case class Header(contents: View*) extends ContentElement {
+      val rendered = DOM.createElement("div", contents)
+      css("modal-header")
+    }
+
+    case class Body(contents: View*) extends ContentElement {
+      val rendered = DOM.createElement("div", contents)
+      css("modal-body")
+    }
+
+    case class Footer(contents: View*) extends ContentElement {
+      val rendered = DOM.createElement("div", contents)
+      css("modal-footer")
+    }
+  }
 }
