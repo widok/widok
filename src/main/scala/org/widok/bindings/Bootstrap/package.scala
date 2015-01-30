@@ -63,21 +63,21 @@ package object Bootstrap {
     HTML.Label(contents: _*)
       .css("control-label")
 
-  object Label {
-    trait Style { val cssTag: String }
-    object Style {
-      case object Default extends Style { val cssTag = "label-default" }
-      case object Primary extends Style { val cssTag = "label-primary" }
-      case object Success extends Style { val cssTag = "label-success" }
-      case object Info extends Style { val cssTag = "label-info" }
-      case object Warning extends Style { val cssTag = "label-warning" }
-      case object Danger extends Style { val cssTag = "label-danger" }
-    }
+  trait Style { val cssSuffix: String }
+  object Style {
+    case object Default extends Style { val cssSuffix = "default" }
+    case object Primary extends Style { val cssSuffix = "primary" }
+    case object Success extends Style { val cssSuffix = "success" }
+    case object Info extends Style { val cssSuffix = "info" }
+    case object Warning extends Style { val cssSuffix = "warning" }
+    case object Danger extends Style { val cssSuffix = "danger" }
+  }
 
-    def apply(style: ReadChannel[Label.Style])(contents: View*) =
+  object Label {
+    def apply(style: Style)(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("label")
-        .cssCh(style.map(_.cssTag))
+        .css(s"label-${style.cssSuffix}")
   }
 
   // TODO Improve design.
@@ -110,12 +110,13 @@ package object Bootstrap {
     val rendered = DOM.createElement("button", contents)
     css("btn btn-default")
 
-    def size(size: Size) = css("btn-" + size.cssSuffix)
-    def style(style: Button.Style) = {
+    def size(value: Size) = css(s"btn-${value.cssSuffix}")
+    def style(value: Style) = {
       css(false, "btn-default")
-      css(style.cssTag)
+      css(s"btn-${value.cssSuffix}")
     }
     def block(state: Boolean) = css(state, "btn-block")
+    def link(state: Boolean) = css(state, "btn-link")
   }
 
   trait Size { val cssSuffix: String }
@@ -127,17 +128,6 @@ package object Bootstrap {
   }
 
   object Button {
-    trait Style { val cssTag: String }
-    object Style {
-      case object Default extends Style { val cssTag = "btn-default" }
-      case object Primary extends Style { val cssTag = "btn-primary" }
-      case object Success extends Style { val cssTag = "btn-success" }
-      case object Info extends Style { val cssTag = "btn-info" }
-      case object Warning extends Style { val cssTag = "btn-warning" }
-      case object Danger extends Style { val cssTag = "btn-danger" }
-      case object Link extends Style { val cssTag = "btn-link" }
-    }
-
     case class Group(buttons: Button*) extends Widget[Group] {
       val rendered = DOM.createElement("div", buttons)
       css("btn-group")
@@ -317,12 +307,34 @@ package object Bootstrap {
       .css(s"alert ${alertType.cssTag}")
       .attribute("role", "alert")
 
-  def Panel(contents: View*) =
-    HTML.Container.Generic(
-      HTML.Container.Generic(
-        contents: _*
-      ) .css("panel-body")
-    ) .css("panel panel-default")
+  case class Panel(contents: View*) extends Widget[Panel] {
+    val rendered = DOM.createElement("div", contents)
+    css("panel")
+    css("panel-default")
+
+    def style(value: Style) = {
+      css(false, "panel-default")
+      css(s"panel-${value.cssSuffix}")
+    }
+  }
+
+  object Panel {
+    def Body(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("panel-body")
+
+    def Heading(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("panel-heading")
+
+    def Title(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("panel-title")
+
+    def Footer(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("panel-footer")
+  }
 
   object ListGroup {
     case class Group(contents: Widget.List.Item[_]*) extends Widget.List[Group, Widget.List.Item[_]] {
