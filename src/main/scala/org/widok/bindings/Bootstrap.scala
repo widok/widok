@@ -442,4 +442,36 @@ object Bootstrap {
       css("modal-footer")
     }
   }
+
+  case class Media(contents: View*) extends Widget[Media] {
+    val rendered = DOM.createElement("div", contents)
+    css("media")
+  }
+
+  object Media {
+    def Left(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("media-left")
+
+    def List(contents: Bootstrap.Media.Item*) =
+      HTML.List.Unordered(contents: _*)
+        .css("media-left")
+
+    case class Item(contents: View*) extends Widget.List.Item[Item] {
+      val rendered = DOM.createElement("li", contents)
+      css("media")
+    }
+
+    def Body(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("media-body")
+
+    def Object(source: String) =
+      HTML.Image(source)
+        .css("media-object")
+
+    def Heading(contents: View*) =
+      HTML.Heading.Level4(contents: _*)
+        .css("media-heading")
+  }
 }
