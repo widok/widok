@@ -47,6 +47,7 @@ package object Bootstrap {
     css("form-group")
 
     def role(role: Role) = attribute("role", role.value)
+    def size(value: Size) = css(s"form-group-${value.cssSuffix}")
   }
 
   def InputGroup(contents: View*) =
@@ -82,18 +83,22 @@ package object Bootstrap {
       HTML.Container.Inline(contents: _*)
     ).css("alert alert-danger")
 
+  trait Input[T] extends Widget[T] { self: T =>
+    def size(value: Size) = css(s"input-${value.cssSuffix}")
+  }
+
   object Input {
-    def Text(): HTML.Input.Text =
-      HTML.Input.Text()
-        .css("form-control")
+    case class Text() extends HTML.Input.TextBase[Text] with Input[Text] {
+      css("form-control")
+    }
 
-    def Password(): HTML.Input.Password =
-      HTML.Input.Password()
-        .css("form-control")
+    case class Password() extends HTML.Input.PasswordBase[Password] with Input[Password] {
+      css("form-control")
+    }
 
-    def Select(options: Seq[String], selected: Int = -1): HTML.Input.Select =
-      HTML.Input.Select(options, selected)
-        .css("form-control")
+    case class Select() extends HTML.Input.SelectBase[Select] with Input[Select] {
+      css("form-control")
+    }
   }
 
   case class Button(contents: View*) extends Widget[Button] {

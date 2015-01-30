@@ -134,18 +134,23 @@ object HTML {
       }
     }
 
-    case class Text() extends Textual[Text] {
+    trait TextBase[T] extends Textual[T] { self: T =>
       rendered.setAttribute("type", "text")
 
       def autocomplete(value: Boolean) = {
         rendered.setAttribute("autocomplete", if (value) "on" else "off")
-        this
+        self
       }
     }
 
-    case class Password() extends Textual[Password] {
+    case class Text() extends TextBase[Text]
+
+    trait PasswordBase[T] extends Textual[T] { self: T =>
       rendered.setAttribute("type", "password")
     }
+
+    case class Password() extends PasswordBase[Password]
+
 
     case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
       val rendered = DOM.createElement("input")
@@ -189,15 +194,22 @@ object HTML {
       }
     }
 
-    case class Select(options: Seq[String] = Seq.empty, selected: Int = -1) extends Widget.Input.Select[Select] {
+    trait SelectBase[T] extends Widget.Input.Select[T] { self: T =>
       val rendered = DOM.createElement("select")
-      options.zipWithIndex.foreach { case (cur, idx) =>
-        val elem = DOM.createElement("option")
-        elem.appendChild(dom.document.createTextNode(cur))
-        if (idx == selected) elem.setAttribute("selected", "")
-        rendered.appendChild(elem)
+
+      def options(options: Seq[String], selected: Int = -1) = {
+        options.zipWithIndex.foreach { case (cur, idx) =>
+          val elem = DOM.createElement("option")
+          elem.appendChild(dom.document.createTextNode(cur))
+          if (idx == selected) elem.setAttribute("selected", "")
+          rendered.appendChild(elem)
+        }
+
+        self
       }
     }
+
+    case class Select() extends SelectBase[Select]
   }
 
   case class HorizontalLine() extends Widget[HorizontalLine] {
