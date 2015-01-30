@@ -101,17 +101,14 @@ package object Bootstrap {
 
   case class Button(contents: View*) extends Widget[Button] {
     val rendered = DOM.createElement("button", contents)
-    css("btn")
+    css("btn btn-default")
 
-    def size(size: Button.Size) = {
-      css(size.cssTag)
-      this
+    def size(size: Button.Size) = css(size.cssTag)
+    def style(style: Button.Style) = {
+      css(false, "btn-default")
+      css(style.cssTag)
     }
-
-    def `type`(`type`: Button.Type) = {
-      css(`type`.cssTag)
-      this
-    }
+    def block(state: Boolean) = css(state, "btn-block")
   }
 
   object Button {
@@ -124,13 +121,15 @@ package object Bootstrap {
       case object Large extends Size { val cssTag = "btn-lg" }
     }
 
-    trait Type { val cssTag: String }
-    object Type {
-      case object Default extends Type { val cssTag = "btn-default" }
-      case object Success extends Type { val cssTag = "btn-success" }
-      case object Info extends Type { val cssTag = "btn-info" }
-      case object Warning extends Type { val cssTag = "btn-warning" }
-      case object Danger extends Type { val cssTag = "btn-danger" }
+    trait Style { val cssTag: String }
+    object Style {
+      case object Default extends Style { val cssTag = "btn-default" }
+      case object Primary extends Style { val cssTag = "btn-primary" }
+      case object Success extends Style { val cssTag = "btn-success" }
+      case object Info extends Style { val cssTag = "btn-info" }
+      case object Warning extends Style { val cssTag = "btn-warning" }
+      case object Danger extends Style { val cssTag = "btn-danger" }
+      case object Link extends Style { val cssTag = "btn-link" }
     }
   }
 
