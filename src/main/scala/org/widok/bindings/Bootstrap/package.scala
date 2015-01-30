@@ -65,8 +65,12 @@ package object Bootstrap {
 
   trait Style { val cssSuffix: String }
   object Style {
+    /** Not supported by tables. */
     case object Default extends Style { val cssSuffix = "default" }
+
+    /** Not supported by tables. */
     case object Primary extends Style { val cssSuffix = "primary" }
+
     case object Success extends Style { val cssSuffix = "success" }
     case object Info extends Style { val cssSuffix = "info" }
     case object Warning extends Style { val cssSuffix = "warning" }
@@ -507,5 +511,35 @@ package object Bootstrap {
   case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb, Bootstrap.Item] {
     val rendered = DOM.createElement("ol", contents)
     css("breadcrumb")
+  }
+
+  case class Table(contents: View*) extends Widget[Table] {
+    val rendered = DOM.createElement("table", contents)
+    css("table")
+
+    def striped(state: Boolean) = css(state, "table-striped")
+    def bordered(state: Boolean) = css(state, "table-bordered")
+    def hover(state: Boolean) = css(state, "table-hover")
+    def condensed(state: Boolean) = css(state, "table-condensed")
+  }
+
+  object Table {
+    def Responsive(table: Table) =
+      HTML.Container.Generic(table)
+        .css("table-responsive")
+
+    case class Row(contents: View*) extends HTML.Table.RowBase[Row] {
+      val rendered = DOM.createElement("tr", contents)
+
+      def active(state: Boolean) = css(state, "active")
+      def style(style: Style) = css(style.cssSuffix)
+    }
+
+    case class Column(contents: View*) extends Widget[Column] {
+      val rendered = DOM.createElement("td", contents)
+
+      def active(state: Boolean) = css(state, "active")
+      def style(style: Style) = css(style.cssSuffix)
+    }
   }
 }

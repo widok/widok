@@ -276,7 +276,7 @@ object HTML {
   }
 
   object Table {
-    case class Head(contents: Row*) extends Widget.List[Head, Row] {
+    case class Head(contents: RowBase[_]*) extends Widget.List[Head, Row] {
       val rendered = DOM.createElement("thead", contents)
     }
 
@@ -284,12 +284,16 @@ object HTML {
       val rendered = DOM.createElement("th", contents)
     }
 
-    case class Body(contents: Row*) extends Widget.List[Body, Row] {
+    trait RowBase[T] extends Widget[T] { self: T =>
+
+    }
+
+    case class Body(contents: RowBase[_]*) extends Widget.List[Body, RowBase[_]] {
       val rendered = DOM.createElement("tbody", contents)
     }
 
     /** May contain either HeadColumn or Column. */
-    case class Row(contents: View*) extends Widget.List.Item[Row] {
+    case class Row(contents: View*) extends RowBase[Row] {
       val rendered = DOM.createElement("tr", contents)
     }
 
