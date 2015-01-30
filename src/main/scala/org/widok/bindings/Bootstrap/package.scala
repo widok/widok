@@ -65,10 +65,10 @@ package object Bootstrap {
 
   trait Style { val cssSuffix: String }
   object Style {
-    /** Not supported by tables. */
+    /** Not supported by tables and alerts. */
     case object Default extends Style { val cssSuffix = "default" }
 
-    /** Not supported by tables. */
+    /** Not supported by tables and alerts. */
     case object Primary extends Style { val cssSuffix = "primary" }
 
     case object Success extends Style { val cssSuffix = "success" }
@@ -298,18 +298,15 @@ package object Bootstrap {
         .rendered
   }
 
-  trait AlertType { val cssTag: String }
-  object AlertType {
-    case object Success extends AlertType { val cssTag = "alert-success" }
-    case object Info extends AlertType { val cssTag = "alert-info" }
-    case object Warning extends AlertType { val cssTag = "alert-warning" }
-    case object Danger extends AlertType { val cssTag = "alert-danger" }
-  }
+  case class Alert(contents: View*) extends Widget[Alert] {
+    val rendered = DOM.createElement("div", contents)
+    css("alert")
+    attribute("role", "alert")
 
-  def Alert(alertType: AlertType)(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css(s"alert ${alertType.cssTag}")
-      .attribute("role", "alert")
+    def style(value: Style) = {
+      css(s"alert-${value.cssSuffix}")
+    }
+  }
 
   case class Panel(contents: View*) extends Widget[Panel] {
     val rendered = DOM.createElement("div", contents)
