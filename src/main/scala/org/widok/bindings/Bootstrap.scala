@@ -135,6 +135,21 @@ object Bootstrap {
         .css("form-control")
   }
 
+  case class Button(contents: View*) extends Widget[Button] {
+    val rendered = DOM.createElement("button", contents)
+    css("btn")
+
+    def size(size: Button.Size) = {
+      css(size.cssTag)
+      this
+    }
+
+    def `type`(`type`: Button.Type) = {
+      css(`type`.cssTag)
+      this
+    }
+  }
+
   object Button {
     trait Size { val cssTag: String }
     object Size {
@@ -153,12 +168,6 @@ object Bootstrap {
       case object Warning extends Type { val cssTag = "btn-warning" }
       case object Danger extends Type { val cssTag = "btn-danger" }
     }
-
-    def apply(size: Size = Size.Normal,
-              `type`: Type = Type.Default)
-             (contents: View*) =
-      HTML.Button(contents: _*)
-        .css("btn", `type`.cssTag, size.cssTag)
   }
 
   def Footer(contents: View*) =
