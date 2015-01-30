@@ -3,7 +3,7 @@ package org.widok.bindings.FontAwesome
 import org.widok._
 
 trait Icon extends Widget[Icon] {
-  val icon: String
+  def icon: String
 
   val rendered = DOM.createElement("span")
   css(s"fa fa-$icon")

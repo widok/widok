@@ -39,7 +39,7 @@ object Build extends sbt.Build {
         val obj = objectName(icon)
 
         s"""
-         case class $obj() extends Icon { val icon = "$icon" }
+         case class $obj() extends Icon { def icon = "$icon" }
          """
       }
       .mkString("\n")
@@ -70,7 +70,7 @@ object Build extends sbt.Build {
         val obj = objectName(icon)
 
         s"""
-         case class $obj() extends Glyphicon { val icon = "$prefix-$icon" }
+         case class $obj() extends Glyphicon { def icon = "$prefix-$icon" }
          """
       }
       .mkString("\n")
@@ -82,7 +82,7 @@ object Build extends sbt.Build {
       import org.widok._
 
       trait Glyphicon extends Widget[Glyphicon] {
-        val icon: String
+        def icon: String
         val rendered = DOM.createElement("span")
         css(s"glyphicon $icon")
       }
