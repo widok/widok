@@ -402,6 +402,11 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
+  def tabIndex(value: Int) = {
+    rendered.setAttribute("tabindex", value.toString)
+    self
+  }
+
   def title(value: String) = {
     rendered.setAttribute("title", value)
     self
