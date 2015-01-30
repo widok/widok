@@ -203,29 +203,29 @@ object Bootstrap {
         val anchor = HTML.Anchor(tab.name).cursor(HTML.Cursor.Pointer)
         anchor.click.attach(_ => currentTab := tab)
 
-        Bootstrap.Navigation.Item(anchor).active(currentTab.map(_ == tab))
+        Bootstrap.Item(anchor).active(currentTab.map(_ == tab))
       }
 
       Bootstrap.Navigation.Tabs(renderedTabs: _*)
     }
 
-    def Tabs(contents: Bootstrap.Navigation.Item*) =
+    def Tabs(contents: Bootstrap.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav nav-tabs")
         .attribute("role", "tablist")
 
-    def Pills(contents: Bootstrap.Navigation.Item*) =
+    def Pills(contents: Bootstrap.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav nav-pills")
         .attribute("role", "tablist")
+  }
 
-    case class Item(contents: View*) extends Widget.List.Item[Item] {
-      val rendered = DOM.createElement("li", contents)
+  case class Item(contents: View*) extends Widget.List.Item[Item] {
+    val rendered = DOM.createElement("li", contents)
 
-      def active(active: ReadChannel[Boolean]) = {
-        cssCh(active, "active")
-        this
-      }
+    def active(active: ReadChannel[Boolean]) = {
+      cssCh(active, "active")
+      this
     }
   }
 
@@ -276,10 +276,10 @@ object Bootstrap {
         .css("collapse", "navbar-collapse")
 
     def Branch(contentsCaption: Widget[_]*)
-              (contents: Bootstrap.Navigation.Item*): Bootstrap.Navigation.Item = {
+              (contents: Bootstrap.Item*): Bootstrap.Item = {
       val open = Var(false)
 
-      Bootstrap.Navigation.Item(
+      Bootstrap.Item(
         HTML.Anchor(
           HTML.Container.Inline(contentsCaption: _*),
           HTML.Container.Inline().css("caret")
@@ -293,7 +293,7 @@ object Bootstrap {
         .onClick(_ => open := !open.get)
     }
 
-    def Elements(contents: Bootstrap.Navigation.Item*) =
+    def Elements(contents: Bootstrap.Item*) =
       HTML.List.Unordered(contents: _*)
         .css("nav", "navbar-nav")
 
@@ -473,5 +473,10 @@ object Bootstrap {
     def Heading(contents: View*) =
       HTML.Heading.Level4(contents: _*)
         .css("media-heading")
+  }
+
+  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb] {
+    val rendered = DOM.createElement("ol", contents)
+    css("breadcrumb")
   }
 }
