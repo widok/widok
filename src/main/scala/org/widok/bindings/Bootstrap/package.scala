@@ -73,11 +73,11 @@ package object Bootstrap {
     case object Danger extends Style { val cssSuffix = "danger" }
   }
 
-  object Label {
-    def apply(style: Style)(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("label")
-        .css(s"label-${style.cssSuffix}")
+  case class Label(contents: View*) extends Widget[Label] {
+    val rendered = DOM.createElement("span", contents)
+    css("label")
+
+    def style(value: Style) = css(s"label-${value.cssSuffix}")
   }
 
   // TODO Improve design.
