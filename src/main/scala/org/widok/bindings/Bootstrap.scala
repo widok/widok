@@ -66,7 +66,6 @@ object Bootstrap {
 
   trait Role { val value: String }
   object Role {
-    case object None extends Role { val value = "" }
     case object Search extends Role { val value = "search" }
   }
 
@@ -80,12 +79,14 @@ object Bootstrap {
       .css("form-horizontal")
       .attribute("role", "form")
 
-  def FormGroup(role: Role = Role.None)(contents: View*) = {
-    val res = HTML.Container.Generic(contents: _*)
-      .css("form-group")
+  case class FormGroup(contents: View*) extends Widget[FormGroup] {
+    val rendered = DOM.createElement("div", contents)
+    css("form-group")
 
-    if (role == Role.None) res
-    else res.attribute("role", role.value)
+    def role(role: Role) = {
+      attribute("role", role.value)
+      this
+    }
   }
 
   def InputGroup(contents: View*) =
