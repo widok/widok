@@ -356,33 +356,65 @@ package object Bootstrap {
         .css("panel-footer")
   }
 
-  object ListGroup {
-    case class Group(contents: Widget.List.Item[_]*) extends Widget.List[Group, Widget.List.Item[_]] {
-      val rendered = HTML.Container.Generic(contents: _*)
-        .css("list-group")
-        .rendered
-    }
+  case class Pagination(contents: Pagination.Item*) extends Widget.List[Pagination, Pagination.Item] {
+    val rendered =
+      HTML.Navigation(
+        HTML.List.Unordered(
+          contents: _*
+        ).css("pagination")
+      ).rendered
+  }
 
-    case class PageItem(contents: View*) extends Widget.List.Item[PageItem] {
-      val widget = HTML.Anchor(contents: _*)
+  object Pagination {
+    case class Item(contents: View*) extends Widget.List.Item[Item] {
+      val rendered = DOM.createElement("li", contents)
+
+      def size(value: Size) = css(s"pagination-${value.cssSuffix}")
+      def active(state: Boolean) = css(state, "active")
+      def disabled(state: Boolean) = css(state, "disabled")
+    }
+  }
+
+  case class ListGroup(contents: Widget.List.Item[_]*) extends Widget.List[ListGroup, ListGroup.Item] {
+    val rendered = HTML.Container.Generic(contents: _*)
+      .css("list-group")
+      .rendered
+  }
+
+  object ListGroup {
+    case class Item(contents: View*) extends Widget.List.Item[Item] {
+      val widget = HTML.Container.Inline(contents: _*)
         .css("list-group-item")
       val rendered = widget.rendered
 
-      def url(value: String) = { widget.url(value); this }
-      def active(ch: Channel[Boolean]) = cssCh(ch, "active")
+      def active(state: Boolean) = css(state, "active")
+
+      /** Needed in conjunction with PullRight(). */
+      def clearfix(state: Boolean) = css(state, "clearfix")
     }
 
-    // clearfix is needed in conjunction with PullRight()
-    case class Item(contents: View*) extends Widget.List.Item[Item] {
-      val widget = HTML.Container.Generic(contents: _*)
-        .css("list-group-item", "clearfix")
-      val rendered = widget.rendered
+    def ItemHeading1(contents: View*) =
+      HTML.Heading.Level1(contents: _*)
+        .css("list-group-item-heading")
 
-      def active(ch: Channel[Boolean]) = cssCh(ch, "active")
-    }
+    def ItemHeading2(contents: View*) =
+      HTML.Heading.Level2(contents: _*)
+        .css("list-group-item-heading")
 
-    def ItemHeading(contents: View*) =
+    def ItemHeading3(contents: View*) =
+      HTML.Heading.Level3(contents: _*)
+        .css("list-group-item-heading")
+
+    def ItemHeading4(contents: View*) =
       HTML.Heading.Level4(contents: _*)
+        .css("list-group-item-heading")
+
+    def ItemHeading5(contents: View*) =
+      HTML.Heading.Level5(contents: _*)
+        .css("list-group-item-heading")
+
+    def ItemHeading6(contents: View*) =
+      HTML.Heading.Level6(contents: _*)
         .css("list-group-item-heading")
 
     def ItemText(contents: View*) =
