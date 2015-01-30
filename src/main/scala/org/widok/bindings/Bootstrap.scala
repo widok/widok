@@ -98,20 +98,20 @@ object Bootstrap {
       .css("control-label")
 
   object Label {
-    trait Style
+    trait Style { val cssTag: String }
     object Style {
-      case object Default extends Style { override def toString = "label-default" }
-      case object Primary extends Style { override def toString = "label-primary" }
-      case object Success extends Style { override def toString = "label-success" }
-      case object Info extends Style { override def toString = "label-info" }
-      case object Warning extends Style { override def toString = "label-warning" }
-      case object Danger extends Style { override def toString = "label-danger" }
+      case object Default extends Style { val cssTag = "label-default" }
+      case object Primary extends Style { val cssTag = "label-primary" }
+      case object Success extends Style { val cssTag = "label-success" }
+      case object Info extends Style { val cssTag = "label-info" }
+      case object Warning extends Style { val cssTag = "label-warning" }
+      case object Danger extends Style { val cssTag = "label-danger" }
     }
 
     def apply(style: ReadChannel[Label.Style])(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("label")
-        .cssCh(style.map(_.toString))
+        .cssCh(style.map(_.cssTag))
   }
 
   // TODO Improve design.
