@@ -5,7 +5,7 @@ import org.widok._
 /**
  * Native widgets for Bootstrap 3 components
  */
-object Bootstrap {
+package object Bootstrap {
   object TextContainer {
     trait Style { val cssTag: String }
     object Style {
@@ -32,47 +32,10 @@ object Bootstrap {
         .css(styles.map(_.cssTag): _*)
   }
 
-  // TODO Add missing ones.
-  trait Glyphicon { val cssTag: String }
-  object Glyphicon {
-    case object Ok extends Glyphicon { val cssTag = "glyphicon-ok" }
-    case object Star extends Glyphicon { val cssTag = "glyphicon-star" }
-    case object Search extends Glyphicon { val cssTag = "glyphicon-search" }
-    case object ArrowLeft extends Glyphicon { val cssTag = "glyphicon-arrow-left" }
-    case object ArrowRight extends Glyphicon { val cssTag = "glyphicon-arrow-right" }
-    case object Bookmark extends Glyphicon { val cssTag = "glyphicon-bookmark" }
-    case object Fire extends Glyphicon { val cssTag = "glyphicon-fire" }
-    case object Time extends Glyphicon { val cssTag = "glyphicon-time" }
-    case object Dashboard extends Glyphicon { val cssTag = "glyphicon-dashboard" }
-    case object Book extends Glyphicon { val cssTag = "glyphicon-book" }
-    case object Statistics extends Glyphicon { val cssTag = "glyphicon-stats" }
-    case object Open extends Glyphicon { val cssTag = "glyphicon-open" }
-    case object Plus extends Glyphicon { val cssTag = "glyphicon-plus" }
-    case object Trash extends Glyphicon { val cssTag = "glyphicon-trash" }
-    case object Left extends Glyphicon { val cssTag = "glyphicon-left" }
-    case object Right extends Glyphicon { val cssTag = "glyphicon-right" }
-    case object Font extends Glyphicon { val cssTag = "glyphicon-font" }
-    case object Bold extends Glyphicon { val cssTag = "glyphicon-bold" }
-    case object Italic extends Glyphicon { val cssTag = "glyphicon-italic" }
-    case object Wrench extends Glyphicon { val cssTag = "glyphicon-wrench" }
-    case object Comment extends Glyphicon { val cssTag = "glyphicon-comment" }
-    case object User extends Glyphicon { val cssTag = "glyphicon-user" }
-    case object Off extends Glyphicon { val cssTag = "glyphicon-off" }
-    case object Pause extends Glyphicon { val cssTag = "glyphicon-pause" }
-    case object Stop extends Glyphicon { val cssTag = "glyphicon-stop" }
-    case object Minus extends Glyphicon { val cssTag = "glyphicon-minus" }
-    case object Remove extends Glyphicon { val cssTag = "glyphicon-remove" }
-  }
-
   trait Role { val value: String }
   object Role {
     case object Search extends Role { val value = "search" }
   }
-
-  def Glyphicon(glyphicon: Glyphicon, caption: String = "") =
-    HTML.Container.Inline()
-      .css("glyphicon", glyphicon.cssTag)
-      .attribute("title", caption)
 
   def HorizontalForm(contents: View*) =
     HTML.Form(contents: _*)
@@ -256,11 +219,11 @@ object Bootstrap {
         .attribute("role", "navigation")
 
     def Toggle() =
-       HTML.Button(
-         HTML.Container.Inline().css("icon-bar"),
-         HTML.Container.Inline().css("icon-bar"),
-         HTML.Container.Inline().css("icon-bar")
-       ).css("navbar-toggle collapsed")
+      HTML.Button(
+        HTML.Container.Inline().css("icon-bar"),
+        HTML.Container.Inline().css("icon-bar"),
+        HTML.Container.Inline().css("icon-bar")
+      ).css("navbar-toggle collapsed")
         .attribute("type", "button")
 
     def Header(contents: View*) =
@@ -302,8 +265,8 @@ object Bootstrap {
         .css("navbar-form")
 
     def Right(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("navbar-right")
+      HTML.Container.Generic(contents: _*)
+        .css("navbar-right")
 
     def Navigation(contents: View*) =
       HTML.Container.Generic(contents: _*)
@@ -321,7 +284,7 @@ object Bootstrap {
           HTML.Container.Inline(contents: _*)
         )
       ).css("checkbox")
-       .rendered
+        .rendered
   }
 
   trait AlertType { val cssTag: String }

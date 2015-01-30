@@ -14,28 +14,28 @@ object Build extends sbt.Build {
     "-unchecked", "-deprecation",
     "-encoding", "utf8")
 
-  def between(subject: String, left: String, right: String): String = {
+  def between(subject: String, left: String, right: String): Option[String] = {
     val ofs = subject.indexOf(left)
     val end = subject.indexOf(right, ofs + left.length + 1)
-    assert(ofs != -1 && end != -1)
-    subject.slice(ofs + left.length, end)
+    if (ofs == -1 || end == -1) None
+    else Some(subject.slice(ofs + left.length, end))
   }
+
+  def objectName(cssTag: String): String =
+    cssTag.foldLeft("") { case (acc, cur) =>
+      if (acc.length == 0) "" + cur.toUpper
+      else if (acc.last == '-') acc.dropRight(1) + cur.toUpper
+      else acc + cur
+    }
 
   def generateFontAwesome(sourceGen: File, webJars: File): Seq[File] = {
     val file = sourceGen / "org" / "widok" / "bindings" / "FontAwesome" / "Icon.scala"
-
-    def objectName(cssTag: String): String =
-      cssTag.foldLeft("") { case (acc, cur) =>
-        if (acc.length == 0) "" + cur.toUpper
-        else if (acc.last == '-') acc.dropRight(1) + cur.toUpper
-        else acc + cur
-      }
 
     val objects = io.Source.fromFile(webJars / "lib" / "font-awesome" / "scss" / "_icons.scss")
       .getLines()
       .filter(_.startsWith(".#"))
       .map { line =>
-        val icon = between(line, "}-", ":")
+        val icon = between(line, "}-", ":").get
         val obj = objectName(icon)
 
         s"""
@@ -54,10 +54,55 @@ object Build extends sbt.Build {
     Seq(file)
   }
 
-  val faTask = {
+  def generateBootstrap(sourceGen: File, webJars: File): Seq[File] = {
+    val prefix = "glyphicon"
+
+    val file = sourceGen / "org" / "widok" / "bindings" / "Bootstrap" / "Glyphicon.scala"
+
+    val objects = io.Source.fromFile(webJars / "lib" / "bootstrap" / "less" / "glyphicons.less")
+      .getLines()
+      .filter(_.startsWith(s".$prefix-"))
+      .map { line =>
+        val icon =
+          between(line, "-", "{")
+          .orElse(between(line, "-", ","))
+          .get.trim
+        val obj = objectName(icon)
+
+        s"""
+         case class $obj() extends Glyphicon { val icon = "$prefix-$icon" }
+         """
+      }
+      .mkString("\n")
+
+    IO.write(file,
+      """
+      package org.widok.bindings.Bootstrap
+
+      import org.widok._
+
+      trait Glyphicon extends Widget[Glyphicon] {
+        val icon: String
+        val rendered = DOM.createElement("span")
+        css(s"glyphicon $icon")
+      }
+      """ +
+      s"""
+      object Glyphicon {
+        $objects
+      }
+      """
+    )
+
+    Seq(file)
+  }
+
+  val codeGenerationTask = {
     val source = sourceManaged in Compile
     val zipped = source.zip(WebKeys.webJarsDirectory in Assets)
-    zipped.map { case (src, web) => generateFontAwesome(src, web) }
+    zipped.map { case (src, web) =>
+      generateFontAwesome(src, web) ++ generateBootstrap(src, web)
+    }
   }.dependsOn(WebKeys.webJars in Assets)
 
   lazy val main = Project(id = "widok", base = file("."))
@@ -73,9 +118,10 @@ object Build extends sbt.Build {
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scalajs-dom" % "0.7.0",
         "org.monifu" %%% "minitest" % "0.10" % "test",
-        "org.webjars" % "font-awesome" % "4.3.0-1"
+        "org.webjars" % "font-awesome" % "4.3.0-1",
+        "org.webjars" % "bootstrap" % "3.3.2"
       ),
-      sourceGenerators in Compile <+= faTask,
+      sourceGenerators in Compile <+= codeGenerationTask,
       testFrameworks += new TestFramework("minitest.runner.Framework"),
       organization := buildOrganisation,
       scalaVersion := buildScalaVersion,
