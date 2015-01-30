@@ -402,6 +402,19 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
+  def title(value: String) = {
+    rendered.setAttribute("title", value)
+    self
+  }
+
+  def titleCh(value: ReadChannel[String]) = {
+    value.attach { title =>
+      rendered.setAttribute("title", title)
+    }
+
+    self
+  }
+
   def show(value: ReadChannel[Boolean], remove: Boolean = true) = {
     value.attach { cur =>
       if (remove) {
