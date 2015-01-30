@@ -103,7 +103,7 @@ package object Bootstrap {
     val rendered = DOM.createElement("button", contents)
     css("btn btn-default")
 
-    def size(size: Button.Size) = css(size.cssTag)
+    def size(size: Size) = css("btn-" + size.cssSuffix)
     def style(style: Button.Style) = {
       css(false, "btn-default")
       css(style.cssTag)
@@ -111,16 +111,15 @@ package object Bootstrap {
     def block(state: Boolean) = css(state, "btn-block")
   }
 
-  object Button {
-    trait Size { val cssTag: String }
-    object Size {
-      case object Normal extends Size { val cssTag = "" }
-      case object ExtraSmall extends Size { val cssTag = "btn-xs" }
-      case object Small extends Size { val cssTag = "btn-sm" }
-      case object Medium extends Size { val cssTag = "btn-md" }
-      case object Large extends Size { val cssTag = "btn-lg" }
-    }
+  trait Size { val cssSuffix: String }
+  object Size {
+    case object ExtraSmall extends Size { val cssSuffix = "xs" }
+    case object Small extends Size { val cssSuffix = "sm" }
+    case object Medium extends Size { val cssSuffix = "md" }
+    case object Large extends Size { val cssSuffix = "lg" }
+  }
 
+  object Button {
     trait Style { val cssTag: String }
     object Style {
       case object Default extends Style { val cssTag = "btn-default" }
@@ -130,6 +129,22 @@ package object Bootstrap {
       case object Warning extends Style { val cssTag = "btn-warning" }
       case object Danger extends Style { val cssTag = "btn-danger" }
       case object Link extends Style { val cssTag = "btn-link" }
+    }
+
+    case class Group(buttons: Button*) extends Widget[Group] {
+      val rendered = DOM.createElement("div", buttons)
+      css("btn-group")
+      attribute("role", "group")
+
+      def size(value: Size) = css(s"btn-group-${value.cssSuffix}")
+
+      // TODO Make NavigationBar.Branch() from above compatible with button groups.
+    }
+
+    case class Toolbar(groups: Group*) extends Widget[Toolbar] {
+      val rendered = DOM.createElement("div", groups)
+      css("btn-toolbar")
+      attribute("role", "toolbar")
     }
   }
 
@@ -351,17 +366,9 @@ package object Bootstrap {
   }
 
   object Grid {
-    trait ColumnType { val cssTag: String }
-    object ColumnType {
-      case object ExtraSmall extends ColumnType { val cssTag = "col-xs" }
-      case object Small extends ColumnType { val cssTag = "col-sm" }
-      case object Medium extends ColumnType { val cssTag = "col-md" }
-      case object Large extends ColumnType { val cssTag = "col-lg" }
-    }
-
-    def Column(columnType: ColumnType, level: Int)(contents: View*) =
+    def Column(size: Size, level: Int)(contents: View*) =
       HTML.Container.Generic(contents: _*)
-        .css(s"${columnType.cssTag}-$level")
+        .css(s"col-${size.cssSuffix}-$level")
 
     def Row(contents: View*) =
       HTML.Container.Generic(contents: _*)
