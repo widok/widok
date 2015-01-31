@@ -49,6 +49,9 @@ package object widok {
     /* TODO Why do we have to cast? */
     HTML.List.Items = HTML.List.Items(agg.asInstanceOf[Aggregate[Widget[_]]])
 
+  implicit def WidgetSeqToWidget[T <: Widget[_]](agg: Seq[T]): Inline =
+    Inline(agg: _*)
+
   implicit def StringBufferToWidget[T <: String](buf: ReadBuffer[T]):
     HTML.List.Items =
       /* TODO This could be optimised by creating fewer DOM nodes. */
