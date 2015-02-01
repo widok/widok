@@ -8,10 +8,10 @@ The router may be used as follows:
 
 ```scala
 object Main extends Application {
-    val main = Route("/", pages.Main())
-    val test = Route("/test/:param", pages.Test())
-    val test2 = Route("/test/:param/:param2", pages.Test())
-    val notFound = Route("/404", pages.NotFound())
+    val main = Route("/", pages.Main)
+    val test = Route("/test/:param", pages.Test)
+    val test2 = Route("/test/:param/:param2", pages.Test)
+    val notFound = Route("/404", pages.NotFound)
 
     val routes = Set(main, test, notFound)
 
@@ -39,9 +39,13 @@ val instMain: InstantiatedRoute = Main.main()
 val instTest: InstantiatedRoute = Main.test("param", "value")
 
 // Multiple parameters
-val instTest2: InstantiatedRoute = Main.test2(Map(
-    "param" -> "value",
-    "param2" -> "value2"))
+val instTest2: InstantiatedRoute =
+	Main.test2(
+		Map(
+			"param" -> "value",
+			"param2" -> "value2"
+		)
+	)
 
 // Change the current page to /test/value
 instTest.go()
@@ -70,9 +74,9 @@ As the router defines usually the entry point of an application, Widok provides 
 
 ```scala
 object Routes {
-  val main = Route("/", pages.Main())
+  val main = Route("/", pages.Main)
   ...
-  val notFound = Route("/404", pages.NotFound())
+  val notFound = Route("/404", pages.NotFound)
 
   val routes = Set(main, ..., notFound)
 }

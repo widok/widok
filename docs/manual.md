@@ -1,5 +1,5 @@
 ---
-title: Widok User Manual
+title: Widok User Manual v0.2
 author:
 - name: Tim Nieradzik
   affiliation: University of Bremen

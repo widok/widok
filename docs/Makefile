@@ -48,7 +48,6 @@ epub:	clean $(EPUB)
 		--html-q-tags \
 		--self-contained \
 		--reference-links \
-		--number-sections \
 		--template=$(PREFIX)/templates/html.template \
 		--css=$(PREFIX)/marked/kultiad-serif.css \
 		--filter pandoc-citeproc \
@@ -64,7 +63,6 @@ epub:	clean $(EPUB)
 		--html-q-tags \
 		--self-contained \
 		--reference-links \
-		--number-sections \
 		--filter pandoc-citeproc \
 		--csl=$(PREFIX)/csl/$(CSL).csl \
 		--bibliography=$(BIB) \

@@ -88,15 +88,6 @@ $ sbt fastOptJS
 
 Now you can open ``application.html`` in your browser.
 
-## Troubleshooting
-If sbt does not find the shapeless dependency, try to add the following resolver:
-
-```scala
-resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/alexander-myltsev/maven/"
-```
-
-See also https://github.com/widok/todomvc/issues/1
-
 ## Compilation
 The latest version is always published to Sonatype and Maven Central. Therefore, no manual compilation of Widok is required. Please refer to [Developing](#developing) if you would like to try out the latest development release.
 

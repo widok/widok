@@ -31,7 +31,7 @@ To reduce the amount of code needed to get started with Widok, it ships two appl
 - ``RoutingApplication``: A multi-page application with routing
 
 ### Single-page applications
-An example for ``PageApplication`` was already given in the chapter [Getting started](GettingStarted). The only difference over to a raw ``Application`` is that you need to implement the two methods ``contents()`` and ``ready()``.
+An example for ``PageApplication`` was already given in the chapter [Getting started](#getting-started). The only difference over to a raw ``Application`` is that you need to implement the two methods ``contents()`` and ``ready()``.
 
 ### Multi-page applications
 For multi-page applications you can use the default router as the application's entry point. In order to do so, create an object of ``RoutingApplication`` with two arguments: the set of enabled routes and a fall-back route. See the chapter on [Router](routing) for more information.
