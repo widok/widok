@@ -25,7 +25,7 @@ object ChannelSpec extends SimpleTestSuite {
     ch2.attach { value => right += value }
   }
 
-  /** Checks whether ``ch`` contains the given value. */
+  /** Checks whether `ch` contains the given value. */
   def assertConstantEquals[T](ch: ReadChannel[T], value: T) {
     val left = mutable.ArrayBuffer[T]()
 

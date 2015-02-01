@@ -307,7 +307,7 @@ trait WriteChannel[T] {
     ch
   }
 
-  /** Redirect stream from ``other`` to ``this``. */
+  /** Redirect stream from `other` to `this`. */
   def subscribe(ch: ReadChannel[T]): ReadChannel[Unit] =
     ch.attach(this := _)
 
@@ -337,7 +337,7 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
       fwdValue => Result.Next(f(fwdValue)),
       bwdValue => Result.Next(g(bwdValue)))
 
-  /** Two-way binding; synchronises ``this`` and ``other``. */
+  /** Two-way binding; synchronises `this` and `other`. */
   def bind(other: Channel[T]) {
     var obsOther: ReadChannel[Unit] = null
     val obsThis = silentAttach(other.produce(_, obsOther))
@@ -601,12 +601,13 @@ trait RootChannel[T]
   }
 }
 
+/** In Rx terms, a [[StateChannel]] can be considered a cold observable. */
 trait StateChannel[T] extends Channel[T] {
   def update(f: T => T) {
     flush(t => this := f(t))
   }
 
-  /** Maps each value change of ``other`` to a change of ``this``. */
+  /** Maps each value change of `other` to a change of `this`. */
   def zip[U](other: ReadChannel[U]): ReadChannel[(T, U)] = {
     val res = Channel[(T, U)]()
     other.attach(u => flush(t => res := (t, u)))
@@ -614,7 +615,7 @@ trait StateChannel[T] extends Channel[T] {
   }
 
   /** In contrast to zip() this produces a new value for each change of
-    * ``this`` or ``other``. Therefore, ``other`` must be a StateChannel.
+    * `this` or `other`. Therefore, `other` must be a StateChannel.
     */
   def combine[U](other: StateChannel[U]): ReadChannel[(T, U)] = {
     val res = Channel[(T, U)]()

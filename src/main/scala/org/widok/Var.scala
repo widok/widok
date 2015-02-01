@@ -12,8 +12,7 @@ case class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultS
 }
 
 /**
- * Upon each subscription, emit ``v``. ``v`` is evaluated
- * lazily. In Rx terms LazyVar() can be considered a cold observable.
+ * Upon each subscription, emit `v`. `v` is evaluated lazily.
  */
 object LazyVar {
   def apply[T](v: => T) = new StateChannel[T]
@@ -29,9 +28,10 @@ object LazyVar {
   }
 }
 
-/** Every produced value on the channel ``change`` indicates that the underlying
-  * variable was modified and the current value can be retrieved via ``get``.
-  * If a value v is produced on the resulting channel instead, then set(v) is called.
+/** Every produced value on the channel `change` indicates that the underlying
+  * variable was modified and the current value can be retrieved via `get`.
+  * If a value v is produced on the resulting channel instead, then set(v) is
+  * called.
   */
 object PtrVar {
   def apply[T](change: ReadChannel[_], get: => T, set: T => Unit) = new StateChannel[T]

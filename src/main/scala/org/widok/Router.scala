@@ -61,10 +61,9 @@ case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty
   def uri() = "#" + query()
 
   /**
-   * Dispatches a route by changing the current hash.
-   * If the hash did not change, setting it would probably
-   * not result in the ``hashchange`` event being triggered.
-   * Therefore, render the page manually.
+   * Dispatches a route by changing the current hash. If the hash did not
+   * change, setting it would probably not result in the `hashchange` event
+   * being triggered. Therefore, render the page manually.
    */
   def go() {
     val current = Router.decode(dom.window.location.hash) // TODO Is the decode() call necessary?
@@ -84,7 +83,7 @@ case class Router(unorderedRoutes: Set[Route],
 {
   val currentPage = Opt[Page]()
 
-  /** Checks whether no two elements in ``unorderedRoutes`` are symmetric. */
+  /** Checks whether no two elements in `unorderedRoutes` are symmetric. */
   assume((for {
     x <- unorderedRoutes
     y <- unorderedRoutes.filter(_ != x)
