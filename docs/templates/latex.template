@@ -1,0 +1,277 @@
+%% Based upon:
+%% - https://github.com/kjhealy/pandoc-templates (Pandoc templates created by Kieran Healy)
+%% - https://github.com/DGrady/book-template/blob/master/book.tex
+
+%% If font not found, try:
+%% # ln -s /etc/fonts/conf.avail/09-texlive-fonts.conf /etc/fonts/conf.d/09-texlive-fonts.conf
+%% # fc-cache && mkfontscale && mkfontdir
+%% From https://wiki.archlinux.org/index.php/TeX_Live
+
+\documentclass[9pt]{memoir}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage[spelling=new,babelshorthands=true]{$lang$}
+
+%\setromanfont[
+%  BoldFont       = {Linux Libertine Bold},
+%  ItalicFont     = {Linux Libertine Italic},
+%  BoldItalicFont = {Linux Libertine Bold Italic}
+%]{Linux Libertine}
+
+% \setmainfont[Numbers=OldStyle]{TeX Gyre Pagella}
+\setmainfont{Linux Libertine O}
+
+\usepackage{unicode-math}
+%\defaultfontfeatures{Ligatures=TeX}
+%\setmathfont{Cambria}
+
+%% Create a command to make a note at the top of the first page describing the
+%% publication status of the paper.
+\newcommand{\published}[1]{%
+   \gdef\puB{#1}}
+   \newcommand{\puB}{}
+   \renewcommand{\maketitlehooka}{%
+       \par\noindent\footnotesize \puB}
+
+\usepackage[svgnames]{xcolor}
+
+\usepackage[
+	colorlinks=true,
+	urlcolor=DarkSlateBlue,
+	citecolor=DarkSlateBlue,
+	filecolor=DarkSlateBlue,
+	plainpages=false,
+	pdfpagelabels,
+	bookmarksnumbered
+]{hyperref}
+
+\usepackage{graphicx}
+\usepackage{sidecap}
+\usepackage{tikz}
+
+\usepackage{tikz-dependency}
+\usepackage[all]{xy}
+
+$for(header-includes)$
+	$header-includes$
+$endfor$
+
+% Title flush left
+\pretitle{\par\vskip 3em
+	\begin{flushleft}\LARGE\bfseries}
+\posttitle{\end{flushleft}\par\vskip 0.5em}
+\preauthor{\begin{flushleft}\normalsize\bigskip}
+\postauthor{\end{flushleft}}
+\predate{\begin{flushleft}\normalsize}
+\postdate{\end{flushleft}}
+
+% 'abstract' bigger skip from title
+% \addto\captions$lang${\renewcommand{\abstractname}{}}
+% \renewcommand{\abstractname}{}
+\renewcommand{\abstracttextfont}{\normalfont\scriptsize}
+\abstractrunin
+
+
+
+
+
+
+
+
+
+
+
+% =========================
+% = Setting up the layout =
+% =========================
+
+% With a 9pt body font we want a leading line spacing
+\setSingleSpace{1.2}
+\SingleSpacing
+
+% Calculating the correct type block height by hand is quite
+% challenging (partially because not all lines are \baselineskip high;
+% apparently the first line is \topskip high?), and \checkandfixthelayout will
+% in the end actually *change* it so that the type block is always an integer
+% multiple of lines. The easiest thing is to set the approximate desired type
+% block height, the width, the left or right margin, the bottom margin, and
+% the headdrop, and then let memoir take care of everything else. Changing the
+% algorithm used to check the layout helps as well.
+\setstocksize{9in}{6in}
+\settrimmedsize{\stockheight}{\stockwidth}{*}
+\settrims{0pt}{0pt}
+
+\settypeblocksize{46\baselineskip}{4in}{*}
+\setlrmargins{*}{0.5in}{*}
+\setulmargins{*}{0.5in}{*}
+
+\setheadfoot{\baselineskip}{\baselineskip} % headheight and footskip
+\setheaderspaces{0.5in}{*}{*} % headdrop, headsep, and ratio
+
+\checkandfixthelayout[lines]
+
+% Set up custom headers and footers
+\makepagestyle{stylish}
+\copypagestyle{stylish}{headings}
+\makerunningwidth{stylish}{5in}
+\makeheadposition{stylish}{flushleft}{flushright}{}{}
+\pagestyle{stylish}
+
+% =================
+% Table of contents
+% =================
+
+\setsecnumdepth{subsubsection}
+\settocdepth{subsection}
+
+% ===========
+% Page header
+% ===========
+
+% Inspired from http://hstuart.dk/2007/06/12/styling-the-page-footer-and-header/
+% - Small-caps instead of upper-case + italic
+% - vertical rule between page number and text
+\nouppercaseheads
+\makeevenhead{stylish}{\scshape\thepage\hskip.5cm\vrule\hskip.5cm\leftmark}{}{}
+\makeoddhead{stylish}{}{}{\scshape\rightmark\hskip.5cm\vrule\hskip.5cm\thepage}
+
+% ============
+% = Chapters =
+% ============
+
+\newcommand{\swelledrule}{%
+    \tikz \filldraw[scale=.015,very thin]%
+    (0,0) -- (100,1) -- (200,1) -- (300,0) --%
+    (200,-1) -- (100,-1) -- cycle;}
+\makeatletter
+\makechapterstyle{grady}{%
+    \setlength{\beforechapskip}{0pt}
+    \renewcommand*{\chapnamefont}{\large\centering\scshape} % TODO Only the first line should be in small-caps
+    \renewcommand*{\chapnumfont}{\large}
+    \renewcommand*{\printchapternum}{%
+        \chapnumfont \thechapter}
+    \renewcommand*{\printchapternonum}{%
+        \vphantom{\printchaptername}%
+        \vphantom{\chapnumfont 1}%
+        \afterchapternum
+        \vskip -\onelineskip}
+    \renewcommand*{\chaptitlefont}{\Huge}
+    \renewcommand*{\printchaptertitle}[1]{%
+        \centering\chaptitlefont ##1\par\swelledrule}}
+\makeatother
+\chapterstyle{grady}
+
+% See below, after introduction, for \clearforchapter
+
+% Prevent page numbers from appearing on chapter pages
+\aliaspagestyle{chapter}{empty}
+
+% ===================
+% = Marginal labels =
+% ===================
+\strictpagecheck % Turn on robust page checking
+\captiondelim{} % Don't print a colon after "Figure #.#"
+
+\makeatletter
+\renewcommand{\fnum@figure}{%
+    \checkoddpage%
+    \ifoddpage%
+        \makebox[0pt][l]{\hspace{-1in}{\scshape\figurename~\thefigure}}%
+    \else
+        \makebox[0pt][r]{{\scshape\figurename~\thefigure}\hspace*{-3.3in}}% This was changed from -5in
+    \fi%
+    }
+\renewcommand{\fnum@table}{%
+    \checkoddpage%
+    \ifoddpage%
+        \makebox[0pt][l]{\hspace{-1in}{\scshape\tablename~\thetable}}%
+    \else
+        \makebox[0pt][r]{{\scshape\tablename~\thetable}\hspace*{-3.3in}}% This was changed from -5in
+    \fi%
+    }
+\let\mytagform@=\tagform@
+\def\tagform@#1{%
+\checkoddpage%
+    \ifoddpage%
+    \makebox[1sp][l]{\hspace{-5in}\maketag@@@{(\ignorespaces#1 \unskip \@@italiccorr)}}%
+    \else
+    \makebox[1sp][r]{\maketag@@@{(\ignorespaces#1 \unskip \@@italiccorr)}\hspace*{-1in}}%
+    \fi%
+    }
+% \renewcommand{\eqref}[1]{\textup{\mytagform@{\ref{#1}}}}
+\makeatother
+
+\usetikzlibrary{arrows,positioning,decorations.pathmorphing,trees}
+
+
+
+
+
+$if(highlighting-macros)$
+$highlighting-macros$
+$endif$
+
+$if(verbatim-in-note)$
+\usepackage{fancyvrb}
+$endif$
+
+$if(tables)$
+\usepackage{longtable}
+$endif$
+
+$if(graphics)$
+%\usepackage{graphicx}
+% We will generate all images so they have a width \maxwidth. This means
+% that they will get their normal width if they fit onto the page, but
+% are scaled down if they would overflow the margins.
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=\maxwidth]{#1}}
+$endif$
+
+$if(title)$
+\title{\bigskip \bigskip $title$}
+$endif$ 
+
+\author{
+	$for(author)$\Large $author.name$\vspace{0.05in} \newline\normalsize\emph{$author.affiliation$} \newline\footnotesize \url{$author.email$}\vspace*{0.2in}\newline $sep$ \and $endfor$
+}
+
+%\author{$for(author)$$author$$sep$\\$endfor$}
+%\author{$for(author)$$author.name$ ($author.affiliation$)$sep$ \and $endfor$}
+
+\date{}
+
+\begin{document}
+
+\published{$date$}
+
+$if(title)$
+\maketitle
+$endif$
+
+% TODO ugly
+$if(abstract)$
+\begin{abstract}
+	\noindent $abstract$
+\end{abstract}
+$endif$
+
+$if(toc)$
+\clearpage
+\hypersetup{linkcolor=black}
+\setcounter{tocdepth}{$toc-depth$}
+\tableofcontents
+$endif$
+
+$body$
+
+$for(include-after)$
+	$include-after$
+$endfor$
+
+\end{document}
