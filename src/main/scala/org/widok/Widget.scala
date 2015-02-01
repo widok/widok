@@ -49,7 +49,7 @@ object Widget {
           DOM.insertAfter(rendered, mapping(reference), after)
           mapping += element -> after
 
-        case Change.Update(reference, element) =>
+        case Change.Replace(reference, element) =>
           mapping += element -> rendered.replaceChild(f(element).rendered, mapping(reference))
           mapping -= reference
 
@@ -181,7 +181,7 @@ object Widget {
               mapping(element).rendered)
             selection.flush(onSelect)
 
-          case Change.Update(reference, element) =>
+          case Change.Replace(reference, element) =>
             mapping += element -> addOption(element.get)
             rendered.replaceChild(
               mapping(element).rendered,

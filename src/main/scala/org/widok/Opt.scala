@@ -12,7 +12,7 @@ object Opt {
  * Publishes a stream of defined values. Use isEmpty() to detect when the
  * current value is cleared.
  */
-case class Opt[T]() extends StateChannel[T] {
+case class Opt[T]() extends StateChannel[T] with UpdateFunctions[T] {
   private var cached: Option[T] = None
   private val defined = LazyVar[Boolean](cached.isDefined)
 

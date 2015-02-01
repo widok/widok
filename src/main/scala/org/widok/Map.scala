@@ -2,7 +2,7 @@ package org.widok
 
 import scala.collection.mutable
 
-trait OrderedMap[A, B] extends Aggregate[B] with UnorderedFunctions[A, B]
+trait OrderedMap[A, B] extends Aggregate[B] with AssocFunctions[A, B]
 
 /**
  * A buffer map inherits the elements from the referenced parent buffer. Thus,
@@ -44,7 +44,7 @@ trait ChildMap[A, B] extends OrderedMap[A, B] {
     assert(mapping.contains(key))
 
     val ref = Ref(value)
-    changes := Change.Update(mapping(key), ref)
+    changes := Change.Replace(mapping(key), ref)
     mapping += key -> ref
   }
 
@@ -76,7 +76,7 @@ case class BufMap[A, B](parent: ReadBuffer[A], f: A => B)
 
   parent.changes.attach {
     case Change.Insert(position, element) => insert(position, element, f(element.get))
-    case Change.Update(reference, element) => update(reference, f(element.get))
+    case Change.Replace(reference, element) => update(reference, f(element.get))
     case Change.Remove(element) => remove(element)
     case Change.Clear() => clear()
   }
@@ -112,7 +112,7 @@ case class OptBufMap[A, B](parent: ReadBuffer[A], f: A => ReadChannel[Option[B]]
       attached -= element
       if (mapping.contains(element)) remove(element)
 
-    case Change.Update(reference, element) =>
+    case Change.Replace(reference, element) =>
       attached(reference).dispose()
       attached -= reference
       val ch = f(element.get)

@@ -3,7 +3,7 @@ package org.widok
 import scala.collection.mutable
 
 /**
- * A buffer is an ordered aggregate with writing capabilities.
+ * A buffer is an ordered aggregate with writing capabilities
  */
 trait Buffer[T] extends ReadBuffer[T] with WriteBuffer[T] {
   import Aggregate.Change
@@ -46,6 +46,7 @@ trait ReadBuffer[T]
   with FilterFunctions[ReadBuffer, T]
   with MapFunctions[ReadBuffer, Ref[T]]
   with BoundedStreamFunctions[ReadBuffer, T]
+  with UpdateFunctions[T]
 {
   import Aggregate.Change
   import Aggregate.Position
@@ -102,9 +103,17 @@ trait ReadBuffer[T]
     (Buffer.from(left), Buffer.from(right))
   }
 
-  def take(count: Int): ReadBuffer[Ref[T]] = ???
+  def take(count: Int): ReadBuffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.take(count)))
+    result
+  }
 
-  def skip(count: Int): ReadBuffer[Ref[T]] = ???
+  def drop(count: Int): ReadBuffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.drop(count)))
+    result
+  }
 
   def headOption: ReadChannel[Option[Ref[T]]] = changes.map { _ =>
     if (get.isEmpty) None
@@ -120,6 +129,7 @@ trait ReadBuffer[T]
     case Change.Insert(Position.Head(), element) => element
     case Change.Insert(Position.Last(), element) if get.head == element => element
     case Change.Insert(Position.Before(before), element) if get.head == element => element
+    case Change.Replace(reference, element) if get.head == reference => element
   }.distinct
 
   def last: ReadChannel[Ref[T]] = changes.partialMap {
@@ -127,9 +137,14 @@ trait ReadBuffer[T]
     case Change.Insert(Position.Last(), element) => element
     case Change.Insert(Position.After(after), element)
       if get.last == after => element
+    case Change.Replace(reference, element) if get.head == reference => element
   }.distinct
 
-  def tail: ReadBuffer[T] = ???
+  def tail: ReadBuffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.tail))
+    result
+  }
 
   def isHead(element: Ref[T]): ReadChannel[Boolean] = headOption.map(_ == Some(element))
 
@@ -176,7 +191,7 @@ trait ReadBuffer[T]
           filtered.add(element)
         }
 
-      case Change.Update(reference, element) => ???
+      case Change.Replace(reference, element) => ???
 
       case Change.Remove(element) =>
         if (filtered.contains(element)) {
@@ -195,7 +210,11 @@ trait ReadBuffer[T]
   def partition(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) =
     (filter(f), filter((!(_: Boolean)).compose(f)))
 
-  def distinct: ReadBuffer[T] = ???
+  def distinct: ReadBuffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.distinct))
+    result
+  }
 
   def span(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) = {
     val left = Buffer[T]()
@@ -230,8 +249,8 @@ trait ReadBuffer[T]
         mapping += (before(handle) -> buf.insertBefore(mapping(handle), f(element)))
       case Change.Insert(Position.After(handle), element) =>
         mapping += (after(handle) -> buf.insertAfter(mapping(handle), f(element)))
-      case Change.Update(reference, element) =>
-        mapping += element -> buf.update(mapping(reference), f(element))
+      case Change.Replace(reference, element) =>
+        mapping += element -> buf.replace(mapping(reference), f(element))
         mapping -= reference
       case Change.Remove(element) =>
         buf.remove(mapping(element))
@@ -273,7 +292,7 @@ trait ReadBuffer[T]
         if (values(handle).isDefined)
           res.remove(values(handle).get)
       } else {
-        if (values(handle).isDefined) res.update(values(handle).get, value.get)
+        if (values(handle).isDefined) res.replace(values(handle).get, value.get)
         else {
           position match {
             case Position.Head() => res.prepend(value.get)
@@ -315,7 +334,7 @@ trait ReadBuffer[T]
         if (values(element).isDefined) res.remove(values(element).get)
         values -= element
 
-      case Change.Update(reference, element) => ???
+      case Change.Replace(reference, element) => ???
 
       case Change.Clear() =>
         attached.foreach { case (_, ch) => ch.dispose() }
@@ -399,45 +418,44 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
     changes := Change.Insert(Position.After(reference), element)
   }
 
-  def update(reference: Ref[T], element: Ref[T]) {
+  def replace(reference: Ref[T], element: Ref[T]) {
     val position = elements.indexOf(element)
     elements(position) = element
-    changes := Change.Update(reference, element)
+    changes := Change.Replace(reference, element)
   }
 
-  def update(reference: Ref[T], element: T): Ref[T] = {
+  def replace(reference: Ref[T], element: T): Ref[T] = {
     val position = elements.indexOf(element)
     val handle = Ref[T](element)
     elements(position) = handle
-    changes := Change.Update(reference, handle)
+    changes := Change.Replace(reference, handle)
     handle
   }
 
-  /** Remove an element by its reference. */
   def remove(element: Ref[T]) {
     val position = elements.indexOf(element)
     elements.remove(position)
     changes := Change.Remove(element)
   }
 
-  /** Remove all elements. */
+  def update(f: T => T) {
+    ???
+  }
+
   def clear() {
     elements.clear()
     changes := Change.Clear()
   }
 
-  /** Replace all elements. */
   def set(elements: Seq[Ref[T]]) {
     clear()
     elements.foreach(append)
   }
 
-  /** Add all references from ``buf``. */
   def appendAll(buf: ReadBuffer[T]) {
     buf.get.foreach(append)
   }
 
-  /** Remove all references from ``buf``. */
   def removeAll(buf: ReadBuffer[T]) {
     buf.get.toList.foreach(remove)
   }
@@ -448,7 +466,7 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
       case Change.Insert(Position.Last(), element) => append(element)
       case Change.Insert(Position.Before(reference), element) => insertBefore(reference, element)
       case Change.Insert(Position.After(reference), element) => insertAfter(reference, element)
-      case Change.Update(reference, element) => update(reference, element)
+      case Change.Replace(reference, element) => replace(reference, element)
       case Change.Remove(element) => remove(element)
       case Change.Clear() => clear()
     }

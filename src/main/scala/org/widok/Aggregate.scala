@@ -27,7 +27,7 @@ object Aggregate {
   trait Change[T]
   object Change {
     case class Insert[T](position: Position[T], element: T) extends Change[T]
-    case class Update[T](reference: T, element: T) extends Change[T]
+    case class Replace[T](reference: T, element: T) extends Change[T]
     case class Remove[T](element: T) extends Change[T]
     case class Clear[T]() extends Change[T]
   }
@@ -78,7 +78,7 @@ trait Aggregate[T]
           state.produce()
         }
 
-      case Change.Update(reference, element) =>
+      case Change.Replace(reference, element) =>
         var change = false
 
         if (matching.contains(reference)) {
@@ -118,7 +118,7 @@ trait Aggregate[T]
           state.produce()
         }
 
-      case Change.Update(reference, element) =>
+      case Change.Replace(reference, element) =>
         var changed = false
 
         if (falseIds.contains(reference)) {

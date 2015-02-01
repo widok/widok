@@ -35,6 +35,17 @@ object ChannelTest extends SimpleTestSuite {
     expect(map(b)).toBe(2)
   }
 
+  test("head()") {
+    var value = 0
+    val ch = Var(1)
+    val hd = ch.head
+    hd.attach(value = _)
+    expect(value).toBe(1)
+    value = -1
+    hd.attach(value = _)
+    expect(value).toBe(1)
+  }
+
   test("distinct()") {
     val ch = Var(1)
     val dis = ch.distinct
@@ -117,7 +128,7 @@ object ChannelTest extends SimpleTestSuite {
     val ch = Channel[Int]()
 
     var sum = 0
-    ch.skip(2).attach(sum += _)
+    ch.drop(2).attach(sum += _)
 
     ch := 1
     ch := 2

@@ -29,7 +29,7 @@ object Result {
 }
 
 trait ReadChannel[T]
-  extends StreamFunctions[ReadChannel, T]
+  extends UnboundedStreamFunctions[ReadChannel, T]
   with FilterFunctions[ReadChannel, T]
   with FoldFunctions[T]
   with MapFunctions[ReadChannel, T]
@@ -151,7 +151,7 @@ trait ReadChannel[T]
     }
   }
 
-  def skip(count: Int): ReadChannel[T] = {
+  def drop(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
     forkUni(value => {
@@ -164,7 +164,7 @@ trait ReadChannel[T]
   }
 
   def head: ReadChannel[T] = forkUni(value => Result.Done(Some(value)))
-  def tail: ReadChannel[T] = skip(1)
+  def tail: ReadChannel[T] = drop(1)
 
   def isHead(value: T): ReadChannel[Boolean] =
     take(1).map(_ == value)
@@ -228,16 +228,16 @@ trait ReadChannel[T]
   def exists(f: T => Boolean): ReadChannel[Boolean] =
     forkUni { value =>
       if (f(value)) Result.Done(Some(true))
-      else Result.Next(None)
-    }
+      else Result.Next(Some(false))
+    }.distinct
 
   def forall(f: T => Boolean): ReadChannel[Boolean] = ???
 
   def contains(needle: T): ReadChannel[Boolean] =
     forkUni { value =>
       if (value == needle) Result.Done(Some(true))
-      else Result.Next(None)
-    }
+      else Result.Next(Some(false))
+    }.distinct
 
   def takeUntil(ch: ReadChannel[_]): ReadChannel[T] = {
     val res = forkUni { value =>
