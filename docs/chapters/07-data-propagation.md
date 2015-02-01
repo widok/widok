@@ -291,6 +291,6 @@ ch := 42
 ```
 
 ## API documentation
-- [Channel](http://widok.github.io/api/latest/index.html#org.widok.Channel)
-- [Aggregate](http://widok.github.io/api/latest/index.html#org.widok.Aggregate)
+- [Channel](http://widok.github.io/api/v0.1.1/index.html#org.widok.Channel)
+- [Aggregate](http://widok.github.io/api/v0.1.1/index.html#org.widok.Aggregate)
 

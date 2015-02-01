@@ -175,8 +175,8 @@ HTML.Container.Generic("Button clicked")
 
 ``show()`` expects a boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, we hide the widget as soon as we click the button.
 
-The chapter [Data propagation](DataPropagation) deals with channels in detail.
+The chapter [Data propagation](#data-propagation) deals with channels in detail.
 
 ## Links
-- [API documentation](http://widok.github.io/api/latest/index.html)
+- [API documentation](http://widok.github.io/api/v0.1.1/index.html)
 

@@ -98,5 +98,5 @@ resolvers += "bintray-alexander_myltsev" at "http://dl.bintray.com/alexander-myl
 See also https://github.com/widok/todomvc/issues/1
 
 ## Compilation
-The latest version is always published to Sonatype and Maven Central. Therefore, no manual compilation of Widok is required. Please refer to [Developing](Developing) if you would like to try out the latest development release.
+The latest version is always published to Sonatype and Maven Central. Therefore, no manual compilation of Widok is required. Please refer to [Developing](#developing) if you would like to try out the latest development release.
 

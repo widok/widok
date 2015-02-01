@@ -9,7 +9,7 @@ $ sbt ~fastOptJS
 ```
 
 ## Single-page applications
-The basic application from the [last chapter](GettingStarted) looked like this:
+The basic application from the [previous chapter](#getting-started) looked like this:
 
 ```scala
 package org.widok.example

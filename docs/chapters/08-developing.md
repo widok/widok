@@ -14,5 +14,5 @@ $ sbt publish-local
 This compiles the latest version of Widok and installs it locally. To use it, make sure to also update the version in your project accordingly.
 
 ## Releases
-The manual must always reflect the latest version. [Migration](Migration) explains differences between versions.
+The manual must always reflect the latest version.
 
