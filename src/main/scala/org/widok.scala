@@ -24,15 +24,17 @@ package object widok {
     new Error().printStackTrace()
   }
 
+  implicit def NumericToWidget[T](value: T)
+                                 (implicit num: Numeric[T]): HTML.Text =
+    HTML.Text(value.toString)
+
   implicit def StringToWidget(value: String): HTML.Text = HTML.Text(value)
 
   implicit def StringChannelToWidget[T <: String](value: ReadChannel[T]):
     HTML.Container.Inline = HTML.Container.Inline().subscribe(value)
 
-  implicit def IntChannelToWidget[T <: Int](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
-
-  implicit def DoubleChannelToWidget[T <: Double](value: ReadChannel[T]):
+  implicit def NumericChannelToWidget[T](value: ReadChannel[T])
+                                        (implicit num: Numeric[T]):
     HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
 
   implicit def BooleanChannelToWidget[T <: Boolean](value: ReadChannel[T]):
