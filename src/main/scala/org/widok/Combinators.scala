@@ -62,14 +62,16 @@ trait BoundedStreamFunctions[Container[_], T] extends StreamFunctions[Container,
   /**
    * First element with the possibility of non-existence
    *
-   * @return [[Some]] with first row, or [[None]] if the list is empty
+   * @return [[scala.Some]] with first row, or [[scala.None]] if the list is
+   *         empty
    */
   def headOption: ReadChannel[Option[Ref[T]]]
 
   /**
    * Last element with the possibility of non-existence
    *
-   * @return [[Some]] with first row, or [[None]] if the list is empty
+   * @return [[scala.Some]] with first row, or [[scala.None]] if the list is
+   *         empty
    */
   def lastOption: ReadChannel[Option[Ref[T]]]
 
@@ -203,8 +205,8 @@ trait MapFunctions[Container[_], T] {
 
 /**
  * Combinators for sequential access which allow low-level (albeit read-only)
- * access to the underlying [[Seq]] structure that is used by [[Buffer]] for
- * example.
+ * access to the underlying [[scala.Seq]] structure that is used by [[Buffer]]
+ * for example.
  */
 trait SequentialFunctions[T] {
   /**
