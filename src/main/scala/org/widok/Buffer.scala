@@ -447,6 +447,11 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
     changes := Change.Clear()
   }
 
+  def set(elements: ReadBuffer[T]) {
+    clear()
+    elements.get.foreach(append)
+  }
+
   def set(elements: Seq[Ref[T]]) {
     clear()
     elements.foreach(append)

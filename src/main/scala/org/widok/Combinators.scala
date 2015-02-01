@@ -234,7 +234,7 @@ trait IterateFunctions[T] {
 }
 
 /**
- * Combinators to associate values to elements; used by [[Map]]
+ * Combinators to associate values to elements; used by [[OrderedMap]]
  */
 trait AssocFunctions[A, B] {
   /** Value associated to `key` */
@@ -324,6 +324,9 @@ trait UpdateSequenceFunctions[Container[_], T] {
 
   /** Removes all elements from `aggregate` */
   def removeAll(aggregate: Container[T])
+
+  /** Replaces contents with `elements` */
+  def set(elements: Container[T])
 
   /** Replaces contents with `elements` */
   def set(elements: Seq[Ref[T]])
