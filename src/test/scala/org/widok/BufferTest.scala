@@ -50,7 +50,7 @@ object BufferTest extends SimpleTestSuite {
   test("flatMapCh()") {
     /* Ensure that references are preserved. */
     val x = Buffer(1, 2, 3)
-    val y = x.flatMapCh[Int](value => x.watch(value))
+    val y = x.flatMapCh[Int](value => Var(Some(value)))
     assertEquals(x.get, y.get)
 
     val fst = x.get.head

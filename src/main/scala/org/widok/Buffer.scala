@@ -4,7 +4,6 @@ import scala.collection.mutable
 
 /**
  * A buffer is an ordered aggregate with writing capabilities.
- * The values are constant.
  */
 trait Buffer[T] extends ReadBuffer[T] with WriteBuffer[T] {
   import Aggregate.Change
@@ -177,6 +176,8 @@ trait ReadBuffer[T]
           filtered.add(element)
         }
 
+      case Change.Update(reference, element) => ???
+
       case Change.Remove(element) =>
         if (filtered.contains(element)) {
           filtered -= element
@@ -229,6 +230,9 @@ trait ReadBuffer[T]
         mapping += (before(handle) -> buf.insertBefore(mapping(handle), f(element)))
       case Change.Insert(Position.After(handle), element) =>
         mapping += (after(handle) -> buf.insertAfter(mapping(handle), f(element)))
+      case Change.Update(reference, element) =>
+        mapping += element -> buf.update(mapping(reference), f(element))
+        mapping -= reference
       case Change.Remove(element) =>
         buf.remove(mapping(element))
         mapping -= element
@@ -261,37 +265,63 @@ trait ReadBuffer[T]
     val values = mutable.HashMap.empty[Ref[T], Option[Ref[U]]]
     val attached = mutable.HashMap.empty[Ref[T], ReadChannel[Unit]]
 
-    def rerender() {
-      res.clear()
-      elements.foreach { handle =>
-        if (values.isDefinedAt(handle) && values(handle).isDefined)
-          res.append(values(handle).get)
+    def valueChange(position: Aggregate.Position[Ref[T]],
+                    handle: Ref[T],
+                    value: Option[Ref[U]])
+    {
+      if (value.isEmpty) {
+        if (values(handle).isDefined)
+          res.remove(values(handle).get)
+      } else {
+        if (values(handle).isDefined) res.update(values(handle).get, value.get)
+        else {
+          position match {
+            case Position.Head() => res.prepend(value.get)
+            case Position.Last() => res.append(value.get)
+            case Position.Before(reference) =>
+              if (values(reference).isDefined)
+                res.insertBefore(values(reference).get, value.get)
+              else {
+                val insert = get.drop(indexOf(reference)).find(values(_).isDefined)
+                if (insert.isEmpty) res.append(value.get)
+                else res.insertAfter(values(insert.get).get, value.get)
+              }
+            case Position.After(reference) =>
+              if (values(reference).isDefined)
+                res.insertAfter(values(reference).get, value.get)
+              else {
+                val insert = get.drop(indexOf(reference)).find(values(_).isDefined)
+                if (insert.isEmpty) res.append(value.get)
+                else res.insertBefore(values(insert.get).get, value.get)
+              }
+          }
+        }
       }
-    }
 
-    def valueChange(handle: Ref[T], value: Option[Ref[U]]) {
-      // TODO Use Change.Update or Change.Remove
       values += handle -> value
-      rerender()
     }
 
     changes.attach {
       case Change.Insert(position, element) =>
+        // TODO position may change
         values += element -> None
         val ch = f(element)
-        attached += element -> ch.attach(value => valueChange(element, value))
+        attached +=
+          element -> ch.attach(value => valueChange(position, element, value))
 
       case Change.Remove(element) =>
         attached(element).dispose()
         attached -= element
+        if (values(element).isDefined) res.remove(values(element).get)
         values -= element
-        rerender()
+
+      case Change.Update(reference, element) => ???
 
       case Change.Clear() =>
         attached.foreach { case (_, ch) => ch.dispose() }
         attached.clear()
         values.clear()
-        rerender()
+        res.clear()
     }
 
     res
@@ -369,6 +399,20 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
     changes := Change.Insert(Position.After(reference), element)
   }
 
+  def update(reference: Ref[T], element: Ref[T]) {
+    val position = elements.indexOf(element)
+    elements(position) = element
+    changes := Change.Update(reference, element)
+  }
+
+  def update(reference: Ref[T], element: T): Ref[T] = {
+    val position = elements.indexOf(element)
+    val handle = Ref[T](element)
+    elements(position) = handle
+    changes := Change.Update(reference, handle)
+    handle
+  }
+
   /** Remove an element by its reference. */
   def remove(element: Ref[T]) {
     val position = elements.indexOf(element)
@@ -404,6 +448,7 @@ trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
       case Change.Insert(Position.Last(), element) => append(element)
       case Change.Insert(Position.Before(reference), element) => insertBefore(reference, element)
       case Change.Insert(Position.After(reference), element) => insertAfter(reference, element)
+      case Change.Update(reference, element) => update(reference, element)
       case Change.Remove(element) => remove(element)
       case Change.Clear() => clear()
     }

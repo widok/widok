@@ -43,17 +43,9 @@ trait ChildMap[A, B] extends OrderedMap[A, B] {
   def update(key: Ref[A], value: B) {
     assert(mapping.contains(key))
 
-    // TODO Introduce Change.Update
-    val before = parent.beforeOption(key)
-    changes := Change.Remove(mapping(key))
-
     val ref = Ref(value)
+    changes := Change.Update(mapping(key), ref)
     mapping += key -> ref
-
-    if (before.isDefined)
-      changes := Change.Insert(Position.After(mapping(before.get)), ref)
-    else
-      changes := Change.Insert(Position.Last(), ref)
   }
 
   private[widok] def insert(position: Aggregate.Position[Ref[A]], key: Ref[A], value: B) {
@@ -73,6 +65,8 @@ trait ChildMap[A, B] extends OrderedMap[A, B] {
     mapping.clear()
     changes := Change.Clear()
   }
+
+  override def toString = "ChildMap(" + get.mkString(", ") + ")"
 }
 
 case class BufMap[A, B](parent: ReadBuffer[A], f: A => B)
@@ -82,6 +76,7 @@ case class BufMap[A, B](parent: ReadBuffer[A], f: A => B)
 
   parent.changes.attach {
     case Change.Insert(position, element) => insert(position, element, f(element.get))
+    case Change.Update(reference, element) => update(reference, f(element.get))
     case Change.Remove(element) => remove(element)
     case Change.Clear() => clear()
   }
@@ -107,7 +102,8 @@ case class OptBufMap[A, B](parent: ReadBuffer[A], f: A => ReadChannel[Option[B]]
   }
 
   parent.changes.attach {
-    case Change.Insert(position, element) =>
+    case Change.Insert(_, element) =>
+      // TODO Must not ignore position
       val ch = f(element.get)
       attached += element -> ch.attach(value => valueChange(element, value))
 
@@ -115,6 +111,12 @@ case class OptBufMap[A, B](parent: ReadBuffer[A], f: A => ReadChannel[Option[B]]
       attached(element).dispose()
       attached -= element
       if (mapping.contains(element)) remove(element)
+
+    case Change.Update(reference, element) =>
+      attached(reference).dispose()
+      attached -= reference
+      val ch = f(element.get)
+      attached += element -> ch.attach(value => valueChange(element, value))
 
     case Change.Clear() =>
       attached.foreach { case (_, ch) => ch.dispose() }

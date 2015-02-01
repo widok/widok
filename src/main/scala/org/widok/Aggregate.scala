@@ -27,6 +27,7 @@ object Aggregate {
   trait Change[T]
   object Change {
     case class Insert[T](position: Position[T], element: T) extends Change[T]
+    case class Update[T](reference: T, element: T) extends Change[T]
     case class Remove[T](element: T) extends Change[T]
     case class Clear[T]() extends Change[T]
   }
@@ -71,11 +72,26 @@ trait Aggregate[T]
     val state = LazyVar(matching.nonEmpty)
 
     changes.attach {
-      case Change.Insert(position, element) =>
+      case Change.Insert(_, element) =>
         if (f(element.get)) {
           matching.add(element)
           state.produce()
         }
+
+      case Change.Update(reference, element) =>
+        var change = false
+
+        if (matching.contains(reference)) {
+          matching.remove(element)
+          change = true
+        }
+
+        if (f(element.get)) {
+          matching.add(element)
+          change = true
+        }
+
+        if (change) state.produce()
 
       case Change.Remove(element) =>
         if (matching.contains(element)) {
@@ -102,6 +118,21 @@ trait Aggregate[T]
           state.produce()
         }
 
+      case Change.Update(reference, element) =>
+        var changed = false
+
+        if (falseIds.contains(reference)) {
+          falseIds.remove(reference)
+          changed = true
+        }
+
+        if (!f(element.get)) {
+          falseIds.add(element)
+          changed = true
+        }
+
+        if (changed) state.produce()
+
       case Change.Remove(element) =>
         if (falseIds.contains(element)) {
           falseIds.remove(element)
@@ -115,12 +146,4 @@ trait Aggregate[T]
 
     state
   }
-
-  def watch(reference: Ref[T]): ReadChannel[Option[Ref[T]]] =
-    changes.partialMap {
-      /* TODO Support value changes via Change.Update */
-      case Change.Insert(_, element) if element == reference => Some(element)
-      case Change.Remove(element) if element == reference => None
-      case Change.Clear() => None
-    }
 }

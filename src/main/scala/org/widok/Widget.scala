@@ -49,6 +49,10 @@ object Widget {
           DOM.insertAfter(rendered, mapping(reference), after)
           mapping += element -> after
 
+        case Change.Update(reference, element) =>
+          mapping += element -> rendered.replaceChild(f(element).rendered, mapping(reference))
+          mapping -= reference
+
         case Change.Remove(element) =>
           rendered.removeChild(mapping(element))
           mapping -= element
@@ -165,7 +169,9 @@ object Widget {
 
           case Change.Insert(Position.Before(reference), element) =>
             mapping += element -> addOption(element.get)
-            rendered.insertBefore(mapping(element).rendered, mapping(reference).rendered)
+            rendered.insertBefore(
+              mapping(element).rendered,
+              mapping(reference).rendered)
             selection.flush(onSelect)
 
           case Change.Insert(Position.After(reference), element) =>
@@ -175,9 +181,12 @@ object Widget {
               mapping(element).rendered)
             selection.flush(onSelect)
 
-          /*case Change.Update(reference, element) =>
-            val rendered = mapping(reference).rendered
-            rendered.replaceChild(HTML.Text(element.get).rendered, rendered.firstChild)*/
+          case Change.Update(reference, element) =>
+            mapping += element -> addOption(element.get)
+            rendered.replaceChild(
+              mapping(element).rendered,
+              mapping(reference).rendered)
+            mapping -= reference
 
           case Change.Remove(element) =>
             rendered.removeChild(mapping(element).rendered)

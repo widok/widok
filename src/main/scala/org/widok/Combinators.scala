@@ -7,8 +7,8 @@ package org.widok
  * If an operation produces a single value, the return type is ReadChannel[_],
  * otherwise Out[_].
  *
- * Var, LazyVar and Opt are StateChannels.
- * VarBuf and Buffer are Aggregates.
+ * [[Var]], [[LazyVar]] and [[Opt]] are [[StateChannel]]s.
+ * [[Buffer]] and [[OrderedMap]] are [[Aggregate]]s.
  */
 
 /** Unbounded stream. */
@@ -97,9 +97,6 @@ trait SequentialFunctions[T] {
   def get: Seq[Ref[T]]
   def values: Seq[T]
   def foreach(f: T => Unit)
-
-  /** Observe the existence and the value changes of the given element. */
-  def watch(reference: Ref[T]): ReadChannel[Option[Ref[T]]]
 }
 
 trait IterateFunctions[T] {
