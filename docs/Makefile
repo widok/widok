@@ -17,6 +17,8 @@
 
 SRC = manual.md
 
+VERSION = v0.1
+
 ## Location of Pandoc support files.
 PREFIX = .
 
@@ -98,6 +100,11 @@ epub:	clean $(EPUB)
 		--csl=$(PREFIX)/csl/$(CSL).csl \
 		--bibliography=$(BIB) \
 		-o $@ $< chapters/*.md
+
+copy:
+	cp manual.epub ../../widok.github.io/manual/widok-$(VERSION).epub
+	cp manual.pdf ../../widok.github.io/manual/widok-$(VERSION).pdf
+	cp manual.html ../../widok.github.io/manual/widok-$(VERSION).html
 
 clean:
 	rm -f *.html *.epub *.pdf *.tex
