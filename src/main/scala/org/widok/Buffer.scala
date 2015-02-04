@@ -254,6 +254,7 @@ trait PollBuffer[T]
   extends reactive.poll.Index[Seq, Int, T]
   with reactive.poll.RelativeOrder[T]
   with reactive.poll.Iterate[T]
+  with reactive.poll.Filter[ReadBuffer, T]
   with reactive.stream.RelativeOrder[T]
   with reactive.stream.Filter[ReadBuffer, T]
   with reactive.stream.MapExtended[ReadBuffer, T]
@@ -324,6 +325,21 @@ trait PollBuffer[T]
 
   def partition(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) =
     (filter(f), filter((!(_: Boolean)).compose(f)))
+
+  def filter$(f: T => Boolean): ReadBuffer[T] = Buffer(elements.filter(f): _*)
+  def distinct$: ReadBuffer[T] = Buffer(elements.distinct: _*)
+
+  def span$(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) = {
+    val (l, r) = elements.span(f)
+    (Buffer(l: _*), Buffer(r: _*))
+  }
+
+  def partition$(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) = {
+    val (l, r) = elements.partition(f)
+    (Buffer(l: _*), Buffer(r: _*))
+  }
+
+  def find$(f: T => Boolean): Option[T] = elements.find(f)
 
   def update(f: T => T) {
     ???
