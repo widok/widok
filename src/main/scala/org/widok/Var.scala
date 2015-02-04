@@ -20,6 +20,7 @@ object LazyVar {
   {
     def get: T = v
     def flush(f: T => Unit) { f(v) }
+    // TODO Should not provide produce(T), only produce()
     def produce() { this := v }
     def isEmpty: ReadChannel[Boolean] = Var(false)
     def nonEmpty: ReadChannel[Boolean] = Var(true)

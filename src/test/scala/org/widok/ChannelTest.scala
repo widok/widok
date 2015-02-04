@@ -7,14 +7,12 @@ import scala.collection.mutable
 case class Test(a: Int, b: Boolean)
 
 object ChannelTest extends SimpleTestSuite {
-  def expect(a: Any) = new Object { def toBe(b: Any) = assertEquals(a, b) }
-
   test("should never be equal to some other Channel") {
     val a = Channel[Int]()
     val b = Channel[Int]()
 
-    expect(a == b).toBe(false)
-    expect(a == a).toBe(true)
+    assertEquals(a == b, false)
+    assertEquals(a == a, true)
   }
 
   test("should be usable as key in HashMap") {
@@ -26,13 +24,13 @@ object ChannelTest extends SimpleTestSuite {
     map += (a -> 1)
     map += (b -> 2)
 
-    expect(map(a)).toBe(1)
-    expect(map(b)).toBe(2)
+    assertEquals(map(a), 1)
+    assertEquals(map(b), 2)
 
     a := 1
 
-    expect(map(a)).toBe(1)
-    expect(map(b)).toBe(2)
+    assertEquals(map(a), 1)
+    assertEquals(map(b), 2)
   }
 
   test("head()") {
@@ -40,10 +38,10 @@ object ChannelTest extends SimpleTestSuite {
     val ch = Var(1)
     val hd = ch.head
     hd.attach(value = _)
-    expect(value).toBe(1)
+    assertEquals(value, 1)
     value = -1
     hd.attach(value = _)
-    expect(value).toBe(1)
+    assertEquals(value, 1)
   }
 
   test("distinct()") {
@@ -52,7 +50,7 @@ object ChannelTest extends SimpleTestSuite {
     ch := 1
     var sum = 0
     dis.attach(sum += _)
-    expect(sum).toBe(1)
+    assertEquals(sum, 1)
   }
 
   test("distinct()") {
@@ -66,7 +64,7 @@ object ChannelTest extends SimpleTestSuite {
     ch := 1
     ch := 2
 
-    expect(sum).toBe(3)
+    assertEquals(sum, 3)
   }
 
   test("distinct()") {
@@ -80,7 +78,7 @@ object ChannelTest extends SimpleTestSuite {
     ch := 2
 
     ch2.attach(sum += _)
-    expect(sum).toBe(2)
+    assertEquals(sum, 2)
   }
 
   test("distinct()") {
@@ -89,7 +87,14 @@ object ChannelTest extends SimpleTestSuite {
     var sum = 0
     ch.attach(sum += _)
 
-    expect(sum).toBe(42)
+    assertEquals(sum, 42)
+  }
+
+  test("attach()") {
+    val ch = LazyVar[Int](42)
+    var sum = 0
+    ch.attach(sum += _)
+    assertEquals(sum, 42)
   }
 
   test("take()") {
@@ -97,18 +102,18 @@ object ChannelTest extends SimpleTestSuite {
 
     var items = mutable.ArrayBuffer.empty[Int]
     ch.take(2).attach(items += _)
-    expect(ch.children.size).toBe(1)
+    assertEquals(ch.children.size, 1)
 
     ch := 1
     ch := 2
 
-    expect(items).toBe(Seq(1, 2))
-    expect(ch.children.size).toBe(0)
+    assertEquals(items, Seq(1, 2))
+    assertEquals(ch.children.size, 0)
 
     ch := 3
     ch := 4
 
-    expect(items).toBe(Seq(1, 2))
+    assertEquals(items, Seq(1, 2))
   }
 
   test("take()") {
@@ -121,7 +126,28 @@ object ChannelTest extends SimpleTestSuite {
     ch := 2
     ch := 3
 
-    expect(items).toBe(Seq(0, 1))
+    assertEquals(items, Seq(0, 1))
+  }
+
+  test("take()") {
+    /* Multiple subscribers */
+    val ch = Var[Int](0)
+
+    var items = mutable.ArrayBuffer.empty[Int]
+    var items2 = mutable.ArrayBuffer.empty[Int]
+
+    val tk = ch.take(2)
+    tk.attach(items += _)
+
+    ch := 1
+
+    tk.attach(items2 += _)
+
+    ch := 2
+    ch := 3
+
+    assertEquals(items, Seq(0, 1))
+    assertEquals(items2, Seq(1))
   }
 
   test("skip()") {
@@ -135,7 +161,7 @@ object ChannelTest extends SimpleTestSuite {
     ch := 3
     ch := 4
 
-    expect(sum).toBe(3 + 4)
+    assertEquals(sum, 3 + 4)
   }
 
   /*test("toOpt()") {
@@ -148,13 +174,13 @@ object ChannelTest extends SimpleTestSuite {
     a.attach(sum += _)
 
     ch := Test(1, true)
-    expect(sum).toBe(1)
+    assertEquals(sum, 1)
 
     ch := Test(2, false)
-    expect(sum).toBe(1 + 2)
+    assertEquals(sum, 1 + 2)
 
     a := 3
-    expect(sum).toBe(1 + 2 + 3)
+    assertEquals(sum, 1 + 2 + 3)
   }
 
   test("value()") {
@@ -164,22 +190,22 @@ object ChannelTest extends SimpleTestSuite {
 
     var sum = 0
     a.attach(sum += _)
-    expect(sum).toBe(1)
+    assertEquals(sum, 1)
 
     var sum2 = 0
     ch.attach(cur => sum2 += cur.a)
-    expect(sum2).toBe(1)
+    assertEquals(sum2, 1)
 
     ch := Test(2, false)
     ch := Test(3, true)
 
-    expect(sum).toBe(1 + 2 + 3)
-    expect(sum2).toBe(1 + 2 + 3)
+    assertEquals(sum, 1 + 2 + 3)
+    assertEquals(sum2, 1 + 2 + 3)
 
     a := 4
 
-    expect(sum).toBe(1 + 2 + 3 + 4)
-    expect(sum2).toBe(1 + 2 + 3 + 4)
+    assertEquals(sum, 1 + 2 + 3 + 4)
+    assertEquals(sum2, 1 + 2 + 3 + 4)
   }*/
 
   test("Var()") {
@@ -187,10 +213,10 @@ object ChannelTest extends SimpleTestSuite {
     var sum = 0
 
     ch.attach(value => sum += value)
-    expect(sum).toBe(42)
+    assertEquals(sum, 42)
 
     ch.attach(value => sum += value + 1)
-    expect(sum).toBe(42 + 43)
+    assertEquals(sum, 42 + 43)
   }
 
   test("+()") {
@@ -200,10 +226,10 @@ object ChannelTest extends SimpleTestSuite {
     val childCh = ch + (sum += (_: Int))
 
     ch := 42
-    expect(sum).toBe(0)
+    assertEquals(sum, 0)
 
     childCh := 23
-    expect(sum).toBe(23)
+    assertEquals(sum, 23)
   }
 
   test("+() with attach()") {
@@ -214,7 +240,7 @@ object ChannelTest extends SimpleTestSuite {
     childCh.attach(sum += _)
 
     ch := 42
-    expect(sum).toBe(42)
+    assertEquals(sum, 42)
   }
 
   test("+() with chaining") {
@@ -233,24 +259,24 @@ object ChannelTest extends SimpleTestSuite {
     val childCh = ch + ch2 + ch3
 
     ch := 42
-    expect(chSum).toBe(42)
-    expect(chSum2).toBe(0)
-    expect(chSum3).toBe(0)
+    assertEquals(chSum, 42)
+    assertEquals(chSum2, 0)
+    assertEquals(chSum3, 0)
 
     ch2 := 43
-    expect(chSum).toBe(42)
-    expect(chSum2).toBe(43)
-    expect(chSum3).toBe(0)
+    assertEquals(chSum, 42)
+    assertEquals(chSum2, 43)
+    assertEquals(chSum3, 0)
 
     ch3 := 44
-    expect(chSum).toBe(42)
-    expect(chSum2).toBe(43)
-    expect(chSum3).toBe(44)
+    assertEquals(chSum, 42)
+    assertEquals(chSum2, 43)
+    assertEquals(chSum3, 44)
 
     childCh := 23
-    expect(chSum).toBe(42 + 23)
-    expect(chSum2).toBe(43 + 23)
-    expect(chSum3).toBe(44 + 23)
+    assertEquals(chSum, 42 + 23)
+    assertEquals(chSum2, 43 + 23)
+    assertEquals(chSum3, 44 + 23)
   }
 
   test("map()") {
@@ -260,11 +286,11 @@ object ChannelTest extends SimpleTestSuite {
     var sum = 0
     map.attach(value => sum += value)
     ch := 42
-    expect(sum).toBe(43)
+    assertEquals(sum, 43)
 
     map.attach(value => sum += value + 1)
     ch := 43
-    expect(sum).toBe(43 + 44 + 45)
+    assertEquals(sum, 43 + 44 + 45)
   }
 
   test("zip()") {
@@ -278,13 +304,13 @@ object ChannelTest extends SimpleTestSuite {
 
     ch := 23
     ch2 := 42
-    expect(value == (23, 42)).toBe(true)
+    assertEquals(value == (23, 42), true)
 
     ch := 24
-    expect(value == (23, 42)).toBe(true)
+    assertEquals(value == (23, 42), true)
 
     ch2 := 43
-    expect(value == (24, 43)).toBe(true)
+    assertEquals(value == (24, 43), true)
   }
 
   test("flatMap()") {
@@ -352,15 +378,15 @@ object ChannelTest extends SimpleTestSuite {
     a.attach(sum += _)
     b.attach(cur => sum += (if (cur) 1 else 0))
 
-    expect(sum).toBe(0)
+    assertEquals(sum, 0)
 
     val v = Var(Test(2, false))
     ch := v
-    expect(sum).toBe(2)
+    assertEquals(sum, 2)
 
     sum = 0
     v := Test(3, false)
-    expect(sum).toBe(3)
+    assertEquals(sum, 3)
   } */
 
   test("flatMapCh()") {

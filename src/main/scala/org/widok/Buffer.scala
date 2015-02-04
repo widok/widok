@@ -3,205 +3,320 @@ package org.widok
 import scala.collection.mutable
 
 /**
- * A buffer is an ordered aggregate with writing capabilities
+ * A buffer is a reactive ordered list of elements
  */
-trait Buffer[T] extends ReadBuffer[T] with WriteBuffer[T] {
-  import Aggregate.Change
-  import Aggregate.Position
-
-  private[widok] val elements: mutable.ArrayBuffer[Ref[T]]
-
-  val changes = new RootChannel[Change[Ref[T]]] {
-    def flush(f: Change[Ref[T]] => Unit) {
-      elements.foreach { element =>
-        f(Change.Insert(Position.Last(), element))
+object Buffer {
+  trait Position[T] {
+    def map[U](f: T => U): Position[U] = {
+      this match {
+        case Position.Head() => Position.Head[U]()
+        case Position.Last() => Position.Last[U]()
+        case Position.Before(reference) => Position.Before[U](f(reference))
+        case Position.After(reference) => Position.After[U](f(reference))
       }
     }
   }
-}
 
-object Buffer {
-  def apply[T](elements: T*) = {
-    val buf = new Buffer[T] { }
-    elements.foreach(buf.append)
-    buf
+  object Position {
+    case class Head[T]() extends Position[T]
+    case class Last[T]() extends Position[T]
+    case class Before[T](reference: T) extends Position[T]
+    case class After[T](reference: T) extends Position[T]
   }
 
-  def from[T](elements: Seq[Ref[T]]) = {
-    val buf = new Buffer[T] { }
+  trait Delta[T]
+  object Delta {
+    case class Insert[T](position: Position[T], element: T) extends Delta[T]
+    case class Replace[T](reference: T, element: T) extends Delta[T]
+    case class Remove[T](element: T) extends Delta[T]
+    case class Clear[T]() extends Delta[T]
+  }
+
+  def apply[T](): Buffer[T] = new Buffer[T] { }
+  def apply[T](elements: T*): Buffer[T] = from(elements)
+
+  def from[T](elements: Seq[T]) = {
+    val buf = Buffer[T]()
     buf.set(elements)
     buf
   }
 
-  def materialise[T](changes: ReadChannel[Aggregate.Change[Ref[T]]]): ReadBuffer[T] = {
+  def from[T](chgs: ReadChannel[Delta[T]]): Buffer[T] = {
     val buf = Buffer[T]()
-    changes.attach(buf.applyChange)
+    buf.changes << chgs
     buf
   }
+
+  implicit def BufferToSeq[T](buf: Buffer[T]): Seq[T] = buf.elements
 }
 
-trait ReadBuffer[T]
-  extends Aggregate[T]
-  with OrderFunctions[T]
-  with FilterFunctions[ReadBuffer, T]
-  with MapFunctions[ReadBuffer, Ref[T]]
-  with BoundedStreamFunctions[ReadBuffer, T]
-  with UpdateFunctions[T]
+object DeltaBuffer {
+  import Buffer.Delta
+
+  def apply[T](delta: ReadChannel[Delta[T]]): DeltaBuffer[T] =
+    new DeltaBuffer[T] {
+      override val changes = delta
+    }
+}
+
+trait DeltaBuffer[T]
+  extends reactive.stream.Size
+  with reactive.stream.Empty[T]
+  with reactive.stream.Count[T]
+  with reactive.stream.Map[DeltaBuffer, T]
 {
-  import Aggregate.Change
-  import Aggregate.Position
+  import Buffer.Delta
+  val changes: ReadChannel[Delta[T]]
 
-  private[widok] val elements: mutable.ArrayBuffer[Ref[T]]
+  def size: ReadChannel[Int] = {
+    val count = Var(0)
 
-  def mapTo[U](f: T => U): BufMap[T, U] = BufMap(this, f)
+    changes.attach {
+      case Delta.Insert(_, _) => count.update(_ + 1)
+      case Delta.Remove(_) => count.update(_ - 1)
+      case Delta.Clear() if count.get != 0 => count := 0
+      case _ =>
+    }
 
-  def mapToCh[U](f: T => ReadChannel[Option[U]]): OptBufMap[T, U] =
-    OptBufMap(this, f)
+    count
+  }
 
-  def get: Seq[Ref[T]] = elements
+  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
+  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
 
-  def value(index: Int): T = elements(index).get
+  def count(value: T): ReadChannel[Int] = {
+    val found = Var(0)
 
-  def values: Seq[T] = elements.map(_.get)
+    changes.attach {
+      case Delta.Insert(_, `value`) => found.update(_ + 1)
+      case Delta.Replace(`value`, _) => found.update(_ - 1)
+      case Delta.Replace(_, `value`) => found.update(_ + 1)
+      case Delta.Remove(`value`) => found.update(_ - 1)
+      case Delta.Clear() if found.get != 0 => found := 0
+      case _ =>
+    }
 
-  def foreach(f: T => Unit) {
-    elements.foreach(element => f(element.get))
+    found
+  }
+
+  def countUnequal(value: T): ReadChannel[Int] = {
+    val unequal = Var(0)
+
+    changes.attach {
+      case Delta.Insert(_, v) if v != value => unequal.update(_ + 1)
+      case Delta.Replace(_, v) if v != value => unequal.update(_ + 1)
+      case Delta.Remove(v) if v != value => unequal.update(_ - 1)
+      case Delta.Clear() if unequal.get != 0 => unequal := 0
+      case _ =>
+    }
+
+    unequal
   }
 
   def contains(value: T): ReadChannel[Boolean] =
-    changes.map(_ => elements.contains(value)).distinct
+    count(value)
+      .map(_ != 0)
+      .distinct
 
-  def indexOf(handle: Ref[T]): Int = elements.indexOf(handle)
+  def equal(value: T): ReadChannel[Boolean] =
+    countUnequal(value)
+      .map(_ == 0)
+      .distinct
 
-  def toSeq: ReadChannel[Seq[T]] =
-    changes.map(_ => elements.map(_.get))
+  def unequal(value: T): ReadChannel[Boolean] =
+    count(value)
+      .map(_ == 0)
+      .distinct
 
-  def before(value: Ref[T]): Ref[T] = {
-    val position = indexOf(value) - 1
-    elements(position)
-  }
-
-  def beforeOption(value: Ref[T]): Option[Ref[T]] = {
-    val position = indexOf(value) - 1
-    if (position >= 0) Some(elements(position))
-    else None
-  }
-
-  def after(value: Ref[T]): Ref[T] = {
-    val position = indexOf(value) + 1
-    elements(position)
-  }
-
-  def afterOption(value: Ref[T]): Option[Ref[T]] = {
-    val position = indexOf(value) + 1
-    if (position < get.size) Some(elements(position))
-    else None
-  }
-
-  def splitAt(element: Ref[T]): (ReadBuffer[T], ReadBuffer[T]) = {
-    val (left, right) = get.splitAt(elements.indexOf(element))
-    (Buffer.from(left), Buffer.from(right))
-  }
-
-  def take(count: Int): ReadBuffer[T] = {
-    val result = Buffer[T]()
-    changes.attach(_ => result.set(get.take(count)))
-    result
-  }
-
-  def drop(count: Int): ReadBuffer[T] = {
-    val result = Buffer[T]()
-    changes.attach(_ => result.set(get.drop(count)))
-    result
-  }
-
-  def headOption: ReadChannel[Option[Ref[T]]] = changes.map { _ =>
-    if (get.isEmpty) None
-    else Some(get.head)
-  }.distinct
-
-  def lastOption: ReadChannel[Option[Ref[T]]] = changes.map { _ =>
-    if (get.isEmpty) None
-    else Some(get.last)
-  }.distinct
-
-  def head: ReadChannel[Ref[T]] = changes.partialMap {
-    case Change.Insert(Position.Head(), element) => element
-    case Change.Insert(Position.Last(), element) if get.head == element => element
-    case Change.Insert(Position.Before(before), element) if get.head == element => element
-    case Change.Replace(reference, element) if get.head == reference => element
-  }.distinct
-
-  def last: ReadChannel[Ref[T]] = changes.partialMap {
-    case Change.Insert(Position.Head(), element) if get.head == element => element
-    case Change.Insert(Position.Last(), element) => element
-    case Change.Insert(Position.After(after), element)
-      if get.last == after => element
-    case Change.Replace(reference, element) if get.head == reference => element
-  }.distinct
-
-  def tail: ReadBuffer[T] = {
-    val result = Buffer[T]()
-    changes.attach(_ => result.set(get.tail))
-    result
-  }
-
-  def isHead(element: Ref[T]): ReadChannel[Boolean] = headOption.map(_ == Some(element))
-
-  def isLast(element: Ref[T]): ReadChannel[Boolean] = lastOption.map(_ == Some(element))
-
-  def filter(f: T => Boolean): ReadBuffer[T] = {
-    val buf = Buffer[T]()
-    val filtered = new mutable.HashSet[Ref[T]]()
+  def exists(f: T => Boolean): ReadChannel[Boolean] = {
+    val equal = Var(0)
 
     changes.attach {
-      case Change.Insert(Position.Head(), element) =>
-        if (f(element.get)) {
-          filtered.add(element)
-          buf.prepend(element)
-        }
+      case Delta.Insert(_, v) if f(v) => equal.update(_ + 1)
+      case Delta.Replace(k, v) if f(k) && !f(v) => equal.update(_ - 1)
+      case Delta.Replace(k, v) if !f(k) && f(v) => equal.update(_ + 1)
+      case Delta.Remove(v) if f(v) => equal.update(_ - 1)
+      case Delta.Clear() if equal.get != 0 => equal := 0
+      case _ =>
+    }
 
-      case Change.Insert(Position.Last(), element) =>
-        if (f(element.get)) {
-          filtered.add(element)
-          buf.append(element)
-        }
+    equal
+      .map(_ == 0)
+      .distinct
+  }
 
-      case Change.Insert(Position.Before(reference), element) =>
-        if (f(element.get)) {
-          if (filtered.contains(reference)) buf.insertBefore(reference, element)
-          else {
-            val insert = get.drop(indexOf(reference)).find(filtered.contains)
-            if (insert.isEmpty) buf.append(element)
-            else buf.insertAfter(insert.get, element)
-          }
+  def forall(f: T => Boolean): ReadChannel[Boolean] = {
+    val unequal = Var(0)
 
-          filtered.add(element)
-        }
+    changes.attach {
+      case Delta.Insert(_, v) if !f(v) => unequal.update(_ + 1)
+      case Delta.Replace(k, v) if f(k) && !f(v) => unequal.update(_ + 1)
+      case Delta.Replace(k, v) if !f(k) && f(v) => unequal.update(_ - 1)
+      case Delta.Remove(v) if !f(v) => unequal.update(_ - 1)
+      case Delta.Clear() if unequal.get != 0 => unequal := 0
+      case _ =>
+    }
 
-      case Change.Insert(Position.After(reference), element) =>
-        if (f(element.get)) {
-          if (filtered.contains(reference)) buf.insertAfter(reference, element)
-          else {
-            val insert = get.drop(indexOf(reference)).find(filtered.contains)
-            if (insert.isEmpty) buf.append(element)
-            else buf.insertBefore(insert.get, element)
-          }
+    unequal
+      .map(_ == 0)
+      .distinct
+  }
 
-          filtered.add(element)
-        }
+  def insertions: ReadChannel[T] = changes.partialMap {
+    case Delta.Insert(_, element) => element
+  }
 
-      case Change.Replace(reference, element) => ???
+  /** @note `f` should not be side-effecting */
+  def map[U](f: T => U): DeltaBuffer[U] = {
+    val chgs: ReadChannel[Delta[U]] = changes.map {
+      case Delta.Insert(position, element) =>
+        Delta.Insert(position.map(f), f(element))
+      case Delta.Replace(reference, element) =>
+        Delta.Replace(f(reference), f(element))
+      case Delta.Remove(element) =>
+        Delta.Remove(f(element))
+      case Delta.Clear() =>
+        Delta.Clear()
+    }
 
-      case Change.Remove(element) =>
-        if (filtered.contains(element)) {
-          filtered -= element
-          buf.remove(element)
-        }
+    DeltaBuffer(chgs)
+  }
 
-      case Change.Clear() =>
-        filtered.clear()
-        buf.clear()
+  def buffer: Buffer[T] = {
+    val buf = Buffer[T]()
+    buf.changes << changes
+    buf
+  }
+
+  def mapTo[U](f: T => U): DeltaDict[T, U] = {
+    // TODO Implement Channel.flatMapSeq(f: T => Seq[T])
+    val delta: ReadChannel[Dict.Delta[T, U]] = changes.map[Dict.Delta[T, U]] {
+      case Delta.Insert(position, element) =>
+        Dict.Delta.Insert(element, f(element))
+      case Delta.Replace(reference, element) => ???
+        /*(Dict.Delta.Remove(f(reference)),
+          Dict.Delta.Insert(element, f(element)))*/
+      case Delta.Remove(element) =>
+        Dict.Delta.Remove(element)
+      case Delta.Clear() =>
+        Dict.Delta.Clear()
+    }
+
+    DeltaDict(delta)
+  }
+}
+
+trait StateBuffer[T] extends Disposable {
+  import Buffer.Delta
+  import Buffer.Position
+
+  private[widok] val elements = mutable.ArrayBuffer.empty[T]
+
+  val changes = new RootChannel[Delta[T]] {
+    def flush(f: Delta[T] => Unit) {
+      elements.foreach { element =>
+        f(Delta.Insert(Position.Last(), element))
+      }
+    }
+  }
+
+  private[widok] val subscription = changes.attach {
+    case Delta.Insert(Position.Head(), element) =>
+      elements.prepend(element)
+    case Delta.Insert(Position.Last(), element) =>
+      elements.append(element)
+    case Delta.Insert(Position.Before(reference), element) =>
+      val position = elements.indexOf(reference)
+      assert(position != -1, "insertBefore() with invalid position")
+      elements.insert(position, element)
+    case Delta.Insert(Position.After(reference), element) =>
+      val position = elements.indexOf(reference)
+      assert(position != -1, "insertAfter() with invalid position")
+      elements.insert(position + 1, element)
+    case Delta.Replace(reference, element) =>
+      val position = elements.indexOf(reference)
+      assert(position != -1, "replace() with invalid position")
+      elements(position) = element
+    case Delta.Remove(element) =>
+      val position = elements.indexOf(element)
+      assert(position != -1, "remove() with invalid position")
+      elements.remove(position)
+    case Delta.Clear() =>
+      elements.clear()
+  }
+
+  def dispose() {
+    subscription.dispose()
+  }
+}
+
+trait PollBuffer[T]
+  extends reactive.poll.Index[Seq, Int, T]
+  with reactive.poll.RelativeOrder[T]
+  with reactive.poll.Iterate[T]
+  with reactive.stream.RelativeOrder[T]
+  with reactive.stream.Filter[ReadBuffer, T]
+  with reactive.stream.MapExtended[ReadBuffer, T]
+  with reactive.stream.AbsoluteOrder[ReadBuffer, T]
+{
+  import Buffer.Delta
+  import Buffer.Position
+
+  val changes: ReadChannel[Delta[T]]
+
+  private[widok] val elements: mutable.ArrayBuffer[T]
+
+  def get: Seq[T] = elements
+
+  def foreach(f: T => Unit) {
+    elements.foreach(f)
+  }
+
+  /** TODO Could this be implemented more efficiently without iterating over `elements`? */
+  def filter(f: T => Boolean): ReadBuffer[T] = {
+    val buf = Buffer[T]()
+
+    changes.attach {
+      case Delta.Insert(Position.Head(), element) if f(element) =>
+        buf.changes := Delta.Insert(Position.Head(), element)
+
+      case Delta.Insert(Position.Last(), element) if f(element) =>
+        buf.changes := Delta.Insert(Position.Last(), element)
+
+      case Delta.Insert(Position.Before(reference), element) if f(reference) && f(element) =>
+        buf.changes := Delta.Insert(Position.Before(reference), element)
+
+      case Delta.Insert(Position.Before(reference), element) if !f(reference) && f(element) =>
+        val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
+        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
+        else buf.changes := Delta.Insert(Position.After(insert.get), element)
+
+      case Delta.Insert(Position.After(reference), element) if f(reference) && f(element) =>
+        buf.changes := Delta.Insert(Position.After(reference), element)
+
+      case Delta.Insert(Position.After(reference), element) if !f(reference) && f(element) =>
+        val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
+        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
+        else buf.changes := Delta.Insert(Position.Before(insert.get), element)
+
+      case Delta.Replace(reference, element) if f(reference) && f(element) =>
+        buf.changes := Delta.Replace(reference, element)
+
+      case Delta.Replace(reference, element) if f(reference) && !f(element) =>
+        buf.changes := Delta.Remove(reference)
+
+      case Delta.Replace(reference, element) if !f(reference) && f(element) =>
+        val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
+        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
+        else buf.changes := Delta.Insert(Position.Before(insert.get), element)
+
+      case Delta.Remove(element) if f(element) =>
+        buf.changes := Delta.Remove(element)
+
+      case Delta.Clear() =>
+        buf.changes := Delta.Clear()
+
+      case _ =>
     }
 
     buf
@@ -209,6 +324,125 @@ trait ReadBuffer[T]
 
   def partition(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) =
     (filter(f), filter((!(_: Boolean)).compose(f)))
+
+  def update(f: T => T) {
+    ???
+  }
+
+  def value(index: Int): T = elements(index)
+  def indexOf(handle: T): Int = elements.indexOf(handle)
+  def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements)
+
+  def foreach(f: T => Unit) {
+    elements.foreach(element => f(element))
+  }
+
+  def before(value: T): ReadChannel[T] = ???
+  def after(value: T): ReadChannel[T] = ???
+  def beforeOption(value: T): PartialChannel[T] = ???
+  def afterOption(value: T): PartialChannel[T] = ???
+
+  def before$(value: T): T = {
+    val position = indexOf(value) - 1
+    elements(position)
+  }
+
+  def beforeOption$(value: T): Option[T] = {
+    val position = indexOf(value) - 1
+    if (position >= 0) Some(elements(position))
+    else None
+  }
+
+  def after$(value: T): T = {
+    val position = indexOf(value) + 1
+    elements(position)
+  }
+
+  def afterOption$(value: T): Option[T] = {
+    val position = indexOf(value) + 1
+    if (position < get.size) Some(elements(position))
+    else None
+  }
+
+  def splitAt(element: T): (Buffer[T], Buffer[T]) = {
+    val (left, right) = get.splitAt(elements.indexOf(element))
+    (Buffer.from(left), Buffer.from(right))
+  }
+
+  def take(count: Int): Buffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.take(count)))
+    result
+  }
+
+  def drop(count: Int): Buffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.drop(count)))
+    result
+  }
+
+  def head: ReadChannel[T] = {
+    val hd = Opt[T]()
+
+    changes.attach {
+      case Delta.Insert(Position.Head(), element) => hd := element
+      case Delta.Insert(Position.Last(), element)
+        if hd.isEmpty$ => hd := element
+      case Delta.Insert(Position.Before(before), element)
+        if hd.contains$(before) => hd := element
+      case Delta.Replace(reference, element)
+        if hd.contains$(reference) => hd := element
+      case Delta.Remove(element)
+        if hd.contains$(element) => hd := elements.head
+      case _ =>
+    }
+
+    hd
+  }
+
+  def last: ReadChannel[T] = {
+    val lst = Opt[T]()
+
+    changes.attach {
+      case Delta.Insert(Position.Head(), element)
+        if lst.isEmpty$ => lst := element
+      case Delta.Insert(Position.Last(), element) =>
+        lst := element
+      case Delta.Insert(Position.After(after), element)
+        if lst.contains$(after) => lst := element
+      case Delta.Replace(reference, element)
+        if lst.contains$(reference) => lst := element
+      case Delta.Remove(element)
+        if lst.contains$(element) => lst := elements.last
+      case _ =>
+    }
+
+    lst
+  }
+
+  def headOption: ReadPartialChannel[T] = {
+    val opt = Opt[T]()
+    changes.attach(_ => opt.set(get.headOption))
+    opt
+  }
+
+  def lastOption: ReadPartialChannel[T] = {
+    val opt = Opt[T]()
+    changes.attach(_ => opt.set(get.lastOption))
+    opt
+  }
+
+  def tail: ReadBuffer[T] = {
+    val result = Buffer[T]()
+    changes.attach(_ => result.set(get.tail))
+    result
+  }
+
+  def isHead(element: T): ReadChannel[Boolean] =
+    headOption.map(_ == Some(element))
+
+  def isLast(element: T): ReadChannel[Boolean] =
+    lastOption.map(_ == Some(element))
 
   def distinct: ReadBuffer[T] = {
     val result = Buffer[T]()
@@ -221,7 +455,7 @@ trait ReadBuffer[T]
     val right = Buffer[T]()
 
     changes.attach { _ =>
-      val (leftSpan, rightSpan) = get.span(handle => f(handle.get))
+      val (leftSpan, rightSpan) = get.span(f)
 
       left.set(leftSpan)
       left.set(rightSpan)
@@ -230,40 +464,11 @@ trait ReadBuffer[T]
     (left, right)
   }
 
-  def view[U](lens: T => ReadChannel[U]): ReadBuffer[T] = {
+  def watch[U](lens: T => ReadChannel[U]): ReadBuffer[T] = {
     flatMapCh { t =>
-      lens(t.get).map(x => Some(t))
+      lens(t).map(x => Some(t))
     }
   }
-
-  def map[U](f: Ref[T] => U): ReadBuffer[U] = {
-    val buf = Buffer[U]()
-    val mapping = new mutable.HashMap[Ref[T], Ref[U]]()
-
-    changes.attach {
-      case Change.Insert(Position.Head(), element) =>
-        mapping += (element -> buf.prepend(f(element)))
-      case Change.Insert(Position.Last(), element) =>
-        mapping += (element -> buf.append(f(element)))
-      case Change.Insert(Position.Before(handle), element) =>
-        mapping += (before(handle) -> buf.insertBefore(mapping(handle), f(element)))
-      case Change.Insert(Position.After(handle), element) =>
-        mapping += (after(handle) -> buf.insertAfter(mapping(handle), f(element)))
-      case Change.Replace(reference, element) =>
-        mapping += element -> buf.replace(mapping(reference), f(element))
-        mapping -= reference
-      case Change.Remove(element) =>
-        buf.remove(mapping(element))
-        mapping -= element
-      case Change.Clear() =>
-        buf.clear()
-        mapping.clear()
-    }
-
-    buf
-  }
-
-  def partialMap[U](f: PartialFunction[Ref[T], U]): ReadBuffer[U] = ???
 
   def concat(buf: ReadBuffer[T]): ReadBuffer[T] = {
     val res = Buffer[T]()
@@ -277,16 +482,18 @@ trait ReadBuffer[T]
     res
   }
 
-  def flatMap[U](f: Ref[T] => ReadBuffer[U]): ReadBuffer[U] = ???
+  def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] = ???
 
-  def flatMapCh[U](f: Ref[T] => ReadChannel[Option[Ref[U]]]): ReadBuffer[U] = {
+  def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] = ???
+
+  def flatMapCh[U](f: T => ReadChannel[Option[U]]): ReadBuffer[U] = {
     val res = Buffer[U]()
-    val values = mutable.HashMap.empty[Ref[T], Option[Ref[U]]]
-    val attached = mutable.HashMap.empty[Ref[T], ReadChannel[Unit]]
+    val values = mutable.HashMap.empty[T, Option[U]]
+    val attached = mutable.HashMap.empty[T, ReadChannel[Unit]]
 
-    def valueChange(position: Aggregate.Position[Ref[T]],
-                    handle: Ref[T],
-                    value: Option[Ref[U]])
+    def valueChange(position: Buffer.Position[T],
+                    handle: T,
+                    value: Option[U])
     {
       if (value.isEmpty) {
         if (values(handle).isDefined)
@@ -321,22 +528,22 @@ trait ReadBuffer[T]
     }
 
     changes.attach {
-      case Change.Insert(position, element) =>
+      case Delta.Insert(position, element) =>
         // TODO position may change
         values += element -> None
         val ch = f(element)
         attached +=
           element -> ch.attach(value => valueChange(position, element, value))
 
-      case Change.Remove(element) =>
+      case Delta.Remove(element) =>
         attached(element).dispose()
         attached -= element
         if (values(element).isDefined) res.remove(values(element).get)
         values -= element
 
-      case Change.Replace(reference, element) => ???
+      case Delta.Replace(reference, element) => ???
 
-      case Change.Clear() =>
+      case Delta.Clear() =>
         attached.foreach { case (_, ch) => ch.dispose() }
         attached.clear()
         values.clear()
@@ -346,134 +553,110 @@ trait ReadBuffer[T]
     res
   }
 
-  def takeUntil(ch: ReadChannel[_]): ReadBuffer[Ref[T]] = ???
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
 
-  def equal(element: Ref[T]): ReadChannel[Boolean] = ???
+  def takeUntil(ch: ReadChannel[_]): ReadBuffer[T] = ???
 
-  def unequal(element: Ref[T]): ReadChannel[Boolean] = ???
-
-  def insertions: ReadChannel[T] = changes.partialMap {
-    case Change.Insert(_, element) => element.get
-  }
+  /* TODO Must always return the first matching row; if the row gets deleted,
+   * should pick the next match
+   */
+  def find(f: T => Boolean): PartialChannel[T] = ???
 
   override def toString = get.toString()
 }
 
-trait WriteBuffer[T] extends UpdateSequenceFunctions[ReadBuffer, T] {
-  import Aggregate.Change
-  import Aggregate.Position
+trait ReadBuffer[T]
+  extends DeltaBuffer[T]
+  with PollBuffer[T]
 
-  private[widok] val elements = new mutable.ArrayBuffer[Ref[T]]()
-  val changes: Channel[Change[Ref[T]]]
+trait WriteBuffer[T]
+  extends reactive.mutate.Buffer[Seq, T]
+{
+  import Buffer.Delta
+  import Buffer.Position
 
-  def prepend(element: T): Ref[T] = {
-    val handle = Ref[T](element)
-    elements.prepend(handle)
-    changes := Change.Insert(Position.Head(), handle)
-    handle
+  val changes: WriteChannel[Delta[T]]
+
+  def prepend(element: T) {
+    changes := Delta.Insert(Position.Head(), element)
   }
 
-  def prepend(element: Ref[T]) {
-    elements.prepend(element)
-    changes := Change.Insert(Position.Head(), element)
+  def append(element: T) {
+    changes := Delta.Insert(Position.Last(), element)
   }
 
-  def append(element: T): Ref[T] = {
-    val handle = Ref[T](element)
-    elements.append(handle)
-    changes := Change.Insert(Position.Last(), handle)
-    handle
+  def insertBefore(reference: T, element: T) {
+    changes := Delta.Insert(Position.Before(reference), element)
   }
 
-  def append(element: Ref[T]) {
-    elements.append(element)
-    changes := Change.Insert(Position.Last(), element)
+  def insertAfter(reference: T, element: T) {
+    changes := Delta.Insert(Position.After(reference), element)
   }
 
-  def insertBefore(reference: Ref[T], element: T): Ref[T] = {
-    val position = elements.indexOf(reference)
-    val handle = Ref[T](element)
-    elements.insert(position, handle)
-    changes := Change.Insert(Position.Before(reference), handle)
-    handle
+  def replace(reference: T, element: T) {
+    changes := Delta.Replace(reference, element)
   }
 
-  def insertBefore(reference: Ref[T], element: Ref[T]) {
-    val position = elements.indexOf(reference)
-    elements.insert(position, element)
-    changes := Change.Insert(Position.Before(reference), element)
-  }
-
-  def insertAfter(reference: Ref[T], element: T): Ref[T] = {
-    val position = elements.indexOf(reference) + 1
-    val handle = Ref[T](element)
-    elements.insert(position, handle)
-    changes := Change.Insert(Position.After(reference), handle)
-    handle
-  }
-
-  def insertAfter(reference: Ref[T], element: Ref[T]) {
-    val position = elements.indexOf(reference) + 1
-    elements.insert(position, element)
-    changes := Change.Insert(Position.After(reference), element)
-  }
-
-  def replace(reference: Ref[T], element: Ref[T]) {
-    val position = elements.indexOf(element)
-    elements(position) = element
-    changes := Change.Replace(reference, element)
-  }
-
-  def replace(reference: Ref[T], element: T): Ref[T] = {
-    val position = elements.indexOf(element)
-    val handle = Ref[T](element)
-    elements(position) = handle
-    changes := Change.Replace(reference, handle)
-    handle
-  }
-
-  def remove(element: Ref[T]) {
-    val position = elements.indexOf(element)
-    elements.remove(position)
-    changes := Change.Remove(element)
-  }
-
-  def update(f: T => T) {
-    ???
+  def remove(element: T) {
+    changes := Delta.Remove(element)
   }
 
   def clear() {
-    elements.clear()
-    changes := Change.Clear()
+    changes := Delta.Clear()
   }
 
-  def set(elements: ReadBuffer[T]) {
-    clear()
-    elements.get.foreach(append)
-  }
-
-  def set(elements: Seq[Ref[T]]) {
+  def set(elements: Seq[T]) {
     clear()
     elements.foreach(append)
   }
 
-  def appendAll(buf: ReadBuffer[T]) {
-    buf.get.foreach(append)
+  def appendAll(buf: Seq[T]) {
+    /** toList needed because Seq[T] may change. */
+    buf.toList.foreach(append)
   }
 
-  def removeAll(buf: ReadBuffer[T]) {
-    buf.get.toList.foreach(remove)
+  def removeAll(buf: Seq[T]) {
+    /** toList needed because Seq[T] may change. */
+    buf.toList.foreach(remove)
+  }
+}
+
+trait Buffer[T]
+  extends ReadBuffer[T]
+  with WriteBuffer[T]
+  with StateBuffer[T]
+
+trait RefBuf[T] extends Buffer[Ref[T]] {
+  /** All row values that are stored within the [[Ref]] objects */
+  def values: Seq[T] = elements.map(_.get)
+
+  def insertBefore(reference: Ref[T], element: T): Ref[T] = {
+    val handle = Ref[T](element)
+    insertBefore(reference, handle)
+    handle
   }
 
-  def applyChange(change: Change[Ref[T]]) {
-    change match {
-      case Change.Insert(Position.Head(), element) => prepend(element)
-      case Change.Insert(Position.Last(), element) => append(element)
-      case Change.Insert(Position.Before(reference), element) => insertBefore(reference, element)
-      case Change.Insert(Position.After(reference), element) => insertAfter(reference, element)
-      case Change.Replace(reference, element) => replace(reference, element)
-      case Change.Remove(element) => remove(element)
-      case Change.Clear() => clear()
-    }
+  def insertAfter(reference: Ref[T], element: T): Ref[T] = {
+    val handle = Ref[T](element)
+    insertAfter(reference, handle)
+    handle
+  }
+
+  def prepend(element: T): Ref[T] = {
+    val handle = Ref[T](element)
+    prepend(handle)
+    handle
+  }
+
+  def append(element: T): Ref[T] = {
+    val handle = Ref[T](element)
+    append(handle)
+    handle
+  }
+
+  def replace(reference: Ref[T], element: T): Ref[T] = {
+    val handle = Ref[T](element)
+    replace(reference, handle)
+    handle
   }
 }

@@ -229,44 +229,44 @@ object HTML {
       val rendered = DOM.createElement("li", contents)
     }
 
-    case class Items(aggregate: Aggregate[Widget[_]]) extends Widget.List.Item[Items] {
+    case class Items(buf: DeltaBuffer[Widget[_]]) extends Widget.List.Item[Items] {
       val rendered: dom.HTMLElement = DOM.createElement(null)
 
       override def render(parent: dom.Node, offset: dom.Node) {
-        import Aggregate.Change
-        import Aggregate.Position
+        import Buffer.Delta
+        import Buffer.Position
 
         DOM.insertAfter(parent, offset, rendered)
 
-        val mapping = mutable.Map.empty[Ref[Widget[_]], dom.Node]
+        val mapping = mutable.Map.empty[Widget[_], dom.Node]
         var last: dom.Node = rendered
 
-        aggregate.changes.attach {
-          case Change.Insert(Position.Head(), element) =>
-            DOM.insertAfter(parent, rendered, element.get.rendered)
-            mapping += element -> element.get.rendered
+        buf.changes.attach {
+          case Delta.Insert(Position.Head(), element) =>
+            DOM.insertAfter(parent, rendered, element.rendered)
+            mapping += element -> element.rendered
             if (last == rendered) last = mapping(element)
 
-          case Change.Insert(Position.Last(), element) =>
-            DOM.insertAfter(parent, last, element.get.rendered)
-            mapping += element -> element.get.rendered
+          case Delta.Insert(Position.Last(), element) =>
+            DOM.insertAfter(parent, last, element.rendered)
+            mapping += element -> element.rendered
             last = mapping(element)
 
-          case Change.Insert(Position.Before(reference), element) =>
-            parent.insertBefore(element.get.rendered, mapping(reference))
-            mapping += element -> element.get.rendered
+          case Delta.Insert(Position.Before(reference), element) =>
+            parent.insertBefore(element.rendered, mapping(reference))
+            mapping += element -> element.rendered
 
-          case Change.Insert(Position.After(reference), element) =>
-            DOM.insertAfter(parent, mapping(reference), element.get.rendered)
-            mapping += element -> element.get.rendered
+          case Delta.Insert(Position.After(reference), element) =>
+            DOM.insertAfter(parent, mapping(reference), element.rendered)
+            mapping += element -> element.rendered
             if (last == mapping(reference)) last = mapping(element)
 
-          case Change.Remove(element) =>
+          case Delta.Remove(element) =>
             if (last == mapping(element)) last = mapping(element).previousSibling
             parent.removeChild(mapping(element))
             mapping -= element
 
-          case Change.Clear() =>
+          case Delta.Clear() =>
             mapping.foreach { case (_, value) => parent.removeChild(value) }
             mapping.clear()
             last = rendered

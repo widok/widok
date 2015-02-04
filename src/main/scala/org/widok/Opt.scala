@@ -1,5 +1,16 @@
 package org.widok
 
+trait ReadPartialChannel[T]
+  extends ReadChannel[T]
+  with ReadStateChannel[T]
+  with reactive.poll.Empty
+  with reactive.poll.Count[T]
+  with reactive.stream.PartialChannel[T]
+
+trait PartialChannel[T]
+  extends StateChannel[T]
+  with ReadPartialChannel[T]
+
 object Opt {
   def apply[T](value: T): Opt[T] = {
     val res = Opt[T]()
@@ -12,7 +23,10 @@ object Opt {
  * Publishes a stream of defined values. Use isEmpty() to detect when the
  * current value is cleared.
  */
-case class Opt[T]() extends StateChannel[T] with UpdateFunctions[T] {
+case class Opt[T]()
+  extends PartialChannel[T]
+  with reactive.mutate.PartialChannel[T]
+{
   private var cached: Option[T] = None
   private val defined = LazyVar[Boolean](cached.isDefined)
 
@@ -21,6 +35,10 @@ case class Opt[T]() extends StateChannel[T] with UpdateFunctions[T] {
     cached = Some(t)
     if (!prevDefined) defined.produce()
   }
+
+  def isEmpty$: Boolean = cached.isEmpty
+  def nonEmpty$: Boolean = cached.nonEmpty
+  def contains$(value: T): Boolean = cached.contains(value)
 
   def isEmpty: ReadChannel[Boolean] = defined.map(!_)
   def nonEmpty: ReadChannel[Boolean] = defined
@@ -63,6 +81,8 @@ case class Opt[T]() extends StateChannel[T] with UpdateFunctions[T] {
     else clear()
   }
 
+  def partialUpdate(f: PartialFunction[T, T]) = ???
+
   /** @note This method may only be called if the value is defined. */
   def get: T = cached.get
 
@@ -75,7 +95,7 @@ case class Opt[T]() extends StateChannel[T] with UpdateFunctions[T] {
 
   def values: ReadChannel[Option[T]] =
     defined
-      .partialMap { case false ⇒ Option.empty[T] }
+      .partialMap { case false => Option.empty[T] }
       .merge(map(Some(_)))
 
   def toOption: Option[T] = cached

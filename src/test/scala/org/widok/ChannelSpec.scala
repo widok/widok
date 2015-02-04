@@ -17,9 +17,8 @@ object ChannelSpec extends SimpleTestSuite {
     val left = mutable.ArrayBuffer[T]()
     val right = mutable.ArrayBuffer[T]()
 
-    tickExpr = () => {
-      assert(left == right, s"Both channels produce the same values [$left vs. $right]")
-    }
+    tickExpr = () =>
+      assert(left == right, s"Channels don't produce the same value [$left vs. $right]")
 
     ch.attach { value => left += value }
     ch2.attach { value => right += value }

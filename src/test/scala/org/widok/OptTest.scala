@@ -22,7 +22,7 @@ object OptTest extends SimpleTestSuite {
 
     val ch = Opt(0)
     val x = Channel[String]()
-    val y = ch.flatMap { cur => x.map(_ + cur) }
+    val y = ch.flatMap(cur => x.map(_ + cur))
 
     y.attach(elems += _)
 
@@ -35,6 +35,14 @@ object OptTest extends SimpleTestSuite {
     x := "c"
 
     assertEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2"))
+
+    /* flatMap() must work with multiple attaches */
+    val elems2 = mutable.ArrayBuffer.empty[String]
+    y.attach(elems2 += _)
+    assertEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2"))
+    x := "c"
+    assertEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2", "c2"))
+    assertEquals(elems2, mutable.ArrayBuffer("c2"))
   }
 
   test("size()") {

@@ -29,36 +29,50 @@ object Result {
 }
 
 trait ReadChannel[T]
-  extends UnboundedStreamFunctions[ReadChannel, T]
-  with FilterFunctions[ReadChannel, T]
-  with FoldFunctions[T]
-  with MapFunctions[ReadChannel, T]
-  with IterateFunctions[T]
-  with SizeFunctions
+  extends reactive.stream.Head[T]
+  with reactive.stream.Tail[ReadChannel, T]
+  with reactive.stream.Take[ReadChannel, T]
+  with reactive.stream.Empty[T]
+  with reactive.stream.Fold[T]
+  with reactive.stream.Filter[ReadChannel, T]
+  with reactive.stream.Map[ReadChannel, T]
+  with reactive.stream.MapExtended[ReadChannel, T]
+  with reactive.stream.RelativeOrder[T]
+  with reactive.stream.Cache[T]
+  with reactive.stream.Size
+  with reactive.stream.Count[T]
+  with reactive.poll.Flush[T]
   with Disposable
 {
   import Channel.Observer
 
   private[widok] val children = Array[ChildChannel[T, _]]()
 
-  def cache: Opt[T] = {
+  def cache: ReadPartialChannel[T] = {
     val res = Opt[T]()
     res << this
     res
   }
 
-  def cache(default: T): Var[T] = {
+  def cache(default: T): ReadStateChannel[T] = {
     val res = Var[T](default)
     res << this
     res
   }
 
-  /** Flush data and call f for each element */
+  def before(value: T): ReadChannel[T] = ???
+  def after(value: T): ReadChannel[T] = ???
+  def beforeOption(value: T): PartialChannel[T] = ???
+  def afterOption(value: T): PartialChannel[T] = ???
+
   def flush(f: T => Unit)
 
   def publish(ch: WriteChannel[T]): ReadChannel[Unit] = ch.subscribe(this)
   def publish[U](ch: WriteChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = ch.subscribe(this, ignore)
   def >>(ch: WriteChannel[T]) = publish(ch)
+
+  def count(value: T): ReadChannel[Int] = ???
+  def countUnequal(value: T): ReadChannel[Int] = ???
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
     val res = new RootChannel[T] {
@@ -77,21 +91,21 @@ trait ReadChannel[T]
   def child(): ReadChannel[T] =
     forkUni(t => Result.Next(Some(t)))
 
-  def attach(f: T => Unit): ReadChannel[Unit] =
+  def silentAttach(f: T => Unit): ReadChannel[Unit] =
     forkUni { value =>
       f(value)
       Result.Next(None)
     }
 
+  def attach(f: T => Unit): ReadChannel[Unit] = {
+    val ch = silentAttach(f).asInstanceOf[UniChildChannel[T, Unit]]
+    flush(ch.process)
+    ch
+  }
+
   def detach(ch: ChildChannel[T, _]) {
     children -= ch
   }
-
-  def silentAttach(f: T => Unit): ReadChannel[Unit] =
-    forkUni(value => {
-      f(value)
-      Result.Next(None)
-    }, silent = true)
 
   def buffer: Buffer[T] = {
     val buf = Buffer[T]()
@@ -100,17 +114,16 @@ trait ReadChannel[T]
   }
 
   /** Uni-directional fork for values */
-  def forkUni[U](observer: Observer[T, U], silent: Boolean = false, filterCycles: Boolean = false): ReadChannel[U] = {
+  def forkUni[U](observer: Observer[T, U], filterCycles: Boolean = false): ReadChannel[U] = {
     val ch = UniChildChannel[T, U](this, observer, None, filterCycles)
     children += ch
-    if (!silent) flush(ch.process)
     ch
   }
 
   def forkUniState[U](observer: Observer[T, U], onFlush: => Option[U]): ReadChannel[U] = {
     val ch = UniChildChannel[T, U](this, observer, Some(() => onFlush))
     children += ch
-    flush(ch.process)
+    flush(ch.process) /* Otherwise onFlush will be None for the initial value */
     ch
   }
 
@@ -118,15 +131,13 @@ trait ReadChannel[T]
   def forkUniFlat[U](observer: Observer[T, ReadChannel[U]]): ReadChannel[U] = {
     val ch = FlatChildChannel[T, U](this, observer)
     children += ch
-    flush(ch.process)
     ch
   }
 
   /** Bi-directional fork for channels */
-  def forkBiFlat[U](obs: Observer[T, Channel[U]], silent: Boolean = false): Channel[U] = {
+  def forkBiFlat[U](obs: Observer[T, Channel[U]]): Channel[U] = {
     val ch = BiFlatChildChannel[T, U](this, obs)
     children += ch
-    if (!silent) flush(ch.process)
     ch
   }
 
@@ -154,13 +165,13 @@ trait ReadChannel[T]
   def drop(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
-    forkUni(value => {
+    forkUni { value =>
       if (cnt > 0) { cnt -= 1; Result.Next(None) }
 
       // TODO Create a new result type which continues processing
       // the stream without calling this callback.
       else Result.Next(Some(value))
-    }, silent = true)
+    }
   }
 
   def head: ReadChannel[T] = forkUni(value => Result.Done(Some(value)))
@@ -176,10 +187,7 @@ trait ReadChannel[T]
       Result.Next(Some(f(value)))
     }
 
-  def foreach(f: T => Unit): ReadChannel[Unit] =
-    forkUni { value =>
-      Result.Next(Some(f(value)))
-    }
+  def mapTo[U](f: T => U): DeltaDict[T, U] = ???
 
   def equal(value: T): ReadChannel[Boolean] =
     forkUni { t =>
@@ -204,7 +212,7 @@ trait ReadChannel[T]
     attach { value =>
       buf.clear()
       if (child != null) child.dispose()
-      child = f(value).changes.attach(buf.applyChange)
+      child = buf.changes.subscribe(f(value).changes)
     }
     buf
   }
@@ -223,7 +231,7 @@ trait ReadChannel[T]
     }, Some(accum))
   }
 
-  def find(f: T => Boolean): ReadChannel[Option[T]] = ???
+  def find(f: T => Boolean): PartialChannel[T] = ???
 
   def exists(f: T => Boolean): ReadChannel[Boolean] =
     forkUni { value =>
@@ -265,7 +273,7 @@ trait ReadChannel[T]
       if (cur.contains(value)) Result.Next(None)
       else {
         cur = Some(value)
-        Result.Next(Some(cur.get))
+        Result.Next(cur)
       }
     }, cur)
   }
@@ -311,7 +319,8 @@ trait WriteChannel[T] {
   def subscribe(ch: ReadChannel[T]): ReadChannel[Unit] =
     ch.attach(this := _)
 
-  def subscribe[U](ch: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
+  def subscribe[U](ch: ReadChannel[T],
+                   ignore: ReadChannel[U]): ReadChannel[Unit] =
     ch.attach(produce(_, ignore))
 
   def <<(ch: ReadChannel[T]): ReadChannel[Unit] = subscribe(ch)
@@ -410,7 +419,7 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def flush(f: U => Unit) {
-    if (bound != null) bound.flush(f)
+    parent.flush(process)
   }
 
   def dispose() {
@@ -567,7 +576,7 @@ trait ChannelDefaultSize[T] {
   this: ReadChannel[T] =>
 
   def size: ReadChannel[Int] =
-    foldLeft(0) { case (acc, cur) => acc + 1}
+    foldLeft(0) { case (acc, cur) => acc + 1 }
 }
 
 trait ChannelDefaultEmpty[T] {
@@ -601,8 +610,10 @@ trait RootChannel[T]
   }
 }
 
+trait ReadStateChannel[T] extends ReadChannel[T]
+
 /** In Rx terms, a [[StateChannel]] can be considered a cold observable. */
-trait StateChannel[T] extends Channel[T] {
+trait StateChannel[T] extends Channel[T] with ReadStateChannel[T] {
   def update(f: T => T) {
     flush(t => this := f(t))
   }

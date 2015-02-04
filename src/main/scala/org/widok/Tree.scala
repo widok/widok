@@ -8,27 +8,27 @@ trait Tree[T] {
     if (f(this)) Some(this)
     else children.elements.foldLeft(Option.empty[Tree[T]]) { (acc, cur) =>
       if (acc.isDefined) acc
-      else cur.get.find(f)
+      else cur.find(f)
     }
 
-  def findChild(f: Ref[Tree[T]] => Boolean): Option[Ref[Tree[T]]] = {
+  def findChild(f: Tree[T] => Boolean): Option[Tree[T]] = {
     val found = children.elements.find(f)
     if (found.isDefined) found
-    else children.elements.foldLeft(Option.empty[Ref[Tree[T]]]) { (acc, cur) =>
+    else children.elements.foldLeft(Option.empty[Tree[T]]) { (acc, cur) =>
       if (acc.isDefined) acc
-      else cur.get.findChild(f)
+      else cur.findChild(f)
     }
   }
 
-  def parentOf(node: Tree[T]): Option[Ref[Tree[T]]] = {
+  def parentOf(node: Tree[T]): Option[Tree[T]] = {
     val found = children.elements.find(
-      _.get.children.elements.contains(node)
+      _.children.elements.contains(node)
     )
 
     if (found.isDefined) found
-    else children.elements.foldLeft(Option.empty[Ref[Tree[T]]]) { (acc, cur) =>
+    else children.elements.foldLeft(Option.empty[Tree[T]]) { (acc, cur) =>
       if (acc.isDefined) acc
-      else cur.get.parentOf(node)
+      else cur.parentOf(node)
     }
   }
 }

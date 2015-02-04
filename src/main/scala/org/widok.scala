@@ -47,9 +47,9 @@ package object widok {
     (value: ReadChannel[T]): HTML.Container.Inline =
       HTML.Container.Inline().optWidget(value)
 
-  implicit def WidgetAggregateToWidget[T <: Widget[_]](agg: Aggregate[T]):
+  implicit def WidgetBufferToWidget[T <: Widget[_]](agg: DeltaBuffer[T]):
     /* TODO Why do we have to cast? */
-    HTML.List.Items = HTML.List.Items(agg.asInstanceOf[Aggregate[Widget[_]]])
+    HTML.List.Items = HTML.List.Items(agg.asInstanceOf[DeltaBuffer[Widget[_]]])
 
   implicit def WidgetSeqToWidget[T <: Widget[_]](agg: Seq[T]): Inline =
     Inline(agg: _*)
@@ -57,8 +57,7 @@ package object widok {
   implicit def StringBufferToWidget[T <: String](buf: ReadBuffer[T]):
     HTML.List.Items =
       /* TODO This could be optimised by creating fewer DOM nodes. */
-      HTML.List.Items(buf
-        .map(x => HTML.Text(x.get)))
+      HTML.List.Items(buf.map(x => HTML.Text(x)))
 
   implicit def InstantiatedRouteToString(route: InstantiatedRoute): String =
     route.uri()

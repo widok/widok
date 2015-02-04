@@ -28,7 +28,7 @@ $ sbt fullOptJS
 
 Similarly as with ``fastOptJS``, you can also prefix ``~`` here.
 
-TBD Explain how to have maintain sbt setups for production and development releases. This is necessary in order to have use a different value for ``-Xelidable-below``.
+> **TODO:** Explain how to maintain sbt setups for production and development releases. This is necessary in order to use a different value for ``-Xelidable-below``.
 
 ## Links
 For more information on the build process, please refer to the [Scala.js manual](http://www.scala-js.org/doc/sbt/run.html).

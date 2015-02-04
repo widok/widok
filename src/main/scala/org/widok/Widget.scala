@@ -28,36 +28,36 @@ object Widget {
       self
     }
 
-    def bind[T](aggregate: Aggregate[T])(f: Ref[T] => ListItem) = {
-      import Aggregate.Change
-      import Aggregate.Position
+    def bind[T](buffer: DeltaBuffer[T])(f: T => ListItem) = {
+      import Buffer.Delta
+      import Buffer.Position
 
-      val mapping = mutable.Map.empty[Ref[T], dom.Node]
+      val mapping = mutable.Map.empty[T, dom.Node]
 
-      aggregate.changes.attach {
-        case Change.Insert(Position.Head(), element) =>
+      buffer.changes.attach {
+        case Delta.Insert(Position.Head(), element) =>
           mapping += element -> rendered.insertBefore(f(element).rendered, rendered.firstChild)
 
-        case Change.Insert(Position.Last(), element) =>
+        case Delta.Insert(Position.Last(), element) =>
           mapping += element -> rendered.appendChild(f(element).rendered)
 
-        case Change.Insert(Position.Before(reference), element) =>
+        case Delta.Insert(Position.Before(reference), element) =>
           mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference))
 
-        case Change.Insert(Position.After(reference), element) =>
+        case Delta.Insert(Position.After(reference), element) =>
           val after = f(element).rendered
           DOM.insertAfter(rendered, mapping(reference), after)
           mapping += element -> after
 
-        case Change.Replace(reference, element) =>
+        case Delta.Replace(reference, element) =>
           mapping += element -> rendered.replaceChild(f(element).rendered, mapping(reference))
           mapping -= reference
 
-        case Change.Remove(element) =>
+        case Delta.Remove(element) =>
           rendered.removeChild(mapping(element))
           mapping -= element
 
-        case Change.Clear() =>
+        case Delta.Clear() =>
           mapping.clear()
           DOM.clear(rendered)
       }
@@ -115,9 +115,12 @@ object Widget {
         self
       }
 
-      def bind[T, X <: List.Item[X]](map: ChildMap[T, String], selection: Channel[Option[Ref[T]]]) = {
-        import Aggregate.Change
-        import Aggregate.Position
+      def bind[T, X <: List.Item[X]](buf: Buffer[T],
+                                     f: T => String,
+                                     selection: Channel[Option[T]]) =
+      {
+        import Buffer.Delta
+        import Buffer.Position
 
         def selected(): dom.HTMLSelectElement = {
           val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
@@ -133,22 +136,20 @@ object Widget {
             .apply(idx)
         }
 
-        val mapping = mutable.Map.empty[Ref[String], HTML.Input.Select.Option]
+        val mapping = mutable.Map.empty[T, HTML.Input.Select.Option]
 
-        def onSelect(select: Option[Ref[T]]) {
-          if (select.isEmpty) {
-            if (optDefault.nonEmpty)
-              optDefault.get.rendered.setAttribute("selected", "")
-          } else (for {
-            selection <- select
-            ch <- map.mapping.get(selection)
-            opt <- mapping.get(ch)
-          } yield opt).foreach(_.rendered.setAttribute("selected", ""))
+        def onSelect(select: Option[T]) {
+          val node: Option[HTML.Input.Select.Option] =
+            if (select.isDefined) mapping.get(select.get)
+            else if (optDefault.nonEmpty) optDefault
+            else None
+
+          node.foreach(_.rendered.setAttribute("selected", ""))
         }
 
-        map.changes.attach {
-          case Change.Insert(Position.Head(), element) =>
-            mapping += element -> addOption(element.get)
+        buf.changes.attach {
+          case Delta.Insert(Position.Head(), element) =>
+            mapping += element -> addOption(f(element))
 
             if (optDefault.isEmpty)
               rendered.insertBefore(
@@ -162,37 +163,37 @@ object Widget {
             // TODO Flush only if selection was invalidated by Remove() or Clear()
             selection.flush(onSelect)
 
-          case Change.Insert(Position.Last(), element) =>
-            mapping += element -> addOption(element.get)
+          case Delta.Insert(Position.Last(), element) =>
+            mapping += element -> addOption(f(element))
             rendered.appendChild(mapping(element).rendered)
             selection.flush(onSelect)
 
-          case Change.Insert(Position.Before(reference), element) =>
-            mapping += element -> addOption(element.get)
+          case Delta.Insert(Position.Before(reference), element) =>
+            mapping += element -> addOption(f(element))
             rendered.insertBefore(
               mapping(element).rendered,
               mapping(reference).rendered)
             selection.flush(onSelect)
 
-          case Change.Insert(Position.After(reference), element) =>
-            mapping += element -> addOption(element.get)
+          case Delta.Insert(Position.After(reference), element) =>
+            mapping += element -> addOption(f(element))
             DOM.insertAfter(rendered,
               mapping(reference).rendered,
               mapping(element).rendered)
             selection.flush(onSelect)
 
-          case Change.Replace(reference, element) =>
-            mapping += element -> addOption(element.get)
+          case Delta.Replace(reference, element) =>
+            mapping += element -> addOption(f(element))
             rendered.replaceChild(
               mapping(element).rendered,
               mapping(reference).rendered)
             mapping -= reference
 
-          case Change.Remove(element) =>
+          case Delta.Remove(element) =>
             rendered.removeChild(mapping(element).rendered)
             mapping -= element
 
-          case Change.Clear() =>
+          case Delta.Clear() =>
             mapping.foreach { case (_, value) =>
               rendered.removeChild(value.rendered) }
             mapping.clear()
@@ -202,11 +203,7 @@ object Widget {
 
         change.attach { e =>
           val m = mapping.find(_._2.rendered == selected())
-
-          if (m.isDefined) {
-            val found = map.mapping.find(_._2 == m.get._1).get._1
-            selection.produce(Some(found), obs)
-          } else selection.produce(None, obs)
+          selection.produce(m.map(_._1), obs)
         }
 
         self

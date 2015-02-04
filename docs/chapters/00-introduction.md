@@ -1,4 +1,6 @@
 # Introduction
+> **TODO:** Update chapter
+
 Widok is a reactive web framework for Scala.js. Its key concepts are:
 
 - **Page:** the browser query is dispatched to a page which renders widgets
