@@ -364,18 +364,18 @@ trait PollBuffer[T]
     else None
   }
 
-  def splitAt(element: T): (Buffer[T], Buffer[T]) = {
+  def splitAt(element: T): (ReadBuffer[T], ReadBuffer[T]) = {
     val (left, right) = get.splitAt(elements.indexOf(element))
     (Buffer.from(left), Buffer.from(right))
   }
 
-  def take(count: Int): Buffer[T] = {
+  def take(count: Int): ReadBuffer[T] = {
     val result = Buffer[T]()
     changes.attach(_ => result.set(get.take(count)))
     result
   }
 
-  def drop(count: Int): Buffer[T] = {
+  def drop(count: Int): ReadBuffer[T] = {
     val result = Buffer[T]()
     changes.attach(_ => result.set(get.drop(count)))
     result
