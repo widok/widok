@@ -333,10 +333,6 @@ trait PollBuffer[T]
   def indexOf(handle: T): Int = elements.indexOf(handle)
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements)
 
-  def foreach(f: T => Unit) {
-    elements.foreach(element => f(element))
-  }
-
   def before(value: T): ReadChannel[T] = ???
   def after(value: T): ReadChannel[T] = ???
   def beforeOption(value: T): PartialChannel[T] = ???
