@@ -161,11 +161,12 @@ To summarise, for a reactive data structure it is necessary to declare several t
 : Traits and layers of a reactive data structure
 
 ## Reactive data structures
-Widok currently implements three reactive data structures:
+Widok currently implements four reactive data structures:
 
 - **Channels:** single values like ``T``
 - **Buffers:** lists like ``Seq[T]``
 - **Dictionaries:**  maps like ``Map[A, B]``
+- **Sets:**  reactive ``Set[T]``
 
 ## Channels
 A channel is a multiplexer for typed messages of immutable values that it receives. Values sent to the channel get propagated to the observers that have been attached to the channel — in the same order as they were added.
@@ -452,6 +453,9 @@ Every time a new filter function is produced to ``f``, the filter is applied on 
 
 ## Dictionaries
 Dictionaries are unordered maps from ``A`` to ``B``. Widok abbreviates the type as ``Dict``.
+
+## Sets
+Reactive sets are implemented as ``BufSet``^[This name was chosen as ``Set`` would have collided with Scala's implementation.].
 
 ## User Interfaces
 User interfaces (UIs) are notoriously heavily data-driven. Values do not only need to be displayed once, but continuously modified as the user interacts with the interface.

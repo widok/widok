@@ -27,6 +27,7 @@ object DeltaDict {
 
 trait DeltaDict[A, B]
   extends reactive.stream.Size
+  with reactive.stream.Empty[(A, B)]
   with reactive.stream.Count[(A, B)]
 {
   import Dict.Delta
@@ -50,6 +51,9 @@ trait DeltaDict[A, B]
 
     count
   }
+
+  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
+  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
 
   def exists(f: ((A, B)) => Boolean): ReadChannel[Boolean] = ???
   def count(value: (A, B)): ReadChannel[Int] = ???

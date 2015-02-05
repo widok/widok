@@ -353,39 +353,28 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
+  lazy val className = {
+    val set = BufSet[String]()
+    set.toSeq.attach { tags =>
+      assert(tags.forall(!_.contains(" ")), "Tag contains spaces")
+      rendered.className = tags.mkString(" ")
+    }
+    set
+  }
+
   def css(cssTags: String*) = {
-    val tags = rendered.className.split(" ").toSet
-    rendered.className = (tags ++ cssTags).mkString(" ")
+    className ++= cssTags
     self
   }
 
   def css(state: Boolean, cssTags: String*) = {
-    val tags = rendered.className.split(" ").toSet
-
-    val changed =
-      if (state) tags ++ cssTags
-      else tags.diff(cssTags.toSet)
-
-    rendered.className = changed.mkString(" ")
+    if (state) className ++= cssTags
+    else className --= cssTags
     self
   }
 
-  /** The tags produced by the channel may consist of multiple space-separated
-    * CSS classes.
-    */
-  def cssCh(tag: ReadChannel[String]) = {
-    var cur: Option[Set[String]] = None
-
-    tag.attach { value =>
-      val tags = rendered.className.split(" ").toSet
-      val changed =
-        if (cur.isDefined) tags.diff(cur.get) + value
-        else tags + value
-      cur = Some(value.split(" ").toSet)
-
-      rendered.className = changed.mkString(" ")
-    }
-
+  def cssCh(tag: ReadChannel[Seq[String]]) = {
+    tag.attach(className.set)
     self
   }
 

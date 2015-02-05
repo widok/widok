@@ -1,0 +1,181 @@
+package org.widok
+
+import scala.collection.mutable
+
+/**
+ * Reactive set
+ */
+object BufSet {
+  trait Delta[T]
+  object Delta {
+    case class Insert[T](key: T) extends Delta[T]
+    case class Remove[T](key: T) extends Delta[T]
+    case class Clear[T]() extends Delta[T]
+  }
+
+  def apply[T](): BufSet[T] = new BufSet[T] { }
+
+  implicit def BufSetToSeq[T](buf: BufSet[T]): Seq[T] = buf.elements.toSeq
+}
+
+object DeltaBufSet {
+  import BufSet.Delta
+
+  def apply[T](delta: ReadChannel[Delta[T]]): DeltaBufSet[T] =
+    new DeltaBufSet[T] {
+      override val changes = delta
+    }
+}
+
+trait DeltaBufSet[T]
+  extends reactive.stream.Size
+  with reactive.stream.Empty[T]
+  with reactive.stream.Count[T]
+{
+  import BufSet.Delta
+  val changes: ReadChannel[Delta[T]]
+
+  def size: ReadChannel[Int] = {
+    var keys = mutable.HashSet.empty[T]
+    val count = LazyVar(keys.size)
+
+    changes.attach {
+      case Delta.Insert(k) if !keys.contains(k) =>
+        keys += k
+        count.produce()
+      case Delta.Remove(k) =>
+        keys -= k
+        count.produce()
+      case Delta.Clear() if keys.nonEmpty =>
+        count.produce()
+      case _ =>
+    }
+
+    count
+  }
+
+  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
+  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
+
+  def exists(f: T => Boolean): ReadChannel[Boolean] = ???
+  def count(value: T): ReadChannel[Int] = ???
+  def unequal(value: T): ReadChannel[Boolean] = ???
+
+  def contains(value: T): ReadChannel[Boolean] = {
+    val state = Var(false)
+
+    changes.attach {
+      case Delta.Insert(k) if k == value && !state.get => state := true
+      case Delta.Remove(k) if k == value && state.get => state := false
+      case Delta.Clear() if !state.get => state := false
+      case _ =>
+    }
+
+    state
+  }
+
+  def equal(value: T): ReadChannel[Boolean] = ???
+  def countUnequal(value: T): ReadChannel[Int] = ???
+
+  def forall(f: T => Boolean): ReadChannel[Boolean] = {
+    var keys = mutable.HashSet.empty[T]
+    val unequal = Var(0)
+
+    changes.attach {
+      case Delta.Insert(k) if keys.contains(k) && f(k) =>
+        unequal.update(_ - 1)
+        keys -= k
+      case Delta.Insert(k) if !keys.contains(k) && !f(k) =>
+        unequal.update(_ + 1)
+        keys += k
+      case Delta.Remove(k) if keys.contains(k) =>
+        unequal.update(_ - 1)
+        keys -= k
+      case Delta.Clear() if unequal.get != 0 =>
+        unequal := 0
+      case _ =>
+    }
+
+    unequal
+      .map(_ == 0)
+      .distinct
+  }
+}
+
+trait StateBufSet[T] extends Disposable {
+  import BufSet.Delta
+
+  private[widok] val elements = mutable.HashSet.empty[T]
+
+  val changes = new RootChannel[Delta[T]] {
+    def flush(f: Delta[T] => Unit) {
+      elements.foreach(key => f(Delta.Insert(key)))
+    }
+  }
+
+  private[widok] val subscription = changes.attach {
+    case Delta.Insert(key) => elements += key
+    case Delta.Remove(key) => elements -= key
+    case Delta.Clear() => elements.clear()
+  }
+
+  def dispose() {
+    subscription.dispose()
+  }
+}
+
+trait WriteBufSet[T]
+  extends reactive.mutate.BufSet[T]
+{
+  import BufSet.Delta
+
+  val changes: Channel[Delta[T]]
+
+  def insert(key: T) {
+    changes := Delta.Insert(key)
+  }
+
+  def insertAll(keys: Seq[T]) {
+    keys.foreach(insert)
+  }
+
+  def remove(key: T) {
+    changes := Delta.Remove(key)
+  }
+
+  def removeAll(keys: Seq[T]) {
+    keys.foreach(remove)
+  }
+
+  def set(keys: Seq[T]) {
+    clear()
+    insertAll(keys)
+  }
+
+  def clear() {
+    changes := Delta.Clear()
+  }
+}
+
+trait PollBufSet[T]
+  extends reactive.poll.Count[T]
+{
+  import BufSet.Delta
+
+  private[widok] val elements: mutable.HashSet[T]
+
+  val changes: ReadChannel[Delta[T]]
+
+  def contains$(key: T): Boolean = elements.contains(key)
+
+  def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements.toSeq)
+}
+
+trait ReadBufSet[T]
+  extends PollBufSet[T]
+  with DeltaBufSet[T]
+
+trait BufSet[T]
+  extends ReadBufSet[T]
+  with WriteBufSet[T]
+  with StateBufSet[T]
