@@ -8,8 +8,8 @@ import scala.collection.mutable
 object BufSet {
   trait Delta[T]
   object Delta {
-    case class Insert[T](key: T) extends Delta[T]
-    case class Remove[T](key: T) extends Delta[T]
+    case class Insert[T](value: T) extends Delta[T]
+    case class Remove[T](value: T) extends Delta[T]
     case class Clear[T]() extends Delta[T]
   }
 
@@ -36,17 +36,17 @@ trait DeltaBufSet[T]
   val changes: ReadChannel[Delta[T]]
 
   def size: ReadChannel[Int] = {
-    var keys = mutable.HashSet.empty[T]
-    val count = LazyVar(keys.size)
+    var values = mutable.HashSet.empty[T]
+    val count = LazyVar(values.size)
 
     changes.attach {
-      case Delta.Insert(k) if !keys.contains(k) =>
-        keys += k
+      case Delta.Insert(k) if !values.contains(k) =>
+        values += k
         count.produce()
       case Delta.Remove(k) =>
-        keys -= k
+        values -= k
         count.produce()
-      case Delta.Clear() if keys.nonEmpty =>
+      case Delta.Clear() if values.nonEmpty =>
         count.produce()
       case _ =>
     }
@@ -78,19 +78,19 @@ trait DeltaBufSet[T]
   def countUnequal(value: T): ReadChannel[Int] = ???
 
   def forall(f: T => Boolean): ReadChannel[Boolean] = {
-    var keys = mutable.HashSet.empty[T]
+    var values = mutable.HashSet.empty[T]
     val unequal = Var(0)
 
     changes.attach {
-      case Delta.Insert(k) if keys.contains(k) && f(k) =>
+      case Delta.Insert(k) if values.contains(k) && f(k) =>
         unequal.update(_ - 1)
-        keys -= k
-      case Delta.Insert(k) if !keys.contains(k) && !f(k) =>
+        values -= k
+      case Delta.Insert(k) if !values.contains(k) && !f(k) =>
         unequal.update(_ + 1)
-        keys += k
-      case Delta.Remove(k) if keys.contains(k) =>
+        values += k
+      case Delta.Remove(k) if values.contains(k) =>
         unequal.update(_ - 1)
-        keys -= k
+        values -= k
       case Delta.Clear() if unequal.get != 0 =>
         unequal := 0
       case _ =>
@@ -109,13 +109,13 @@ trait StateBufSet[T] extends Disposable {
 
   val changes = new RootChannel[Delta[T]] {
     def flush(f: Delta[T] => Unit) {
-      elements.foreach(key => f(Delta.Insert(key)))
+      elements.foreach(value => f(Delta.Insert(value)))
     }
   }
 
   private[widok] val subscription = changes.attach {
-    case Delta.Insert(key) => elements += key
-    case Delta.Remove(key) => elements -= key
+    case Delta.Insert(value) => elements += value
+    case Delta.Remove(value) => elements -= value
     case Delta.Clear() => elements.clear()
   }
 
@@ -131,25 +131,30 @@ trait WriteBufSet[T]
 
   val changes: Channel[Delta[T]]
 
-  def insert(key: T) {
-    changes := Delta.Insert(key)
+  def insert(value: T) {
+    changes := Delta.Insert(value)
   }
 
-  def insertAll(keys: Seq[T]) {
-    keys.foreach(insert)
+  def insertAll(values: Seq[T]) {
+    values.foreach(insert)
   }
 
-  def remove(key: T) {
-    changes := Delta.Remove(key)
+  def remove(value: T) {
+    changes := Delta.Remove(value)
   }
 
-  def removeAll(keys: Seq[T]) {
-    keys.foreach(remove)
+  def removeAll(values: Seq[T]) {
+    values.foreach(remove)
   }
 
-  def set(keys: Seq[T]) {
+  def set(values: Seq[T]) {
     clear()
-    insertAll(keys)
+    insertAll(values)
+  }
+
+  def toggle(state: Boolean, values: T*) {
+    if (state) insertAll(values)
+    else removeAll(values)
   }
 
   def clear() {
@@ -166,7 +171,7 @@ trait PollBufSet[T]
 
   val changes: ReadChannel[Delta[T]]
 
-  def contains$(key: T): Boolean = elements.contains(key)
+  def contains$(value: T): Boolean = elements.contains(value)
 
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements.toSeq)
 }

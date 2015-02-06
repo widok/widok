@@ -368,8 +368,7 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def css(state: Boolean, cssTags: String*) = {
-    if (state) className ++= cssTags
-    else className --= cssTags
+    className.toggle(state, cssTags: _*)
     self
   }
 

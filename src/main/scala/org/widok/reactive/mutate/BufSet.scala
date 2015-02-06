@@ -1,33 +1,36 @@
 package org.widok.reactive.mutate
 
 trait BufSet[T] {
-  /** Adds `key` */
-  def insert(key: T)
+  /** Adds `value` */
+  def insert(value: T)
 
-  /** Insert `keys` */
-  def insertAll(keys: Seq[T])
+  /** Insert `values` */
+  def insertAll(values: Seq[T])
 
-  /** Removes `key` */
-  def remove(key: T)
+  /** Removes `value` */
+  def remove(value: T)
 
-  /** Remove `keys` */
-  def removeAll(keys: Seq[T])
+  /** Remove `values` */
+  def removeAll(values: Seq[T])
 
-  /** Replace all elements with `keys` */
-  def set(keys: Seq[T])
+  /** Insert all elements from `values` if state true, otherwise remove */
+  def toggle(state: Boolean, values: T*)
+
+  /** Replace all elements with `values` */
+  def set(values: Seq[T])
 
   /** Removes all elements */
   def clear()
 
   /** @see [[remove]] */
-  def -=(key: T) = remove(key)
+  def -=(value: T) = remove(value)
 
   /** @see [[insert]] */
-  def +=(key: T) = insert(key)
+  def +=(value: T) = insert(value)
 
   /** @see [[insertAll]] */
-  def ++=(keys: Seq[T]) = insertAll(keys)
+  def ++=(values: Seq[T]) = insertAll(values)
 
   /** @see [[removeAll]] */
-  def --=(keys: Seq[T]) = removeAll(keys)
+  def --=(values: Seq[T]) = removeAll(values)
 }
