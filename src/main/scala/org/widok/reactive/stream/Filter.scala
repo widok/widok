@@ -1,6 +1,6 @@
 package org.widok.reactive.stream
 
-import org.widok.ReadChannel
+import org.widok.{ReadBufSet, ReadChannel}
 
 trait Filter[Container[_], T] {
   /** Take all elements until `ch` produces any value */
@@ -30,4 +30,9 @@ trait Filter[Container[_], T] {
 
   /** Finds first value for which `f` is true */
   def find(f: T => Boolean): PartialChannel[T]
+
+  /** Remove all elements from `other` */
+  def diff(other: ReadBufSet[T]): Container[T]
+
+  def -(other: ReadBufSet[T]) = diff(other)
 }

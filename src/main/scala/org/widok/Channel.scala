@@ -65,6 +65,8 @@ trait ReadChannel[T]
   def beforeOption(value: T): PartialChannel[T] = ???
   def afterOption(value: T): PartialChannel[T] = ???
 
+  def diff(other: ReadBufSet[T]): ReadChannel[T] = ???
+
   def flush(f: T => Unit)
 
   def publish(ch: WriteChannel[T]): ReadChannel[Unit] = ch.subscribe(this)

@@ -578,6 +578,21 @@ trait PollBuffer[T]
    */
   def find(f: T => Boolean): PartialChannel[T] = ???
 
+  def diff(other: ReadBufSet[T]): ReadBuffer[T] = {
+    val buf = Buffer[T]()
+    val diff = other.elements
+
+    changes.attach { _ =>
+      buf.set(elements.diff(diff.toSeq))
+    }
+
+    other.changes.attach { _ =>
+      buf.set(elements.diff(diff.toSeq))
+    }
+
+    buf
+  }
+
   override def toString = get.toString()
 }
 
