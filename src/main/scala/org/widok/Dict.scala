@@ -122,7 +122,7 @@ trait WriteDict[A, B]
 {
   import Dict.Delta
 
-  val changes: Channel[Delta[A, B]]
+  val changes: WriteChannel[Delta[A, B]]
 
   def insert(key: A, value: B) {
     changes := Delta.Insert(key, value)
@@ -139,10 +139,27 @@ trait WriteDict[A, B]
 
 trait PollDict[A, B]
   extends reactive.poll.Key[A, B]
+  with reactive.stream.Key[A, B]
 {
+  import Dict.Delta
+
   private[widok] val mapping: mutable.Map[A, B]
 
-  def value(key: A): B = mapping(key)
+  val changes: ReadChannel[Delta[A, B]]
+
+  def value$(key: A): B = mapping(key)
+
+  def value(key: A): ReadPartialChannel[B] = {
+    val res = Opt[B]()
+
+    changes.attach {
+      case Delta.Insert(`key`, value) => res := value
+      case Delta.Remove(`key`) => res.clear()
+      case Delta.Clear() if res.nonEmpty$ => res.clear()
+    }
+
+    res
+  }
 
   def get(key: A): Option[B] = mapping.get(key)
 }
