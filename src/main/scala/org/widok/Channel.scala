@@ -610,7 +610,10 @@ trait RootChannel[T]
   }
 }
 
-trait ReadStateChannel[T] extends ReadChannel[T]
+trait ReadStateChannel[T] extends ReadChannel[T] {
+  def zip[U](other: ReadChannel[U]): ReadChannel[(T, U)]
+  def combine[U](other: StateChannel[U]): ReadChannel[(T, U)]
+}
 
 /** In Rx terms, a [[StateChannel]] can be considered a cold observable. */
 trait StateChannel[T] extends Channel[T] with ReadStateChannel[T] {
