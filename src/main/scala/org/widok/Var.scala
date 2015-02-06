@@ -11,9 +11,7 @@ case class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultS
   override def toString = s"Var(${v.toString})"
 }
 
-/**
- * Upon each subscription, emit `v`. `v` is evaluated lazily.
- */
+/* Upon each subscription, emit `v`. `v` is evaluated lazily. */
 object LazyVar {
   def apply[T](v: => T) = new StateChannel[T]
     with ChannelDefaultSize[T]
@@ -30,16 +28,18 @@ object LazyVar {
 }
 
 /** Every produced value on the channel `change` indicates that the underlying
-  * variable was modified and the current value can be retrieved via `get`.
-  * If a value v is produced on the resulting channel instead, then set(v) is
-  * called.
-  */
+ * variable was modified and the current value can be retrieved via `get`.
+ * If a value v is produced on the resulting channel instead, then set(v) is
+ * called.
+ */
 object PtrVar {
-  def apply[T](change: ReadChannel[_], get: => T, set: T => Unit) = new StateChannel[T]
+  def apply[T](change: ReadChannel[_], _get: => T, set: T => Unit) = new StateChannel[T]
     with ChannelDefaultSize[T]
   {
     val sub = attach(set)
     change.attach(_ => produce())
+
+    def get: T = _get
 
     def flush(f: T => Unit) { f(get) }
     def produce() { produce(get, sub) }
