@@ -638,7 +638,7 @@ trait Buffer[T]
   with WriteBuffer[T]
   with StateBuffer[T]
 
-trait RefBuf[T] extends Buffer[Ref[T]] {
+case class RefBuf[T]() extends Buffer[Ref[T]] {
   /** All row values that are stored within the [[Ref]] objects */
   def values: Seq[T] = elements.map(_.get)
 
