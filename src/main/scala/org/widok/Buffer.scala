@@ -166,6 +166,10 @@ trait DeltaBuffer[T]
     case Delta.Insert(_, element) => element
   }
 
+  def removals: ReadChannel[T] = changes.partialMap {
+    case Delta.Remove(element) => element
+  }
+
   /** @note `f` should not be side-effecting */
   def map[U](f: T => U): DeltaBuffer[U] = {
     val chgs: ReadChannel[Delta[U]] = changes.map {
