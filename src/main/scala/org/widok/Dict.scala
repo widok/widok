@@ -156,6 +156,7 @@ trait PollDict[A, B]
       case Delta.Insert(`key`, value) => res := value
       case Delta.Remove(`key`) => res.clear()
       case Delta.Clear() if res.nonEmpty$ => res.clear()
+      case _ =>
     }
 
     res
