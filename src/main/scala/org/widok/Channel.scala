@@ -281,7 +281,7 @@ trait ReadChannel[T]
   }
 }
 
-trait WriteChannel[T] {
+trait WriteChannel[T] extends reactive.propagate.Channel[T] {
   import Channel.Observer
 
   private[widok] val children: Array[ChildChannel[T, _]]
@@ -328,7 +328,6 @@ trait WriteChannel[T] {
   def <<(ch: ReadChannel[T]): ReadChannel[Unit] = subscribe(ch)
   def <<[U](ch: ReadChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] =
     subscribe(ch, ignore)
-  def :=(v: T) = produce(v)
 }
 
 trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
