@@ -480,12 +480,6 @@ trait PollBuffer[T]
     (left, right)
   }
 
-  def watch[U](lens: T => ReadChannel[U]): ReadBuffer[T] = {
-    flatMapCh { t =>
-      lens(t).map(x => Some(t))
-    }
-  }
-
   def concat(buf: ReadBuffer[T]): ReadBuffer[T] = {
     val res = Buffer[T]()
 
@@ -502,7 +496,7 @@ trait PollBuffer[T]
 
   def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] = ???
 
-  def flatMapCh[U](f: T => ReadChannel[Option[U]]): ReadBuffer[U] = {
+  def flatMapCh[U](f: T => ReadPartialChannel[U]): ReadBuffer[U] = {
     val res = Buffer[U]()
     val values = mutable.HashMap.empty[T, Option[U]]
     val attached = mutable.HashMap.empty[T, ReadChannel[Unit]]
@@ -547,7 +541,7 @@ trait PollBuffer[T]
       case Delta.Insert(position, element) =>
         // TODO position may change
         values += element -> None
-        val ch = f(element)
+        val ch = f(element).values
         attached +=
           element -> ch.attach(value => valueChange(position, element, value))
 

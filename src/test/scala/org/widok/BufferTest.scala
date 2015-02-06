@@ -43,16 +43,14 @@ object BufferTest extends SimpleTestSuite {
   }
 
   test("concat()") {
-    /* Ensure that references are preserved. */
     val x = Buffer(1, 2, 3)
     val y = x.concat(Buffer())
     assertEquals(x.get, y.buffer.get)
   }
 
   test("flatMapCh()") {
-    /* Ensure that references are preserved. */
     val x = Buffer(1, 2, 3)
-    val y = x.flatMapCh[Int](value => Var(Some(value)))
+    val y = x.flatMapCh[Int](value => Opt(value))
     assertEquals(x.get, y.buffer.get)
 
     val fst = x.get.head
