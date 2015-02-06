@@ -675,4 +675,6 @@ case class RefBuf[T]() extends Buffer[Ref[T]] {
     replace(reference, handle)
     handle
   }
+
+  def +=(value: T) = append(value)
 }
