@@ -85,7 +85,7 @@ object Build extends sbt.Build {
       trait Glyphicon extends Widget[Glyphicon] {
         def icon: String
         val rendered = DOM.createElement("span")
-        css(s"glyphicon $icon")
+        css("glyphicon", icon)
       }
       """ +
       s"""

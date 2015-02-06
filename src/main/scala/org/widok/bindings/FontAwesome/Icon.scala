@@ -6,7 +6,7 @@ trait Icon extends Widget[Icon] {
   def icon: String
 
   val rendered = DOM.createElement("span")
-  css(s"fa fa-$icon")
+  css(s"fa", s"fa-$icon")
 
   def size(level: Int) = {
     assert((1 to 5).contains(level))

@@ -88,9 +88,9 @@ package object Bootstrap {
   def Fix(contents: View*) =
     HTML.Container.Generic(
       HTML.Container.Inline("Fix")
-        .css("label label-warning"),
+        .css("label", "label-warning"),
       HTML.Container.Inline(contents: _*)
-    ).css("alert alert-danger")
+    ).css("alert", "alert-danger")
 
   trait Input[T] extends Widget[T] { self: T =>
     def size(value: Size) = css(s"input-${value.cssSuffix}")
@@ -112,7 +112,7 @@ package object Bootstrap {
 
   case class Button(contents: View*) extends Widget[Button] {
     val rendered = DOM.createElement("button", contents)
-    css("btn btn-default")
+    css("btn", "btn-default")
 
     def size(value: Size) = css(s"btn-${value.cssSuffix}")
     def style(value: Style) = {
@@ -189,12 +189,12 @@ package object Bootstrap {
 
     def Tabs(contents: Bootstrap.Item*) =
       HTML.List.Unordered(contents: _*)
-        .css("nav nav-tabs")
+        .css("nav", "nav-tabs")
         .attribute("role", "tablist")
 
     def Pills(contents: Bootstrap.Item*) =
       HTML.List.Unordered(contents: _*)
-        .css("nav nav-pills")
+        .css("nav", "nav-pills")
         .attribute("role", "tablist")
   }
 
@@ -234,7 +234,7 @@ package object Bootstrap {
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar")
-      ).css("navbar-toggle collapsed")
+      ).css("navbar-toggle", "collapsed")
         .attribute("type", "button")
 
     def Header(contents: View*) =

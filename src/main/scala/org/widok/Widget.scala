@@ -359,7 +359,7 @@ trait Widget[T] extends Node { self: T =>
   lazy val className = {
     val set = BufSet[String]()
     set.toSeq.attach { tags =>
-      assert(tags.forall(!_.contains(" ")), "Tag contains spaces")
+      assert(tags.forall(!_.contains(" ")), s"A tag in '$tags' contains spaces")
       rendered.className = tags.mkString(" ")
     }
     set
