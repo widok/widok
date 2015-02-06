@@ -80,9 +80,11 @@ object Widget {
         keyUp, rendered.value, rendered.value = _)
 
       def bind(ch: Channel[String]) = { value.bind(ch); self }
+      def subscribe(ch: ReadChannel[String]) = { value.subscribe(ch); self }
       def attach(f: String => Unit) = { value.attach(f); self }
 
       def bindLive(ch: Channel[String]) = { liveValue.bind(ch); self }
+      def subscribeLive(ch: ReadChannel[String]) = { liveValue.subscribe(ch); self }
       def attachLive(f: String => Unit) = { liveValue.attach(f); self }
     }
 
@@ -93,6 +95,7 @@ object Widget {
         rendered.checked, rendered.checked = _)
 
       def bind(ch: Channel[Boolean]) = { checked.bind(ch); self }
+      def subscribe(ch: ReadChannel[Boolean]) = { checked.subscribe(ch); self }
       def attach(f: Boolean => Unit) = { checked.attach(f); self }
     }
 
