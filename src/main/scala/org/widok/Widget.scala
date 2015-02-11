@@ -247,6 +247,12 @@ object Widget {
 }
 
 object DOMChannel {
+  def variable[T](set: T => Unit) = {
+    val opt = Opt[T]()
+    opt.attach(set)
+    opt
+  }
+
   /* TODO As an optimisation, f(null) should be called when all children
    * are detached from the channel. If a child gets added, then the callback
    * handler needs to get reinitialised again.
@@ -288,6 +294,12 @@ case class Inline(contents: Widget[_]*) extends View {
   }
 }
 
+case class CSSStyle(style: dom.CSSStyleDeclaration) {
+  lazy val display: Opt[String] = DOMChannel.variable(style.display = _)
+  lazy val visibility: Opt[String] = DOMChannel.variable(style.visibility = _)
+  lazy val cursor: Opt[HTML.Cursor] = DOMChannel.variable(v => style.cursor = v.toString)
+}
+
 trait Node extends View {
   val rendered: dom.HTMLElement
 
@@ -315,6 +327,31 @@ trait Node extends View {
   lazy val touchEnd = DOMChannel.touchEvent(rendered, "ontouchend")
 
   lazy val change = DOMChannel.event(rendered.onchange = _)
+
+  lazy val nodeId: Opt[String] = DOMChannel.variable(rendered.id = _)
+
+  lazy val className = {
+    val set = BufSet[String]()
+    set.toSeq.attach { tags =>
+      assert(tags.forall(!_.contains(" ")), s"A tag in '$tags' contains spaces")
+      rendered.className = tags.mkString(" ")
+    }
+    set
+  }
+
+  lazy val style = CSSStyle(rendered.style)
+
+  lazy val attributes = {
+    val dict = Dict[String, String]()
+
+    dict.changes.attach {
+      case Dict.Delta.Insert(k, v) => rendered.setAttribute(k, v)
+      case Dict.Delta.Remove(k) => rendered.removeAttribute(k)
+      case Dict.Delta.Clear() => rendered.removeAttribute()
+    }
+
+    dict
+  }
 }
 
 object Node {
@@ -324,6 +361,10 @@ object Node {
     }
 }
 
+/**
+ * Convenience trait to use the channels from [[Node]] with chained function
+ * calls.
+ */
 trait Widget[T] extends Node { self: T =>
   def onClick(f: dom.MouseEvent => Unit) = { click.attach(f); self }
   def onDoubleClick(f: dom.MouseEvent => Unit) = { doubleClick.attach(f); self }
@@ -346,86 +387,47 @@ trait Widget[T] extends Node { self: T =>
 
   def onChange(f: dom.Event => Unit) = { change.attach(f); self }
 
-  def id(id: String) = {
-    rendered.id = id
-    self
-  }
+  def id(value: String) = { nodeId := value; self }
 
-  def cursor(cursor: HTML.Cursor) = {
-    rendered.style.cursor = cursor.toString
-    self
-  }
-
-  lazy val className = {
-    val set = BufSet[String]()
-    set.toSeq.attach { tags =>
-      assert(tags.forall(!_.contains(" ")), s"A tag in '$tags' contains spaces")
-      rendered.className = tags.mkString(" ")
-    }
-    set
-  }
-
-  def css(cssTags: String*) = {
-    className ++= cssTags
-    self
-  }
+  def css(cssTags: String*) = { className ++= cssTags; self }
 
   def css(state: Boolean, cssTags: String*) = {
     className.toggle(state, cssTags: _*)
     self
   }
 
-  def cssCh(tag: ReadChannel[Seq[String]]) = {
-    tag.attach(className.set)
-    self
-  }
+  def cssCh(tag: ReadChannel[Seq[String]]) = { tag.attach(className.set); self }
 
   def cssCh(state: ReadChannel[Boolean], cssTags: String*) = {
     state.attach(value => css(value, cssTags: _*))
     self
   }
 
-  def attribute(key: String, value: String) = {
-    rendered.setAttribute(key, value)
-    self
-  }
+  def attribute(key: String, value: String) = { attributes += key -> value; self }
 
   def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
     value.attach {
-      case Some(v) => rendered.setAttribute(key, v)
-      case None => rendered.removeAttribute(key)
+      case Some(v) => attributes += key -> v
+      case None => attributes -= key
     }
 
     self
   }
 
-  def tabIndex(value: Int) = {
-    rendered.setAttribute("tabindex", value.toString)
-    self
-  }
-
-  def title(value: String) = {
-    rendered.setAttribute("title", value)
-    self
-  }
+  def tabIndex(value: Int) = { attributes += "tabindex" -> value.toString; self }
+  def title(value: String) = { attributes += "title" -> value;  self }
 
   def titleCh(value: ReadChannel[String]) = {
-    value.attach { title =>
-      rendered.setAttribute("title", title)
-    }
-
+    value.attach(attributes += "title" -> _)
     self
   }
+
+  def cursor(cursor: HTML.Cursor) = { style.cursor := cursor; self }
 
   def show(value: ReadChannel[Boolean], remove: Boolean = true) = {
     value.attach { cur =>
-      if (remove) {
-        rendered.style.display =
-          if (cur) "" else "none"
-      } else {
-        rendered.style.visibility =
-          if (cur) "visible" else "hidden"
-      }
+      if (remove) style.display := (if (cur) "" else "none")
+      else style.visibility := (if (cur) "visible" else "hidden")
     }
 
     self
