@@ -63,7 +63,7 @@ trait DeltaDict[A, B]
   def countUnequal(value: (A, B)): ReadChannel[Int] = ???
 
   def forall(f: ((A, B)) => Boolean): ReadChannel[Boolean] = {
-    var keys = mutable.HashSet.empty[A]
+    val keys = mutable.HashSet.empty[A]
     val unequal = Var(0)
 
     changes.attach {
