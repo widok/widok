@@ -151,7 +151,6 @@ object HTML {
 
     case class Password() extends PasswordBase[Password]
 
-
     case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[dom.HTMLInputElement]

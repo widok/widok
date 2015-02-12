@@ -447,6 +447,9 @@ package object Bootstrap {
   }
 
   object Modal {
+    def Backdrop() =
+      HTML.Container.Generic().css("modal-backdrop", "fade", "in")
+
     def Title(contents: View*) =
       HTML.Heading.Level4(contents: _*).css("modal-title")
 
