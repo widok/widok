@@ -1,5 +1,7 @@
 package org.widok.bindings
 
+import org.scalajs.dom
+
 import org.widok._
 
 /**
@@ -474,6 +476,60 @@ package object Bootstrap {
       val rendered = DOM.createElement("div", contents)
       css("modal-footer")
     }
+  }
+
+  case class ModalBuilder(contents: View*) extends Widget[ModalBuilder] {
+    val chModalTitle = Channel[String]()
+    val chCloseText = Channel[String]()
+    val shown = Var(false)
+    val close = Channel[Unit]()
+    val height = Channel[Option[String]]()
+
+    def modalTitle(s: String) = { chModalTitle := s; this }
+    def modalShow() = { shown := true; this }
+    def modalHide() = { shown := false; this }
+    def closeText(s: String) = { chCloseText := s; this }
+    def closeAttach(f: () => Unit) = { close.attach(_ => f()); this }
+
+    val rendered = Modal(
+      Modal.Backdrop().attributeCh("style", height)
+      , Modal.Dialog(
+        Modal.Content(
+          Modal.Header(Modal.Title(chModalTitle))
+          , Modal.Body(contents: _*)
+          , Modal.Footer(
+            Button(chCloseText).onClick {_ =>
+              shown := false
+              close := (())
+            }
+          )
+        )
+      )
+    ).fade(true)
+      .cssCh(shown, "in")
+      .rendered
+
+    /* .show(shown) wouldn't work here because Bootstrap uses
+     * `style.display = none` in its stylesheet.
+     */
+
+    val resize = (e: dom.Event) => {
+      val h = dom.document.body.scrollHeight
+      height := Some(s"height: ${h}px")
+    }
+
+    shown.attach(
+      if (_) {
+        Document.body.className += "modal-open"
+        style.display := "block"
+        dom.window.addEventListener("resize", resize)
+        resize(null) /* Set initial height */
+      } else {
+        Document.body.className -= "modal-open"
+        style.display := "none"
+        dom.window.removeEventListener("resize", resize)
+      }
+    )
   }
 
   case class Media(contents: View*) extends Widget[Media] {
