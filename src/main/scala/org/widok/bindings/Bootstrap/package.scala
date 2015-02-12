@@ -478,32 +478,17 @@ package object Bootstrap {
     }
   }
 
-  case class ModalBuilder(contents: View*) extends Widget[ModalBuilder] {
-    val chModalTitle = Channel[String]()
-    val chCloseText = Channel[String]()
+  case class ModalBuilder(contents: Modal.ContentElement*) extends Widget[ModalBuilder] {
     val shown = Var(false)
-    val close = Channel[Unit]()
     val height = Channel[Option[String]]()
 
-    def modalTitle(s: String) = { chModalTitle := s; this }
     def modalShow() = { shown := true; this }
     def modalHide() = { shown := false; this }
-    def closeText(s: String) = { chCloseText := s; this }
-    def closeAttach(f: () => Unit) = { close.attach(_ => f()); this }
 
     val rendered = Modal(
       Modal.Backdrop().attributeCh("style", height)
       , Modal.Dialog(
-        Modal.Content(
-          Modal.Header(Modal.Title(chModalTitle))
-          , Modal.Body(contents: _*)
-          , Modal.Footer(
-            Button(chCloseText).onClick {_ =>
-              shown := false
-              close := (())
-            }
-          )
-        )
+        Modal.Content(contents: _*)
       )
     ).fade(true)
       .cssCh(shown, "in")
