@@ -14,6 +14,12 @@ object Dict {
   }
 
   def apply[A, B](): Dict[A, B] = new Dict[A, B] { }
+
+  def apply[A, B](map: Map[A, B]): Dict[A, B] = {
+    val dict = Dict[A, B]()
+    dict ++= map
+    dict
+  }
 }
 
 object DeltaDict {
@@ -128,17 +134,31 @@ trait WriteDict[A, B]
     changes := Delta.Insert(key, value)
   }
 
+  def insertAll(map: Map[A, B]) {
+    map.foreach(Function.tupled(insert _))
+  }
+
   def remove(key: A) {
     changes := Delta.Remove(key)
+  }
+
+  def removeAll(keys: Seq[A]) {
+    keys.foreach(remove)
   }
 
   def clear() {
     changes := Delta.Clear()
   }
+
+  def set(map: Map[A, B]) {
+    clear()
+    insertAll(map)
+  }
 }
 
 trait PollDict[A, B]
   extends reactive.poll.Key[A, B]
+  with reactive.poll.FilterMap[ReadDict, A, B]
   with reactive.stream.Key[A, B]
 {
   import Dict.Delta
@@ -163,6 +183,9 @@ trait PollDict[A, B]
   }
 
   def get(key: A): Option[B] = mapping.get(key)
+
+  def filter$(f: ((A, B)) => Boolean): ReadDict[A, B] =
+    Dict(mapping.filter(f).toMap)
 }
 
 trait ReadDict[A, B]
