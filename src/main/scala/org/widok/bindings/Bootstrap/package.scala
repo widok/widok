@@ -583,4 +583,48 @@ package object Bootstrap {
       def style(style: Style) = css(style.cssSuffix)
     }
   }
+
+  case class Validation[T](ch: ReadChannel[T], f: T => Option[String])
+
+  case class Validator(validations: Validation[_]*) {
+    val dirty = Var(false)
+    val invalid = Dict[ReadChannel[_], String]()
+    val valid = invalid.isEmpty.cache(true)
+
+    validations.foreach { case Validation(ch, f) =>
+      ch.attach { input =>
+        f(input) match {
+          case Some(err) => invalid += ch -> err
+          case None => invalid -= ch
+        }
+      }
+    }
+
+    val maySubmit = dirty.flatMap {
+      if (_) valid else Var(true)
+    }
+
+    def check(): Boolean = {
+      dirty := true
+      valid.get
+    }
+
+    private def validator(ch: ReadChannel[_]): ReadChannel[Option[String]] =
+      dirty.flatMap(
+        if (_) invalid.value(ch).values
+        else Var(None)
+      )
+
+    def validate[T](x: Widget[T], field: ReadChannel[_]) =
+      x.cssCh(validator(field).map(_.nonEmpty), "has-error")
+
+    def errors(field: ReadChannel[_]) =
+      HTML.Container.Inline(
+        validator(field).map(_.getOrElse(""))
+      ).cssCh(validator(field).map(_.nonEmpty), "help-block", "with-errors")
+  }
+
+  implicit class ValidateWidget[T](widget: Widget[T]) {
+    def validate(field: ReadChannel[_])(implicit v: Validator) = v.validate(widget, field)
+  }
 }
