@@ -432,4 +432,9 @@ trait Widget[T] extends Node { self: T =>
 
     self
   }
+
+  def disabled(value: ReadChannel[Boolean]) = {
+    attributeCh("disabled", value.map(if (_) None else Some("")))
+    self
+  }
 }
