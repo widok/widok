@@ -186,6 +186,8 @@ trait PollDict[A, B]
 
   def filter$(f: ((A, B)) => Boolean): ReadDict[A, B] =
     Dict(mapping.filter(f).toMap)
+
+  def toMap: Map[A, B] = mapping.toMap
 }
 
 trait ReadDict[A, B]
