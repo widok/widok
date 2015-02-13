@@ -58,7 +58,8 @@ package object Bootstrap {
   }
 
   object InputGroup {
-    def Addon(contents: View*) = HTML.Container.Inline().css("input-group-addon")
+    def Addon(contents: View*) = HTML.Container.Inline(contents: _*)
+      .css("input-group-addon")
   }
 
   def ControlLabel(contents: View*) =
