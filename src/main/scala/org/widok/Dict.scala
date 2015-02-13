@@ -93,9 +93,9 @@ trait DeltaDict[A, B]
   }
 
   def buffer: Dict[A, B] = {
-    val buf = Dict[A, B]()
-    buf.changes.subscribe(changes)
-    buf
+    val dict = Dict[A, B]()
+    dict.changes.subscribe(changes)
+    dict
   }
 }
 
@@ -188,6 +188,16 @@ trait PollDict[A, B]
     Dict(mapping.filter(f).toMap)
 
   def toMap: Map[A, B] = mapping.toMap
+
+  def toBuffer: ReadBuffer[(A, B)] = {
+    val buf = Buffer[(A, B)]()
+
+    changes.attach { case _ =>
+      buf.set(mapping.toSeq)
+    }
+
+    buf
+  }
 }
 
 trait ReadDict[A, B]
