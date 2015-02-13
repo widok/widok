@@ -1,6 +1,6 @@
 package org.widok
 
-case class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultSize[T] {
+sealed class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultSize[T] {
   attach(v = _)
 
   def flush(f: T => Unit) { f(v) }
@@ -9,6 +9,10 @@ case class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultS
   def nonEmpty: ReadChannel[Boolean] = Var(true)
 
   override def toString = s"Var(${v.toString})"
+}
+
+object Var {
+  def apply[T](v: T) = new Var(v)
 }
 
 /* Upon each subscription, emit `v`. `v` is evaluated lazily. */
