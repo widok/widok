@@ -487,8 +487,8 @@ package object Bootstrap {
     val shown = Var(false)
     val height = Channel[Option[String]]()
 
-    def modalShow() = { shown := true; this }
-    def modalHide() = { shown := false; this }
+    def open() = { shown := true; this }
+    def dismiss() = { shown := false; this }
 
     val rendered = Modal(
       Modal.Backdrop().attributeCh("style", height)
