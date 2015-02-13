@@ -125,6 +125,3 @@ HTML.Container.Generic("Button clicked")
 
 The chapter [Data propagation](#data-propagation) deals with channels in detail.
 
-## Links
-- [API documentation](http://widok.github.io/api/v0.1.1/index.html)
-
