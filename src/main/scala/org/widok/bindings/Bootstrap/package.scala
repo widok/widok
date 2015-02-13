@@ -86,6 +86,10 @@ package object Bootstrap {
     def style(value: Style) = css(s"label-${value.cssSuffix}")
   }
 
+  implicit class WidgetWithLabel[T](widget: Widget[T]) {
+    def label(value: Style) = widget.css("label", s"label-${value.cssSuffix}")
+  }
+
   // TODO Improve design.
   def Fix(contents: View*) =
     HTML.Container.Generic(
