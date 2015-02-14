@@ -28,6 +28,26 @@ $ sbt fullOptJS
 
 You may want to add a constant to your sbt configuration to toggle compiler settings depending on whether you need a production or development release. For example, ``-Xelidable-below`` could be used to remove assertions from production releases for better performance.
 
+### Additional optimisations
+The Scala.js compiler provides settings to fine-tune the build process.
+
+To further reduce the build size, class names could be replaced by an empty string. The semantics of a program should never rely on class names. This optimisation is therefore safe to set. However, if your want to retain some class names, you could define exceptions, for example for classes from a certain namespace.
+
+Another option is to enable unchecked ``asInstanceOf`` casts. A cast should always be well-defined. If this cannot be ensured, a manual ``isInstanceOf`` check needs to be performed. Expecting an exception to be thrown is a suboptimal way of dealing with potentially undefined casts. Under this assumption, ``asInstanceOf`` casts should work if unchecked. Scala.js lets you change the semantics for the sake of better performance.
+
+```scala
+import org.scalajs.core.tools.sem._
+
+...
+
+      scalaJSSemantics ~= (_
+        .withRuntimeClassName(_ => "")
+        .withAsInstanceOfs(CheckedBehavior.Unchecked)
+      )
+```
+
+Since class names can be useful for debugging purposes and illegal casts may happen during development, these two options should only be set for production releases.
+
 ## Continuous compilation
 sbt can detect changes in source files and recompile only when needed. To do so, prefix ``~`` to your build task (either ``fastOptJS`` or ``fullOptJS``), for example:
 
