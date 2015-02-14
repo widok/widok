@@ -463,8 +463,10 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def flush(f: U => Unit) {
+    inProcess = true
     if (onFlush.isDefined) onFlush.get().foreach(f)
     else parent.flush(observer(_).valueOpt.foreach(f))
+    inProcess = false
   }
 
   def dispose() {
