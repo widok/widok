@@ -1,44 +1,51 @@
 # Build process
-Widok uses sbt as its build system.
+The chapter [Getting Started](#getting-started) proposed a simple sbt configuration. sbt is a flexible tool and can be extended with plug-ins and custom tasks. Some useful advice on using sbt for web development is given here.
+
+For more information on the build process, please refer to the [Scala.js documentation](http://www.scala-js.org/doc/sbt/run.html).
 
 ## Development releases
-As with most programming languages, code optimisations are time-consuming and negligible during development. To compile the project without optimisations, run the following sbt command:
+Code optimisations are time-consuming and usually negligible during development. To compile the project without optimisations, use the ``fastOptJS`` task:
 
 ```bash
 $ sbt fastOptJS
 ```
 
-Note that prefixing ``~`` makes sbt constantly check for changed source files and only recompiles when needed.
-
 This generates two files in ``target/scala-2.11/``:
 
-- ``APPNAME-fastopt.js``
-- ``APPNAME-launcher.js``
+- ``$ProjectName-fastopt.js``
+- ``$ProjectName-launcher.js``
 
-The former contains the whole project including its dependencies within a single JavaScript file, while the latter is a call to the entry point (see also chapter on [applications](#entry-point)).
+The former is the whole project including dependencies within a single JavaScript file, while the latter contains a call to the entry point (see also chapter on [applications](#entry-point)).
 
-It is safe to concatenate these two files and ship them to the client.
+It would be safe to concatenate these two files and ship them to the client.
 
 ## Production releases
-Scala.js uses the Google Closure Compiler to apply code optimisations. To create an optimised build, run:
+Scala.js uses the Google Closure Compiler to apply code optimisations. To create an optimised build, use the ``fullOptJS`` task:
 
 ```bash
 $ sbt fullOptJS
 ```
 
-Similarly as with ``fastOptJS``, you can also prefix ``~`` here.
+You may want to add a constant to your sbt configuration to toggle compiler settings depending on whether you need a production or development release. For example, ``-Xelidable-below`` could be used to remove assertions from production releases for better performance.
 
-> **TODO:** Explain how to maintain sbt setups for production and development releases. This is necessary in order to use a different value for ``-Xelidable-below``.
+## Continuous compilation
+sbt can detect changes in source files and recompile only when needed. To do so, prefix ``~`` to your build task (either ``fastOptJS`` or ``fullOptJS``), for example:
+
+```bash
+$ sbt ~fastOptJS
+```
+
+This leads to faster development cycles than executing ``fastOptJS`` by your own.
 
 ## Configure paths
-If the web server should point directly to the latest built version, you do not need to copy over the generated files each time. Instead, the paths can be customised. A recommended application hierarchy could be the following:
+If the web server should point directly to the most recently built version, you do not need to copy over the generated files each time. Instead, the paths can be customised. A recommended application hierarchy could be the following:
 
 * ``web/index.html``: Self-written entry-point of the application
 * ``web/js/``: Generated JavaScript files
 * ``web/css/``: Generated CSS stylesheets
-* ``web/fonts/``: Copy of the fonts
+* ``web/fonts/``: A copy of all font files (for example, Bootstrap glyphicons or Font-Awesome)
 
-Specify the paths in the build configuration as follows:
+To do so, specify the paths in the build configuration as follows:
 
 ```scala
 val outPath = new File("web")
@@ -47,14 +54,17 @@ val cssPath = outPath / "css"
 val fontsPath = outPath / "fonts"
 ```
 
-The Scala.js' output path can then be configured using:
+Scala.js' output path can be remapped using:
 
 ```scala
-artifactPath in (Compile, packageScalaJSLauncher) := jsPath / "launcher.js",
-artifactPath in (Compile, fastOptJS) := jsPath / "application.js",
+  .settings(
+    ...
+    artifactPath in (Compile, packageScalaJSLauncher) := jsPath / "launcher.js",
+    artifactPath in (Compile, fastOptJS) := jsPath / "application.js"
+  )
 ```
 
-Make sure to add the following three paths to ``.gitignore``:
+Make sure to also add the following three paths to your ``.gitignore``:
 
 ```bash
 web/css/
@@ -65,26 +75,37 @@ web/fonts/
 ## sbt-web
 Many popular web libraries are published to Maven Central as regular ``.jar`` files, so called [WebJars](http://www.webjars.org/). See the [official Scala.js documentation](http://www.scala-js.org/doc/sbt/depending.html) on how to depend on these.
 
-[sbt-web](https://github.com/sbt/sbt-web) is an sbt plugin to manage these WebJars and to produce web artifacts as part of the build process.
+[sbt-web](https://github.com/sbt/sbt-web) is an sbt plug-in to manage these WebJars and to produce web artifacts as part of the build process.
 
-For example, to download the SASS version of the Bootstrap bindings as well as Font-Awesome, just write:
+To enable ``sbt-web``, add two imports:
+
+```scala
+import com.typesafe.sbt.web.SbtWeb
+import com.typesafe.sbt.web.Import._
+```
+
+And enable the plug-in:
+
+```scala
+  .enablePlugins(SbtWeb)
+```
+
+For example, to download the [Sass version of the Bootstrap bindings](https://github.com/twbs/bootstrap-sass) as well as Font-Awesome, add these two lines to ``libraryDependencies``:
 
 ```scala
 libraryDependencies ++= Seq(
   ...
   "org.webjars" % "bootstrap-sass" % "3.3.1",
   "org.webjars" % "font-awesome" % "4.3.0-1"
-),
+)
 ```
 
-When you issue the sbt command ``assets``, sbt-web will create its artifacts.
-
-sbt-web is not necessary to use Bootstrap or Font-Awesome, albeit facilitates their customisation. The chapter [Bindings](#Bindings) explains how to use a CDN instead.
+> **Note:** sbt-web is not necessary to use Bootstrap or Font-Awesome, albeit it facilitates the customisation and upgrading of web dependencies. The chapter [Bindings](#Bindings) explains how to use a CDN instead.
 
 ### Sass
-[Sass](http://sass-lang.com/) is a CSS dialect with useful extensions. One of its strengths is that you can modularise your stylesheets and include files. Since Bootstrap is available as Sass, the [sbt-sass plug-in](https://github.com/ShaggyYeti/sbt-sass) for sbt-web lets you create one monolithic, minified CSS file for your whole website. You may find that the widgets Bootstrap provides are not sufficient for your purposes, so you would end up with additional stylesheet rules specified in external CSS files, which in turn increases load times.
+[Sass](http://sass-lang.com/) is a CSS dialect with useful extensions. One of its strengths is that you can modularise your stylesheets and store in separate files. Since Bootstrap is available as Sass, the [sbt-sass plug-in](https://github.com/ShaggyYeti/sbt-sass) for sbt-web lets you create one monolithic, minified CSS file for your whole application. You may find that the widgets Bootstrap provides are not sufficient for your purposes. Using Sass, you would not end up with additional CSS files that need to be included in your ``application.html``, which in turn will increase load times.
 
-In ``src/main/assets/`` of your website create the file ``application.scss`` containing:
+Assuming that you want to use Bootstrap and Font-Awesome in your application, create the directory ``src/main/assets/`` with the file ``application.scss`` containing:
 
 ```scss
 $icon-font-path: "../fonts/";
@@ -94,12 +115,11 @@ $fa-font-path: "../fonts/";
 @import "lib/font-awesome/scss/font-awesome.scss";
 ```
 
-This assumes that your application is using the Bootstrap and Font-Awesome bindings.
-
 Then, add to your ``plugins.sbt``:
 
 ```scala
 resolvers += Resolver.url("GitHub repository", url("http://shaggyyeti.github.io/releases"))(Resolver.ivyStylePatterns)
+
 addSbtPlugin("default" % "sbt-sass" % "0.1.9")
 ```
 
@@ -109,14 +129,16 @@ And configure the output path of the produced CSS files in your ``Build.scala``:
 resourceManaged in sass in Assets := cssPath
 ```
 
-Add to your ``.gitignore``:
+Finally, add to your ``.gitignore``:
 
 ```bash
 .sass-cache/
 ```
 
+sbt-sass requires that the official Sass compiler is installed on your system.
+
 ### Font-Awesome
-In order to copy the Font-Awesome files to your configured path ``fontsPath``, you can define a sbt-web task:
+In order to automatically copy the Font-Awesome files to your configured path ``fontsPath``, you can define a sbt-web task:
 
 ```scala
 val copyFontsTask = {
@@ -138,6 +160,33 @@ And register it via:
 sourceGenerators in Assets <+= copyFontsTask
 ```
 
-## Links
-For more information on the build process, please refer to the [Scala.js manual](http://www.scala-js.org/doc/sbt/run.html).
+### Artifacts
+When you issue the sbt task ``assets``, sbt-web will generate your web artifacts, like CSS files.
+
+## Code sharing
+Scala.js provides a simple infrastructure to having separate sub-projects for JavaScript and JVM sources, which can share code. This is quite common for client-server applications which could have a common protocol specified in Scala code. You can work on your entire project in the IDE and easily jump between server and client code.
+
+Such projects are called *cross projects* in Scala.js. You can find more information in the [official documentation](http://www.scala-js.org/doc/sbt/cross-building.html).
+
+```scala
+import org.scalajs.sbtplugin.cross.CrossProject
+
+object Build extends sbt.Build {
+  lazy val crossProject = CrossProject("server", "client", file("."), CrossType.Full)
+    .settings(
+      /* Shared settings */
+    )
+    .jvmSettings(
+      /* JVM settings */
+    )
+    .jsSettings(
+      /* Scala.js settings */
+    )
+
+  lazy val jvm = crossProject.jvm
+  lazy val js = crossProject.js
+}
+```
+
+You will also need to move your current ``src/`` folder to ``js/``. The JVM project goes underneath ``jvm/src/main/scala/`` and the shared source files underneath ``shared/src/main/scala/``.
 

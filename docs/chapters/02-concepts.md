@@ -1,13 +1,6 @@
 # Concepts
 In this chapter we will mention all key concepts of Widok. The following chapters will deal with these topics in detail.
 
-## Continuous compilation
-SBT can detect changes in source files. It recompiles the project only when needed:
-
-```bash
-$ sbt ~fastOptJS
-```
-
 ## Single-page applications
 The basic application from the [previous chapter](#getting-started) looked like this:
 
@@ -18,9 +11,10 @@ import org.widok._
 import org.widok.bindings.HTML
 
 object Main extends PageApplication {
-  def contents() = Seq(
+  def view() = Inline(
     HTML.Heading.Level1("Welcome to Widok!"),
-    HTML.Paragraph("This is your first application."))
+    HTML.Paragraph("This is your first application.")
+  )
 
   def ready() {
     log("Page loaded.")
@@ -34,14 +28,14 @@ This is a single-page application. The two methods ``contents()`` and ``ready()`
 While for small applications a single-page approach may be sufficient, you should consider using a router and split the application into multiple pages.
 
 ```scala
-package org.widok.example
+package example
 
 import org.widok._
 
 object Routes {
-  val main = Route("/", pages.Main())
-  val test = Route("/test/:param", pages.Test())
-  val notFound = Route("/404", pages.NotFound())
+  val main = Route("/", pages.Main)
+  val test = Route("/test/:param", pages.Test)
+  val notFound = Route("/404", pages.NotFound)
 
   val routes = Set(main, test, notFound)
 }
@@ -56,7 +50,7 @@ Create a new file for each page:
 - ``pages/Main.scala``
 
 ```scala
-package org.widok.example.pages
+package example.pages
 
 import org.widok._
 import org.widok.Widget
