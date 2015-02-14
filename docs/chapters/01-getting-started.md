@@ -1,63 +1,73 @@
 # Getting Started
-## First project
-We recommend the use of SBT for compilation as it supports continuous compilation and is the official build system used by Scala.js. If you want to use an IDE, Widok is well-supported by IntelliJ.
+This chapter will guide you through creating your first Widok project.
 
-Create a new directory ``project`` with two files:
+## Installation
+To develop web applications with Widok the only dependency you will need is [sbt](http://www.scala-sbt.org/). Once installed, it will automatically fetch Scala.js and all libraries Widok depends on.
 
-- ``plugins.sbt``
+You may also want to use an IDE for development. Widok is well-supported by [IntelliJ IDEA](https://www.jetbrains.com/idea/) with the [Scala plugin](https://github.com/JetBrains/intellij-scala). The use of an IDE is recommended as the interfaces Widok provides are fully typed, which lets you do tab completion.
+
+## Project structure
+Create a directory for your project.
+
+Within your project folder, create a sub-directory ``project`` with the two files ``plugins.sbt`` and ``Build.scala``:
+
+- ``plugins.sbt`` specifies sbt plug-ins, including Scala.js
 
 ```scala
 logLevel := Level.Warn
 
-addSbtPlugin("org.scala-lang.modules.scalajs" % "scalajs-sbt-plugin" % "0.5.5")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.0")
 ```
 
-- ``Build.scala``
+- ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala, which allows for more flexibility. The chapter (Build process)[#Build-process] explains some possibilities in the web context.
 
 ```scala
 import sbt._
 import sbt.Keys._
-import scala.scalajs.sbtplugin.ScalaJSPlugin._
+import org.scalajs.sbtplugin._
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object Build extends sbt.Build {
-  val projectName = "example"
-  val buildOrganisation = "org.widok"
+  val buildOrganisation = "example"
   val buildVersion = "0.1-SNAPSHOT"
-  val buildScalaVersion = "2.11.2"
+  val buildScalaVersion = "2.11.5"
   val buildScalaOptions = Seq(
     "-unchecked", "-deprecation",
     "-encoding", "utf8",
-    "-Xelide-below", annotation.elidable.ALL.toString)
+    "-Xelide-below", annotation.elidable.ALL.toString
+  )
 
-  lazy val main = Project(id = projectName, base = file("."))
-    .settings(scalaJSSettings: _*)
+  lazy val main = Project(id = "example", base = file("."))
+    .enablePlugins(ScalaJSPlugin)
     .settings(
       libraryDependencies ++= Seq(
-        "io.github.widok" %%% "widok" % "0.1.3"
+        "io.github.widok" %%% "widok" % "0.2.0"
       ),
       organization := buildOrganisation,
       version := buildVersion,
       scalaVersion := buildScalaVersion,
       scalacOptions := buildScalaOptions,
-      ScalaJSKeys.persistLauncher := true
+      persistLauncher := true
     )
 }
 ```
 
-The source code goes underneath ``src/main/scala/org/example``.
+Your source code goes underneath ``src/main/scala/example/``.
 
+## Code
 Create a source file ``Main.scala`` with the following contents:
 
 ```scala
-package org.widok.example
+package example
 
 import org.widok._
 import org.widok.bindings.HTML
 
 object Main extends PageApplication {
-  def contents() = Seq(
-    HTML.Heading.Level1("Welcome to Widok!"),
-    HTML.Paragraph("This is your first application."))
+  def view() = Inline(
+    HTML.Heading.Level1("Welcome to Widok!")
+  , HTML.Paragraph("This is your first application.")
+  )
 
   def ready() {
     log("Page loaded.")
@@ -65,7 +75,7 @@ object Main extends PageApplication {
 }
 ```
 
-Finally, you need to create an HTML file ``application.html`` in the root directory which includes the compiled JavaScript sources:
+Finally, you need to create an HTML file ``application.html`` in the root directory. It includes the compiled JavaScript sources:
 
 ```html
 <!DOCTYPE html>
@@ -81,13 +91,21 @@ Finally, you need to create an HTML file ``application.html`` in the root direct
 </html>
 ```
 
-To compile your application application, run:
+## Compilation
+This is all you need for a minimal Widok project. To compile your application, run:
+
 ```bash
 $ sbt fastOptJS
 ```
 
-Now you can open ``application.html`` in your browser.
+Now you can open ``application.html`` in your browser. The page should show a heading with a paragraph. Obviously, the Scala code you wrote translates to:
 
-## Compilation
-The latest version is always published to Sonatype and Maven Central. Therefore, no manual compilation of Widok is required. Please refer to [Developing](#developing) if you would like to try out the latest development release.
+```html
+<h1>Welcome to Widok!</h1>
+<p>This is your first application.</p>
+```
+
+This parts gets dynamically inserted into the ``<body>`` of your HTML file.
+
+When you open up the browser's web console, it will show the message you specified in ``ready()``.
 
