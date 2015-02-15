@@ -10,7 +10,6 @@ object BufferSpec extends SimpleTestSuite {
       val buffer = Buffer[Int]()
       val (lch, rch) = f(buffer)
       assertEqualsCh(lch, rch)
-      tick()
     }
 
     def nonEmptyChannel() {
@@ -20,7 +19,6 @@ object BufferSpec extends SimpleTestSuite {
         val (lch, rch) = f(buffer)
         buffer += elem
         assertEqualsCh(lch, rch)
-        tick()
       }
     }
 

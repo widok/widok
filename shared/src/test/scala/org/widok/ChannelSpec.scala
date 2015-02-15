@@ -4,34 +4,22 @@ import minitest._
 
 import scala.collection.mutable
 
-object ChannelSpec extends SimpleTestSuite {
-  var tickExpr: () => Unit = () => ()
+/** Checks whether two channels behave in the same way. */
+case class ChannelCompare[T](ch: ReadChannel[T], ch2: ReadChannel[T]) {
+  val left = mutable.ArrayBuffer[T]()
+  val right = mutable.ArrayBuffer[T]()
+
+  ch.attach { value => left += value }
+  ch2.attach { value => right += value }
 
   def tick() {
-    tickExpr()
-    tickExpr = () => ()
+    assert(left == right, s"Channels don't produce the same value [$left vs. $right]")
   }
+}
 
-  /** Checks whether two channels behave in the same way. */
+object ChannelSpec extends SimpleTestSuite {
   def assertEqualsCh[T](ch: ReadChannel[T], ch2: ReadChannel[T]) {
-    val left = mutable.ArrayBuffer[T]()
-    val right = mutable.ArrayBuffer[T]()
-
-    tickExpr = () =>
-      assert(left == right, s"Channels don't produce the same value [$left vs. $right]")
-
-    ch.attach { value => left += value }
-    ch2.attach { value => right += value }
-  }
-
-  /** Checks whether `ch` contains the given value. */
-  def assertConstantEquals[T](ch: ReadChannel[T], value: T) {
-    val left = mutable.ArrayBuffer[T]()
-
-    tickExpr = () =>
-      assert(left == mutable.ArrayBuffer(value), "Channel produces one value")
-
-    ch.attach { value => left += value }
+    ChannelCompare(ch, ch2).tick()
   }
 
   def forallChVal[T](f: (Channel[Int], Int) => (ReadChannel[T], ReadChannel[T])) {
@@ -47,9 +35,9 @@ object ChannelSpec extends SimpleTestSuite {
       val ch = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch, value)
-        assertEqualsCh(lch, rch)
+        val cmp = ChannelCompare(lch, rch)
         ch := value
-        tick()
+        cmp.tick()
       }
 
       /* Produce a value and check if law holds when the argument is a different
@@ -58,9 +46,9 @@ object ChannelSpec extends SimpleTestSuite {
       val ch2 = fch()
       elems.foreach { value =>
         val (lch, rch) = f(ch2, value * 2)
-        assertEqualsCh(lch, rch)
+        val cmp = ChannelCompare(lch, rch)
         ch2 := value
-        tick()
+        cmp.tick()
       }
     }
   }
@@ -70,7 +58,6 @@ object ChannelSpec extends SimpleTestSuite {
     val ch = Channel[Int]()
     val (lch, rch) = f(ch)
     assertEqualsCh(lch, rch)
-    tick()
 
     forallChVal((ch, _) => f(ch))
   }
