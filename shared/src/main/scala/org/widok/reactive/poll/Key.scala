@@ -8,7 +8,13 @@ trait Key[A, B] {
   /** Value associated to `key` */
   def get(key: A): Option[B]
 
-  /** Convert dictionary to map **/
+  /** Returns key set */
+  def keys$: Set[A]
+
+  /** Returns all values */
+  def values$: Iterable[B]
+
+  /** Converts dictionary to map **/
   def toMap: Map[A, B]
 
   /** @see [[value$]] */
