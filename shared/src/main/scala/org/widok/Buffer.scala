@@ -61,7 +61,7 @@ object DeltaBuffer {
 
 trait DeltaBuffer[T]
   extends reactive.stream.Size
-  with reactive.stream.Empty[T]
+  with reactive.stream.Empty
   with reactive.stream.Count[T]
   with reactive.stream.Map[DeltaBuffer, T]
 {

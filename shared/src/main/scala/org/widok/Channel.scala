@@ -32,7 +32,7 @@ trait ReadChannel[T]
   extends reactive.stream.Head[T]
   with reactive.stream.Tail[ReadChannel, T]
   with reactive.stream.Take[ReadChannel, T]
-  with reactive.stream.Empty[T]
+  with reactive.stream.Empty
   with reactive.stream.Fold[T]
   with reactive.stream.Filter[ReadChannel, T]
   with reactive.stream.Map[ReadChannel, T]

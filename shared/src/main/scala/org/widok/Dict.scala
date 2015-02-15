@@ -33,7 +33,7 @@ object DeltaDict {
 
 trait DeltaDict[A, B]
   extends reactive.stream.Size
-  with reactive.stream.Empty[(A, B)]
+  with reactive.stream.Empty
   with reactive.stream.Count[(A, B)]
 {
   import Dict.Delta

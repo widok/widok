@@ -2,7 +2,7 @@ package org.widok.reactive.stream
 
 import org.widok.ReadChannel
 
-trait Empty[T] {
+trait Empty {
   /**
    * @note Buffers: Produce a new value once a row is added or removed.
    * @note Channels: Produce false with the first received value.

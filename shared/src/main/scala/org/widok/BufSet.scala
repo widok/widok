@@ -29,7 +29,7 @@ object DeltaBufSet {
 
 trait DeltaBufSet[T]
   extends reactive.stream.Size
-  with reactive.stream.Empty[T]
+  with reactive.stream.Empty
   with reactive.stream.Count[T]
 {
   import BufSet.Delta
