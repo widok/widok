@@ -12,6 +12,8 @@ trait PartialChannel[T]
   with ReadPartialChannel[T]
 
 object Opt {
+  def apply[T](): Opt[T] = new Opt[T] { }
+
   def apply[T](value: T): Opt[T] = {
     val res = Opt[T]()
     res := value
@@ -23,7 +25,7 @@ object Opt {
  * Publishes a stream of defined values. Use isEmpty() to detect when the
  * current value is cleared.
  */
-case class Opt[T]()
+trait Opt[T]
   extends PartialChannel[T]
   with reactive.mutate.PartialChannel[T]
 {
