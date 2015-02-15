@@ -158,6 +158,7 @@ trait WriteDict[A, B]
 
 trait PollDict[A, B]
   extends reactive.poll.Key[A, B]
+  with reactive.poll.Empty
   with reactive.poll.FilterMap[ReadDict, A, B]
   with reactive.stream.Key[A, B]
 {
@@ -166,6 +167,9 @@ trait PollDict[A, B]
   private[widok] val mapping: mutable.Map[A, B]
 
   val changes: ReadChannel[Delta[A, B]]
+
+  def isEmpty$: Boolean = mapping.isEmpty
+  def nonEmpty$: Boolean = mapping.nonEmpty
 
   def value$(key: A): B = mapping(key)
 
