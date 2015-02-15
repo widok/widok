@@ -3,6 +3,7 @@ import sbt.Keys._
 import org.typelevel.sbt.Developer
 import org.typelevel.sbt.TypelevelPlugin._
 import org.scalajs.sbtplugin._
+import org.scalajs.sbtplugin.cross.CrossProject
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.Import._
@@ -106,25 +107,24 @@ object Build extends sbt.Build {
     }
   }.dependsOn(WebKeys.webJars in Assets)
 
-  lazy val main = Project(id = "widok", base = file("."))
-    .enablePlugins(ScalaJSPlugin)
+  lazy val root = project.in(file(".")).
+    aggregate(js, jvm).
+    settings(
+      publish := {},
+      publishLocal := {}
+    )
+
+  lazy val widok = crossProject.in(file("."))
     .enablePlugins(SbtWeb)
     .settings(typelevelDefaultSettings: _*)
     .settings(
+      name := "widok",
+
       TypelevelKeys.signArtifacts := true,
       TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
       TypelevelKeys.githubProject := ("widok", "widok"),
       homepage := Some(url("http://widok.github.io/")),
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-
-      libraryDependencies ++= Seq(
-        "org.scala-js" %%% "scalajs-dom" % "0.7.0",
-        "org.monifu" %%% "minitest" % "0.11" % "test",
-        "org.webjars" % "font-awesome" % "4.3.0-1",
-        "org.webjars" % "bootstrap" % "3.3.2"
-      ),
-
-      sourceGenerators in Compile <+= codeGenerationTask,
 
       testFrameworks += new TestFramework("minitest.runner.Framework"),
 
@@ -135,4 +135,22 @@ object Build extends sbt.Build {
       autoAPIMappings := true,
       apiMappings += (scalaInstance.value.libraryJar -> url(s"http://www.scala-lang.org/api/${scalaVersion.value}/"))
     )
+    .jsSettings(
+      sourceGenerators in Compile <+= codeGenerationTask,
+
+      libraryDependencies ++= Seq(
+        "org.scala-js" %%% "scalajs-dom" % "0.7.0",
+        "org.monifu" %%% "minitest" % "0.11" % "test",
+        "org.webjars" % "font-awesome" % "4.3.0-1",
+        "org.webjars" % "bootstrap" % "3.3.2"
+      )
+    )
+    .jvmSettings(
+      libraryDependencies ++= Seq(
+        "org.monifu" %% "minitest" % "0.11" % "test"
+      )
+    )
+
+  lazy val js = widok.js
+  lazy val jvm = widok.jvm
 }

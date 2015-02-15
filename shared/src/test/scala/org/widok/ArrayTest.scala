@@ -9,12 +9,12 @@ object ArrayTest extends SimpleTestSuite {
     arr += 1
     assertEquals(arr.size, 1)
     assertEquals(arr.isEmpty, false)
-    assertEquals(arr.elements.toList, List(1))
+    assertEquals(arr.toList, List(1))
 
     arr -= 1
     assertEquals(arr.size, 0)
     assertEquals(arr.isEmpty, true)
-    assertEquals(arr.elements.toList, List())
+    assertEquals(arr.toList, List())
   }
 
   test("clear") {

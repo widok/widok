@@ -18,4 +18,5 @@ case class Array[T]() {
     assert(idx != -1)
     elements.splice(idx, 1)
   }
+  def toList: List[T] = elements.toList
 }

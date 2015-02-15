@@ -196,15 +196,15 @@ object Build extends sbt.Build {
     .settings(
       /* Shared settings */
     )
-    .jvmSettings(
-      /* JVM settings */
-    )
     .jsSettings(
       /* Scala.js settings */
     )
+    .jvmSettings(
+      /* JVM settings */
+    )
 
-  lazy val jvm = crossProject.jvm
   lazy val js = crossProject.js
+  lazy val jvm = crossProject.jvm
 }
 ```
 
