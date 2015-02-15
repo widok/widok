@@ -34,10 +34,25 @@ object DeltaDict {
 trait DeltaDict[A, B]
   extends reactive.stream.Size
   with reactive.stream.Empty
+  with reactive.stream.MapDict[DeltaDict, A, B]
   with reactive.stream.Count[(A, B)]
 {
   import Dict.Delta
   val changes: ReadChannel[Delta[A, B]]
+
+  def mapKeys[C](f: A => C): DeltaDict[C, B] =
+    DeltaDict[C, B](changes.map {
+      case Delta.Insert(k, v) => Delta.Insert(f(k), v)
+      case Delta.Remove(k) => Delta.Remove(f(k))
+      case Delta.Clear() => Delta.Clear()
+    })
+
+  def mapValues[C](f: B => C): DeltaDict[A, C] =
+    DeltaDict[A, C](changes.map {
+      case Delta.Insert(k, v) => Delta.Insert(k, f(v))
+      case Delta.Remove(k) => Delta.Remove(k)
+      case Delta.Clear() => Delta.Clear()
+    })
 
   def size: ReadChannel[Int] = {
     var keys = mutable.HashSet.empty[A]
