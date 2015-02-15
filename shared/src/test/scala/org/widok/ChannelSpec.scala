@@ -107,6 +107,12 @@ object ChannelSpec extends SimpleTestSuite {
     forallCh(ch => (ch.size, ch.foldLeft(0) { case (acc, cur) => acc + 1 }))
   }
 
+  test("filterCycles") {
+    val ch = Var(42)
+    ch.filterCycles.attach(_ => ch := 50)
+    assertEquals(ch.get, 50)
+  }
+
   test("Opt") {
     forallCh(ch => (ch.toOpt, ch))
 

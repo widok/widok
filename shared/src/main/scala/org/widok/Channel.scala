@@ -77,10 +77,12 @@ trait ReadChannel[T]
   def countUnequal(value: T): ReadChannel[Int] = ???
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
+    val that = this
+
     val res = new RootChannel[T] {
       def flush(f: T => Unit) {
-        ReadChannel.this.flush(t => this := t)
-        ch.flush(t => this := t)
+        that.flush(f)
+        ch.flush(f)
       }
     }
 
