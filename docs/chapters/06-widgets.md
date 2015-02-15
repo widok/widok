@@ -43,7 +43,8 @@ val widget = HTML.Raw("<b><i>Text</i></b>")
 
 // This is equivalent to:
 val widget2 = Text.Bold(
-    Text.Italic("Text"))
+  Text.Italic("Text")
+)
 ```
 
 Most widgets either expect parameters or children. However, there are also widgets which expect both:
@@ -53,7 +54,7 @@ Anchor("http://en.wikipedia.org/")(
     Text.Bold("Wikipedia"))
 ```
 
-*Hint:* Use the code completion of your IDE to figure out which widgets are available and which parameters to pass.
+> *Hint:* Use the code completion of your IDE to figure out which widgets are available and which parameters to pass.
 
 ## Creating custom widgets
 Widgets should be designed to be restrictive. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. For custom widgets, create a class hierarchy which closely resembles the intended nesting of the elements. This will turn out to be helpful because you implicitly establish type-safety for CSS components. When widgets are changed, this will catch usage errors during compile-time.
@@ -124,4 +125,22 @@ HTML.Container.Generic("Button clicked")
 ``show()`` expects a boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, we hide the widget as soon as we click the button.
 
 The chapter [Data propagation](#data-propagation) deals with channels in detail.
+
+## Composed widgets
+Widok provides a couple of composed widgets without external rendering dependencies. They are defined in the package ``org.widok.widgets``:
+
+- ``LoremIpsum``: Prints Lorem Ipsum as a paragraph
+- ``Placeholder``: Generates placeholder images on-the-fly
+
+## Implicits
+Widok defines a couple of implicits to make your code more concise. For example, if there is only one element you may drop the ``Inline()`` and write:
+
+```scala
+def view() = HTML.Paragraph("Litwo! Ojczyzno moja!")
+```
+
+Another implicit is evaluated here, which converts the string into a widget. There also implicits for most reactive data structures.
+
+## Aliases
+By importing ``import org.widok.html._`` you can use regular HTML tags instead of the more verbose notations.
 

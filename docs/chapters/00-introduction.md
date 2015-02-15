@@ -28,3 +28,4 @@ As Widok is built around Scala.js it also inherits some of its properties:
 Channels model continuous values as streams. These streams can be observed. Internally, no copies of the produced values are created. If desired, the current value can be explicitly cached, though. It is possible to operate on channels with higher-order functions such as ``map()`` and ``filter()``. Every time a new value is produced, it is propagated down the observer chain.
 
 Aggregates are channel containers. They allow to deal with large lists efficiently. If an item gets added, removed or updated, this is reflected directly by a change in the DOM, only operating on the actual nodes.
+

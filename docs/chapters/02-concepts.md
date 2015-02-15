@@ -2,30 +2,27 @@
 In this chapter we will mention all key concepts of Widok. The following chapters will deal with these topics in detail.
 
 ## Single-page applications
-The basic application from the [previous chapter](#getting-started) looked like this:
+The application from the [previous chapter](#getting-started) roughly looked like this:
 
 ```scala
-package org.widok.example
+package example
 
 import org.widok._
-import org.widok.bindings.HTML
 
 object Main extends PageApplication {
-  def view() = Inline(
-    HTML.Heading.Level1("Welcome to Widok!"),
-    HTML.Paragraph("This is your first application.")
-  )
-
-  def ready() {
-    log("Page loaded.")
-  }
+  def view() = Inline()
+  def ready() { }
 }
 ```
 
-This is a single-page application. The two methods ``contents()`` and ``ready()`` must be implemented. ``contents()`` is a list of widgets that are rendered when the page is loaded. Afterwards, ``ready()`` gets called.
+For a single-page application you need to declare an object which inherits from ``PageApplication``, whereby Scala.js knows that it shall be the entry-point of the program.
+
+Furthermore, the two methods ``view()`` and ``ready()`` must be implemented. The views are rendered when the page is loaded. Afterwards, ``ready()`` gets called.
+
+In the example, the ``Inline`` view is used which in contrast to a ``<span>`` or ``<div>`` cannot be controlled using a stylesheet rule.
 
 ## Multi-page applications
-While for small applications a single-page approach may be sufficient, you should consider using a router and split the application into multiple pages.
+While for small applications a single-page approach may be sufficient, you should consider to make use of the in-built router and split your application into multiple pages for better modularity:
 
 ```scala
 package example
@@ -43,7 +40,7 @@ object Routes {
 object Main extends RoutingApplication(Routes.routes, Routes.notFound)
 ```
 
-The ``Routes`` objects defines all available routes. A query part may also be a named parameter. If the query parameters need to be validated, this should be done in the page itself.
+A multi-page application must extend from ``RoutingApplication`` which is passed a list of routes and a fallback route. Here, the ``Routes`` objects defines the available routes. The query part of a route can be parameterised by prefixing a colon. For instance, ``param`` is a named parameter for the route ``test``. The router has a simple design and matches arbitrary strings. Further validations and conversions can be performed in the page itself.
 
 Create a new file for each page:
 
@@ -55,34 +52,41 @@ package example.pages
 import org.widok._
 import org.widok.Widget
 import org.widok.bindings.HTML
-import org.widok.example.Routes
+
+import example._
 
 case class Main() extends Page {
-  def contents() = HTML.Anchor("Link to second page").url(Routes.test("param", "first page"))
+  def view() = HTML.Anchor("Link to second page")
+    .url(Routes.test("param", "first page"))
 
   def ready(route: InstantiatedRoute) {
-    println("Page 'main' loaded.")
+    println(s"Page 'main' loaded with route '$route'")
+  }
+
+  override def destroy() {
+    println("Page 'main' left")
   }
 }
 ```
 
-Contrary to single-page applications, ``ready()`` expects a parameter which contains information about the chosen route and its parameters.
+Contrary to single-page applications, ``ready()`` needs one parameter which contains information about the chosen route and its parameters.
 
-A route can be instantiated with parameters (``Routes.ROUTE(params)``). This method is overloaded. If a route has more than one parameter, a map must be passed instead.
+This page uses ``HTML.Anchor()`` which is a widget representing a link. The target URL is set to an instantiated route, namely ``test``. Every route can be instantiated, although all parameters as in the routes specification must be provided. The ``apply()`` method of a route is overloaded. For only one route parameter, the first argument denotes the named parameter and the second its value. If a route has more than one parameter, a map with the values must be passed instead. Instantiating routes is to be preferred over to creating links with hand-written paths. Referencing routes ensures during compile-time that no invalid routes are referenced. During runtime, assertions will verify whether all correct parameters were specified.
 
-``HTML.Anchor()`` is a widget that creates a link. In the above example the target path is set to an instantiated route. This is to be preferred over creating links with hand-written paths. Using instantiated routes ensures during compile-time that no invalid routes are referenced. During runtime, assertions will even check whether the correct parameters were specified.
+When clicking the link, the router will notice this change and render the new route. The actual HTML file of the page is not reloaded, though.
+
+By default, ``destroy()`` is a stub, but may be overridden when navigating between routes requires resource management.
 
 - ``pages/Test.scala``
 
 ```scala
-package org.widok.example.pages
+package example.pages
 
 import org.widok._
 
 case class Test() extends Page {
   val query = Channel[String]()
-
-  def contents() = Seq("Received parameter: ", query)
+  def view() = Inline("Received parameter: ", query)
 
   def ready(route: InstantiatedRoute) {
     query := route.args("param")
@@ -90,22 +94,22 @@ case class Test() extends Page {
 }
 ```
 
-We are registering a channel and pass it the current query parameter. A channel can be considered as a stream you can send data to. The data then gets directly multiplexed to the subscribers. It is used as a widget in ``contents()``. This subscribes to the channel and whenever a new value is sent to it, it gets rendered automatically without any caching involved.
-
-Each page is instantiated only once (in ``Routes``). If the user changes the URI parameter, the router detects this and calls ``ready()`` again. This feeds the channel the new parameter. The actual HTML page never gets reloaded.
+Here, we are registering a channel and pass it the current value of the query parameter. A channel can be considered as a stream you can send data to. The data then gets directly multiplexed to the subscribers. ``query`` has one subscriber here. As it is used in ``view()``, it is converted into a view. Whenever a new value is produced on ``query`` (using ``:=``), it gets rendered automatically in the browser. If the user changes the query parameter of the current page, the router will detect this and re-render the page.
 
 - ``pages/NotFound.scala``
 
 ```scala
-package org.widok.example.pages
+package example.pages
 
 import org.scalajs.dom
+
 import org.widok._
 import org.widok.bindings.HTML
-import org.widok.example.Routes
+
+import example.Routes
 
 case class NotFound() extends Page {
-  def contents() = HTML.Heading.Level1("Page not found")
+  def view() = HTML.Heading.Level1("Page not found")
 
   def ready(route: InstantiatedRoute) {
     dom.setTimeout(() => Routes.main().go(), 2000)
@@ -113,25 +117,59 @@ case class NotFound() extends Page {
 }
 ```
 
-In the router this page was set as a fall-back route and is loaded if no other page matches (or is loaded explictly). Here we are showing how to call JavaScript functions using the [DOM bindings](https://github.com/scala-js/scala-js-dom). It calls ``go()`` on the ``main`` route after two seconds which redirects to it.
+``NotFound`` was set as a fall-back route. It is loaded when no other route matches or when the fall-back route is loaded explicitly. Here, we are showing how to call JavaScript functions using the [DOM bindings](https://github.com/scala-js/scala-js-dom). It redirects to the ``main`` page after two seconds by calling ``go()`` on the instantiated route.
 
-## Widgets
-The method ``contents()`` must return a sequence of widgets. When the page is loaded, Widok looks for the element ``page`` in the DOM and adds all rendered widgets from ``contents()`` to it.
+## Pages and Widgets
+As in the multi-page application, it is advisable to put all pages in a package as to separate them from other parts of the application, like models, validators or partials^[Partials are composed widgets.].
 
-Widok defines a couple of implicits to make your code more concise. For example, if there is only one element you could drop the sequence and write:
+When the page is loaded, Widok looks for the element with the ID ``page`` in the DOM and renders ``view()`` in it. The entire contents is destroyed when the route changes.
+
+``view()`` must return the whole layout of the page. To prevent duplication among pages, partials should be defined. Common candidates for partials are navigation bars, panels or layout elements. But as partials are just regular functions returning a widget, they can contain logic and you may render different widgets depending on whether the user accesses the website on a mobile device or on a desktop.
+
+For instance, Bootstrap splits pages into header, body and footer. You could create a trait ``CustomPage`` that contains all shared elements like header and footer and requires you only to define ``body()`` in the pages.
+
+The most notable difference to the traditional approach is that instead of writing HTML code you are dealing with type-safe widgets. Widok provides widget bindings for HTML tags and custom bindings for Bootstrap as well as Font-Awesome. It is possible to embed HTML code using the ``HTML.Raw()`` widget. You could even access DOM elements using ``DOM.getElementById()`` as in JavaScript. However, this is discouraged in Widok which provides better ways to interact with elements.
+
+## Reactive programming
+To showcase some of the capabilities of reactive programming for UI development, take the following example:
 
 ```scala
-def contents() = HTML.Paragraph("text") // <p>text</p>
+package example
+
+import org.widok._
+import org.widok.html._
+
+object App extends PageApplication {
+  val name = Var("")
+  val hasName = name.map(_.nonEmpty)
+
+  def view() = div(
+    h1("Welcome to Widok!")
+  , p("Please enter your name:")
+
+  , text().bindLive(name)
+
+  , p("Hello, ", name)
+      .show(hasName)
+
+  , button("Change my name")
+      .onClick(_ => name := "tux")
+      .show(name.unequal("tux"))
+
+  , button("Log out")
+      .onClick(_ => name := "")
+      .show(hasName)
+  )
+
+  def ready() { }
+}
 ```
 
-All widgets that expect children actually expect widgets themselves. Therefore, Widok also provides an implicit to convert strings. As in the above example, most channels are converted as well.
+The first striking change from the previous examples is that we now use the HTML aliases (``import org.widok.html._``).
 
-The most notable difference to the traditional approach is that instead of writing HTML code you are dealing with type-safe widgets. Widok provides widget bindings for most HTML tags and even custom bindings for Bootstrap. While it is technically possible to embed HTML code (``HTML.Raw()``) and access the elements using ``getElementById()`` as in JavaScript, this is discouraged as Widok provides better ways to interact with elements.
+More importantly, this example shows that widgets provide methods to interact with channels. For example, the method ``bindLive()`` on textual input fields realises two-way binding, i.e., every key stroke produces a new value on the channel and notifies all other subscribers.
 
-## Pages
-As above, it is advisable to put all pages in a package as to separate them from models and custom widgets.
+Another such method is ``show()`` which will only show a certain widget if the passed channel produces the value ``true``.
 
-Pages contain the whole layout. To prevent duplication, custom widgets or partials should be created. This becomes necessary when depending on the user devices different widgets shall be rendered.
-
-For example, Bootstrap splits a page into header, body and footer. You could create a trait ``CustomPage`` that contains all shared elements like header and footer and requires you only to define ``body()`` in the pages.
+``Var()`` is a channel with an empty value as a default value and is bound to ``name``. Well-known combinators such as ``map()`` and ``filter()`` are also defined on channels. In the example, ``map()`` is used for ``hasName`` such that the channel notifies its subscribers whenever ``name`` is updated.
 

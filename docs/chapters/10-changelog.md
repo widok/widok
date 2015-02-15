@@ -55,9 +55,11 @@ Code generators were introduced for higher reliability of the bindings. [sbt-web
 
 ### Routing
 
-In v0.1 the DOM nodes of all routes were initialised when the page loads. This may result in cycle errors. Now, a route change also reinitialises the entire page.
+- In v0.1 the DOM nodes of all routes were initialised when the page loads. This may result in cycle errors. Now, a route change also reinitialises the entire page.
+- The method ``destroy()`` can be overridden to react on page changes, for example for manual resource management
 
 ### Trivia
 
 - The API changes significantly shrinked TodoMVC's file size from 3396 bytes (92 lines) to 3098 bytes (88 lines).
 - Widok can be used to develop desktop applications with [Node.js](http://nodejs.org/) and [NW.js](https://github.com/nwjs/nw.js/) as shown by [poliglot-ui](http://github.com/poliglot/poliglot-ui)
+
