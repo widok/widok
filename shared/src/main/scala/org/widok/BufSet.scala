@@ -6,7 +6,7 @@ import scala.collection.mutable
  * Reactive set
  */
 object BufSet {
-  trait Delta[T]
+  sealed trait Delta[T]
   object Delta {
     case class Insert[T](value: T) extends Delta[T]
     case class Remove[T](value: T) extends Delta[T]

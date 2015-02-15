@@ -6,7 +6,7 @@ import scala.collection.mutable
  * A buffer is a reactive ordered list of elements
  */
 object Buffer {
-  trait Position[T] {
+  sealed trait Position[T] {
     def map[U](f: T => U): Position[U] = {
       this match {
         case Position.Head() => Position.Head[U]()
@@ -24,7 +24,7 @@ object Buffer {
     case class After[T](reference: T) extends Position[T]
   }
 
-  trait Delta[T]
+  sealed trait Delta[T]
   object Delta {
     case class Insert[T](position: Position[T], element: T) extends Delta[T]
     case class Replace[T](reference: T, element: T) extends Delta[T]

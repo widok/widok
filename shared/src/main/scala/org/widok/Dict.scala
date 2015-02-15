@@ -6,7 +6,7 @@ import scala.collection.mutable
  * A dictionary is a reactive ordered map A => B
  */
 object Dict {
-  trait Delta[A, B]
+  sealed trait Delta[A, B]
   object Delta {
     case class Insert[A, B](key: A, value: B) extends Delta[A, B]
     case class Remove[A, B](key: A) extends Delta[A, B]
