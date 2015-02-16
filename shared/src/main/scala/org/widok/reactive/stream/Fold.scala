@@ -19,4 +19,28 @@ trait Fold[T] {
    */
   def sum[U >: T](implicit num: Numeric[U]): ReadChannel[U] =
     foldLeft(num.zero)(num.plus)
+
+  /**
+   * Calculates product
+   *
+   * @see [[foldLeft]]
+   */
+  def product[U >: T](implicit num: Numeric[U]): ReadChannel[U] =
+    foldLeft(num.one)(num.times)
+
+  /**
+   * Calculates minimum value
+   *
+   * @see [[foldLeft]]
+   */
+  def min[U >: T](init: U)(implicit num: Numeric[U]): ReadChannel[U] =
+    foldLeft(init)(num.min)
+
+  /**
+   * Calculates maximum value
+   *
+   * @see [[foldLeft]]
+   */
+  def max[U >: T](init: U)(implicit num: Numeric[U]): ReadChannel[U] =
+    foldLeft(init)(num.max)
 }
