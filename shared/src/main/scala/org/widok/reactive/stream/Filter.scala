@@ -9,13 +9,16 @@ trait Filter[Container[_] <: Size, A, B] {
   def filterNot(f: B => Boolean): Container[A] =
     filter((!(_: Boolean)).compose(f))
 
-  /** All elements are equal to `value` */
+  /**
+   * All elements are equal to `value`
+   *
+   * @see [[any]]
+   */
   def all(value: B): ReadChannel[Boolean] = filterNot(_ == value).isEmpty
 
-  /** At least one element is equal to `value`
-   * Inequality check
+  /**
+   * At least one element is equal to `value`
    *
-   * @note Buffers: All rows are unequal to `value`
    * @see [[all]]
    */
   def any(value: B): ReadChannel[Boolean] = filter(_ == value).nonEmpty
@@ -25,11 +28,15 @@ trait Filter[Container[_] <: Size, A, B] {
    *
    * @note Buffers: false as long as no row exists where `f` is true, then true
    * @note Channels: false as long as `f` returns false, then true
+   *
+   * @see [[forall]]
    */
   def exists(f: B => Boolean): ReadChannel[Boolean] = filter(f).nonEmpty
 
   /**
    * Checks whether `f` is true for all elements
+   *
+   * @see [[exists]]
    */
   def forall(f: B => Boolean): ReadChannel[Boolean] = filterNot(f).isEmpty
 

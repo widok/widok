@@ -34,7 +34,7 @@ object DeltaDict {
 
 trait DeltaDict[A, B]
   extends reactive.stream.Size
-  with reactive.stream.Filter[ReadBufSet, A, B]
+  with reactive.stream.Filter[({type d[x] = DeltaDict[x, B]})#d, A, B]
   with reactive.stream.MapDict[DeltaDict, A, B]
   with reactive.stream.Key[A, B]
 {
@@ -70,19 +70,34 @@ trait DeltaDict[A, B]
     count
   }
 
-  def filter(f: B => Boolean): ReadBufSet[A] = {
-    val filtered = BufSet[A]()
+  def keys: DeltaBufSet[A] =
+    DeltaBufSet[A](changes.partialMap {
+      case d @ Delta.Insert(k, _) => BufSet.Delta.Insert(k)
+      case d @ Delta.Remove(k) => BufSet.Delta.Remove(k)
+      case d @ Delta.Clear() => BufSet.Delta.Clear()
+    })
 
-    changes.attach {
-      case Delta.Insert(k, v) if f(v) => filtered += k
-      case Delta.Update(k, v) =>
-        if (!filtered.contains$(k) && f(v)) filtered += k
-        else if (filtered.contains$(k) && !f(v)) filtered -= k
-      case Delta.Remove(k) if filtered.contains$(k) => filtered -= k
-      case Delta.Clear() => filtered.clear()
-    }
+  def filter(f: B => Boolean): DeltaDict[A, B] = {
+    val filtered = mutable.HashSet.empty[A]
 
-    filtered
+    DeltaDict[A, B](changes.partialMap {
+      case d @ Delta.Insert(k, v) if f(v) =>
+        filtered += k
+        d
+      case d @ Delta.Update(k, v) if f(v) =>
+        if (filtered.contains(k)) d
+        else {
+          filtered += k
+          Delta.Insert(k, v)
+        }
+      case d @ Delta.Update(k, v) if filtered.contains(k) =>
+        filtered -= k
+        Delta.Remove(k)
+      case d @ Delta.Remove(k) if filtered.contains(k) =>
+        filtered -= k
+        d
+      case d @ Delta.Clear() if filtered.nonEmpty => d
+    })
   }
 
   def value(key: A): ReadPartialChannel[B] = {
