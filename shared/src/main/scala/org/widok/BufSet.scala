@@ -29,7 +29,7 @@ object DeltaBufSet {
 
 trait DeltaBufSet[T]
   extends reactive.stream.Size
-  with reactive.stream.Filter[ReadBufSet, T, T]
+  with reactive.stream.Filter[DeltaBufSet, T, T]
 {
   import BufSet.Delta
   val changes: ReadChannel[Delta[T]]
@@ -46,17 +46,12 @@ trait DeltaBufSet[T]
     count
   }
 
-  def filter(f: T => Boolean): ReadBufSet[T] = {
-    val result = BufSet[T]()
-
-    changes.attach {
-      case Delta.Insert(value) if f(value) => result += value
-      case Delta.Remove(value) if result.contains$(value) => result -= value
-      case Delta.Clear() if result.nonEmpty$ => result.clear()
-    }
-
-    result
-  }
+  def filter(f: T => Boolean): DeltaBufSet[T] =
+    DeltaBufSet[T](changes.partialMap {
+      case d @ Delta.Insert(value) if f(value) => d
+      case d @ Delta.Remove(value) if f(value) => d
+      case d @ Delta.Clear() => d
+    })
 }
 
 trait StateBufSet[T] extends Disposable {
