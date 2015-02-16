@@ -10,6 +10,7 @@ The changelog lists all major changes between releases. For more details, please
 - [minitest](http://github.com/monifu/minitest) for the test cases
 - [Shapeless](https://github.com/milessabin/shapeless) dependency was dropped. The lens macros resulted in slower compilation and had insufficient IDE support. At the time of writing, Shapeless was not yet ported to Scala.js v0.6.0. ``Var()`` can be used as a drop-in replacement for more flexibility and better performance. As a result of dropping Shapeless, the Sonatype resolver is not needed anymore.
 - There is a [Gitter channel](https://gitter.im/widok/widok) for conversations about Widok
+- **JVM support:** Widok is now built for the JVM, allowing you to use the reactive library on the server, too. Upcoming versions will further focus on network transparency (see [#26](https://github.com/widok/widok/issues/26)). In the future, the widget library will be usable under the JVM as well (see [#25](https://github.com/widok/widok/issues/25)).
 
 ### Event propagation
 This version includes a complete redesign of the event propagation mechanisms. The previous implementation was merely a proof of concept and therefore had a couple of design issues. Changes include:
@@ -60,6 +61,6 @@ Code generators were introduced for higher reliability of the bindings. [sbt-web
 
 ### Trivia
 
-- The API changes significantly shrinked TodoMVC's file size from 3396 bytes (92 lines) to 3098 bytes (88 lines).
+- The API changes significantly shrinked TodoMVC's file size from 3396 bytes (92 lines) to 3044 bytes (89 lines).
 - Widok can be used to develop desktop applications with [Node.js](http://nodejs.org/) and [NW.js](https://github.com/nwjs/nw.js/) as shown by [poliglot-ui](http://github.com/poliglot/poliglot-ui)
 

@@ -1,6 +1,30 @@
 # Concepts
 In this chapter we will mention all key concepts of Widok. The following chapters will deal with these topics in detail.
 
+## Basic application
+Consider a one-file project consisting of:
+
+```scala
+object Main extends Application {
+  def main() {
+    stub()
+  }
+}
+```
+
+A global object of type ``Application`` defines the entry point of the application^[An application cannot define more than one entry point.]. You could use methods from the ``DOM`` object to access and modify the DOM.
+
+```scala
+$ sbt fastOptJS
+```
+
+Open your ``application.html`` in the browser and it will print ``stub`` in the web console. The example doesn't use any browser-related functionality. Therefore, it also runs under [Node.js](http://nodejs.org/):
+
+```bash
+$ cat target/scala-2.11/*js | node
+stub
+```
+
 ## Single-page applications
 The application from the [previous chapter](#getting-started) roughly looked like this:
 

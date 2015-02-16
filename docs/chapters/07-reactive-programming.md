@@ -69,6 +69,13 @@ As soon as the user inserts a value for ``m`` as well as ``b``, ``mAndB`` will p
 
 How channels work in detail is explained in the following sections. This example should only give an intuition of the fundamental concepts and how data dependencies are expressed.
 
+## Data propagation
+**TODO:** Outdated
+
+Channels model continuous values as streams. These streams can be observed. Internally, no copies of the produced values are created. If desired, the current value can be explicitly cached, though. It is possible to operate on channels with higher-order functions such as ``map()`` and ``filter()``. Every time a new value is produced, it is propagated down the observer chain.
+
+Aggregates are channel containers. They allow to deal with large lists efficiently. If an item gets added, removed or updated, this is reflected directly by a change in the DOM, only operating on the actual nodes.
+
 ## Implementation
 This section explains how reactive data structures are implemented in Widok. The design decisions will be beneficial for you to better understand the API and to design your own reactive data structures.
 

@@ -1,31 +1,19 @@
 # Introduction
-> **TODO:** Update chapter
+Widok is a reactive web framework for the JVM and Scala.js. Its key concepts are:
 
-Widok is a reactive web framework for Scala.js. Its key concepts are:
-
-- **Page:** the browser query is dispatched to a page which renders widgets
-- **Widget:** an element that corresponds to a node in the DOM
-- **Channel:** a stream of values
-- **Aggregate:** a channel container
+- **Pages:** Widok enforces modularisation of your web application. You split your application into *pages*. The *router* watches the browser query and loads the respective page.
+- **Widgets:** The layout is specified in terms of composable widgets. Widgets are bound to dynamically changing values which are rendered on-the-fly in the browser.
+- **Bindings:** Widok ships bindings for CSS frameworks like Bootstrap and Font-Awesome.
+- **Reactive programming:** Reactive data structures, which implement a simple model of data propagation, are provided. Widok has reactive counterparts for variables, arrays, maps and sets. Instead of dealing with constant values, you specify the data flow as streams, on which you operate with higher-order functions like ``map()`` or ``filter()``.
 
 ## Comparison
-Widok is different from traditional web frameworks in the following aspects:
+In contrast to traditional web frameworks, a Widok application would implement the entire rendering logic and user interaction on the client-side. The sole purpose of the server would be to exchange data with the client. This approach leads to lower latencies and is more suitable for interactive applications.
 
-- The rendering logic is implemented entirely on the client-side
-- The sole purpose of the server is to exchange data with the client
-- Instead of writing HTML templates, widgets are defined in pure Scala code
-- Only widgets are allowed to manipulate the DOM
-- Designed with memory-efficiency in mind
-- Bootstrap 3 bindings available
+Instead of writing HTML templates and doing manual DOM manipulations, Widok advocates widgets which are inspired by traditional GUI development. Widgets are first-class objects, allowing you to return them in functions. This can be useful when rendering a data stream as widgets, or when you want to display a different widget depending on the device the client is using.
 
-As Widok is built around Scala.js it also inherits some of its properties:
+Another strength of Widok is that you can develop client-server applications entirely in Scala and CSS. Furthermore, Scala.js enables you to do code sharing. This is especially useful as it reduces the reimplementation overhead, like for protocols. But it also lets you develop safer web applications, as you could use the same validation code on the client as on the server.
 
-- IDE support
-- Browser source maps
-- Fast compilation times
+Widok is fully supported by IntelliJ IDEA. As Scala is a statically typed language you can use your IDE for refactoring and tab completion, increasing your productivity. Similarly, many bugs can be already identified during compile-time. Browser source maps will help you pinpoint run-time errors in the original source code. Scala.js supports continuous compilation which lets you iterate faster.
 
-## Data propagation
-Channels model continuous values as streams. These streams can be observed. Internally, no copies of the produced values are created. If desired, the current value can be explicitly cached, though. It is possible to operate on channels with higher-order functions such as ``map()`` and ``filter()``. Every time a new value is produced, it is propagated down the observer chain.
-
-Aggregates are channel containers. They allow to deal with large lists efficiently. If an item gets added, removed or updated, this is reflected directly by a change in the DOM, only operating on the actual nodes.
+Finally, Widok is not necessarily bound to web applications. As it compiles to regular JavaScript code, you could develop Node.js applications or even native user interfaces with [NW.js](http://nwjs.io/). The JVM build comprises the reactive library, so that you can use it on the server-side as well.
 
