@@ -1,5 +1,7 @@
 package org.widok.reactive.poll
 
+import org.widok.ReadBuffer
+
 /** Combinators to resolve keys in dictionaries */
 trait Key[A, B] {
   /** Value associated to `key` */
@@ -17,7 +19,9 @@ trait Key[A, B] {
   /** Converts dictionary to map **/
   def toMap: Map[A, B]
 
+  /** Convert dictionary to buffer */
+  def toBuffer: ReadBuffer[(A, B)]
+
   /** @see [[value$]] */
   def apply(key: A): B = value$(key)
 }
-

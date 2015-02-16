@@ -196,12 +196,12 @@ trait ReadChannel[T]
   def equal(value: T): ReadChannel[Boolean] =
     forkUni { t =>
       Result.Next(Some(t == value))
-    }
+    }.distinct
 
   def unequal(value: T): ReadChannel[Boolean] =
     forkUni { t =>
       Result.Next(Some(t != value))
-    }
+    }.distinct
 
   def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] =
     forkUniFlat(value => Result.Next(Some(f(value))))

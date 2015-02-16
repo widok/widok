@@ -346,6 +346,7 @@ trait Node extends View {
 
     dict.changes.attach {
       case Dict.Delta.Insert(k, v) => rendered.setAttribute(k, v)
+      case Dict.Delta.Update(k, v) => rendered.setAttribute(k, v)
       case Dict.Delta.Remove(k) => rendered.removeAttribute(k)
       case Dict.Delta.Clear() => rendered.removeAttribute()
     }

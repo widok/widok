@@ -1,8 +1,14 @@
 package org.widok.reactive.mutate
 
 trait Dict[A, B] {
-  /** Sets the value of `key` to `value` */
+  /**
+   * Inserts a new key-value tuple. If `key` already exists, [[update]] must
+   * be used instead.
+   */
   def insert(key: A, value: B)
+
+  /** Sets the value of `key` to `value` */
+  def update(key: A, value: B)
 
   /** Insert all elements from map */
   def insertAll(map: Map[A, B])

@@ -9,6 +9,7 @@ object Dict {
   sealed trait Delta[A, B]
   object Delta {
     case class Insert[A, B](key: A, value: B) extends Delta[A, B]
+    case class Update[A, B](key: A, value: B) extends Delta[A, B]
     case class Remove[A, B](key: A) extends Delta[A, B]
     case class Clear[A, B]() extends Delta[A, B]
   }
@@ -35,7 +36,8 @@ trait DeltaDict[A, B]
   extends reactive.stream.Size
   with reactive.stream.Empty
   with reactive.stream.MapDict[DeltaDict, A, B]
-  with reactive.stream.Count[(A, B)]
+  with reactive.stream.Count[B]
+  with reactive.stream.Key[A, B]
 {
   import Dict.Delta
   val changes: ReadChannel[Delta[A, B]]
@@ -43,6 +45,7 @@ trait DeltaDict[A, B]
   def mapKeys[C](f: A => C): DeltaDict[C, B] =
     DeltaDict[C, B](changes.map {
       case Delta.Insert(k, v) => Delta.Insert(f(k), v)
+      case Delta.Update(k, v) => Delta.Update(f(k), v)
       case Delta.Remove(k) => Delta.Remove(f(k))
       case Delta.Clear() => Delta.Clear()
     })
@@ -50,61 +53,63 @@ trait DeltaDict[A, B]
   def mapValues[C](f: B => C): DeltaDict[A, C] =
     DeltaDict[A, C](changes.map {
       case Delta.Insert(k, v) => Delta.Insert(k, f(v))
+      case Delta.Update(k, v) => Delta.Update(k, f(v))
       case Delta.Remove(k) => Delta.Remove(k)
       case Delta.Clear() => Delta.Clear()
     })
 
   def size: ReadChannel[Int] = {
-    var keys = mutable.HashSet.empty[A]
-    val count = LazyVar(keys.size)
+    val count = Var(0)
 
     changes.attach {
-      case Delta.Insert(k, _) if !keys.contains(k) =>
-        keys += k
-        count.produce()
-      case Delta.Remove(k) =>
-        keys -= k
-        count.produce()
-      case Delta.Clear() if keys.nonEmpty =>
-        count.produce()
-      case _ =>
+      case Delta.Insert(k, _) => count.update(_ + 1)
+      case Delta.Update(k, _) =>
+      case Delta.Remove(k) => count.update(_ - 1)
+      case Delta.Clear() if count.get != 0 => count := 0
     }
 
     count
   }
 
-  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
-  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
+  def isEmpty: ReadChannel[Boolean] = size.equal(0)
+  def nonEmpty: ReadChannel[Boolean] = size.unequal(0)
 
-  def exists(f: ((A, B)) => Boolean): ReadChannel[Boolean] = ???
-  def count(value: (A, B)): ReadChannel[Int] = ???
-  def unequal(value: (A, B)): ReadChannel[Boolean] = ???
-  def contains(value: (A, B)): ReadChannel[Boolean] = ???
-  def equal(value: (A, B)): ReadChannel[Boolean] = ???
-  def countUnequal(value: (A, B)): ReadChannel[Int] = ???
+  def exists(f: B => Boolean): ReadChannel[Boolean] = ???
+  def count(value: B): ReadChannel[Int] = ???
+  def unequal(value: B): ReadChannel[Boolean] = ???
+  def contains(value: B): ReadChannel[Boolean] = ???
+  def equal(value: B): ReadChannel[Boolean] = ???
+  def countUnequal(value: B): ReadChannel[Int] = ???
 
-  def forall(f: ((A, B)) => Boolean): ReadChannel[Boolean] = {
-    val keys = mutable.HashSet.empty[A]
-    val unequal = Var(0)
+  def areNot(f: B => Boolean): ReadBufSet[A] = {
+    val unequal = BufSet[A]()
 
     changes.attach {
-      case Delta.Insert(k, v) if keys.contains(k) && f(k, v) =>
-        unequal.update(_ - 1)
-        keys -= k
-      case Delta.Insert(k, v) if !keys.contains(k) && !f(k, v) =>
-        unequal.update(_ + 1)
-        keys += k
-      case Delta.Remove(k) if keys.contains(k) =>
-        unequal.update(_ - 1)
-        keys -= k
-      case Delta.Clear() if unequal.get != 0 =>
-        unequal := 0
-      case _ =>
+      case Delta.Insert(k, v) if !f(v) => unequal += k
+      case Delta.Update(k, v) =>
+        if (!unequal.contains$(k) && !f(v)) unequal += k
+        else if (unequal.contains$(k) && f(v)) unequal -= k
+      case Delta.Remove(k) if unequal.contains$(k) => unequal -= k
+      case Delta.Clear() => unequal.clear()
     }
 
     unequal
-      .map(_ == 0)
-      .distinct
+  }
+
+  def forall(f: B => Boolean): ReadChannel[Boolean] = areNot(f).isEmpty
+
+  def value(key: A): ReadPartialChannel[B] = {
+    val res = Opt[B]()
+
+    changes.attach {
+      case Delta.Insert(`key`, value) => res := value
+      case Delta.Update(`key`, value) => res := value
+      case Delta.Remove(`key`) => res.clear()
+      case Delta.Clear() if res.nonEmpty$ => res.clear()
+      case _ =>
+    }
+
+    res
   }
 
   def buffer: Dict[A, B] = {
@@ -128,7 +133,10 @@ trait StateDict[A, B] extends Disposable {
   }
 
   private[widok] val subscription = changes.attach {
-    case Delta.Insert(key, value) => mapping += key -> value
+    case Delta.Insert(key, value) =>
+      assert(!mapping.isDefinedAt(key), "Key already exists")
+      mapping += key -> value
+    case Delta.Update(key, value) => mapping.update(key, value)
     case Delta.Remove(key) => mapping -= key
     case Delta.Clear() => mapping.clear()
   }
@@ -147,6 +155,10 @@ trait WriteDict[A, B]
 
   def insert(key: A, value: B) {
     changes := Delta.Insert(key, value)
+  }
+
+  def update(key: A, value: B) {
+    changes := Delta.Update(key, value)
   }
 
   def insertAll(map: Map[A, B]) {
@@ -190,19 +202,6 @@ trait PollDict[A, B]
   def nonEmpty$: Boolean = mapping.nonEmpty
 
   def value$(key: A): B = mapping(key)
-
-  def value(key: A): ReadPartialChannel[B] = {
-    val res = Opt[B]()
-
-    changes.attach {
-      case Delta.Insert(`key`, value) => res := value
-      case Delta.Remove(`key`) => res.clear()
-      case Delta.Clear() if res.nonEmpty$ => res.clear()
-      case _ =>
-    }
-
-    res
-  }
 
   def get(key: A): Option[B] = mapping.get(key)
 

@@ -54,8 +54,8 @@ trait DeltaBufSet[T]
     count
   }
 
-  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
-  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
+  def isEmpty: ReadChannel[Boolean] = size.equal(0)
+  def nonEmpty: ReadChannel[Boolean] = size.unequal(0)
 
   def exists(f: T => Boolean): ReadChannel[Boolean] = ???
   def count(value: T): ReadChannel[Int] = ???

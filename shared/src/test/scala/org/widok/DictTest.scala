@@ -33,16 +33,16 @@ object DictTest extends SimpleTestSuite {
     val map = buf.mapTo(_ => -1).buffer
 
     var states = mutable.ArrayBuffer.empty[Boolean]
-    map.forall { case (k, v) => v != -1 }.attach(states += _)
+    map.forall(_ != -1).attach(states += _)
     assertEquals(states, Seq(false))
 
-    map += buf.get(0) -> 1
+    map.update(buf.get(0), 1)
     assertEquals(states, Seq(false))
 
-    map += buf.get(1) -> 2
+    map.update(buf.get(1), 2)
     assertEquals(states, Seq(false))
 
-    map += buf.get(2) -> 3
+    map.update(buf.get(2), 3)
     assertEquals(states, Seq(false, true))
   }
 
