@@ -34,27 +34,26 @@ object DeltaDict {
 
 trait DeltaDict[A, B]
   extends reactive.stream.Size
-  with reactive.stream.Empty
+  with reactive.stream.Filter[ReadBufSet, A, B]
   with reactive.stream.MapDict[DeltaDict, A, B]
-  with reactive.stream.Count[B]
   with reactive.stream.Key[A, B]
 {
   import Dict.Delta
   val changes: ReadChannel[Delta[A, B]]
+
+  def map[C](f: B => C): DeltaDict[A, C] =
+    DeltaDict[A, C](changes.map {
+      case Delta.Insert(k, v) => Delta.Insert(k, f(v))
+      case Delta.Update(k, v) => Delta.Update(k, f(v))
+      case Delta.Remove(k) => Delta.Remove(k)
+      case Delta.Clear() => Delta.Clear()
+    })
 
   def mapKeys[C](f: A => C): DeltaDict[C, B] =
     DeltaDict[C, B](changes.map {
       case Delta.Insert(k, v) => Delta.Insert(f(k), v)
       case Delta.Update(k, v) => Delta.Update(f(k), v)
       case Delta.Remove(k) => Delta.Remove(f(k))
-      case Delta.Clear() => Delta.Clear()
-    })
-
-  def mapValues[C](f: B => C): DeltaDict[A, C] =
-    DeltaDict[A, C](changes.map {
-      case Delta.Insert(k, v) => Delta.Insert(k, f(v))
-      case Delta.Update(k, v) => Delta.Update(k, f(v))
-      case Delta.Remove(k) => Delta.Remove(k)
       case Delta.Clear() => Delta.Clear()
     })
 
@@ -71,32 +70,20 @@ trait DeltaDict[A, B]
     count
   }
 
-  def isEmpty: ReadChannel[Boolean] = size.equal(0)
-  def nonEmpty: ReadChannel[Boolean] = size.unequal(0)
-
-  def exists(f: B => Boolean): ReadChannel[Boolean] = ???
-  def count(value: B): ReadChannel[Int] = ???
-  def unequal(value: B): ReadChannel[Boolean] = ???
-  def contains(value: B): ReadChannel[Boolean] = ???
-  def equal(value: B): ReadChannel[Boolean] = ???
-  def countUnequal(value: B): ReadChannel[Int] = ???
-
-  def areNot(f: B => Boolean): ReadBufSet[A] = {
-    val unequal = BufSet[A]()
+  def filter(f: B => Boolean): ReadBufSet[A] = {
+    val filtered = BufSet[A]()
 
     changes.attach {
-      case Delta.Insert(k, v) if !f(v) => unequal += k
+      case Delta.Insert(k, v) if f(v) => filtered += k
       case Delta.Update(k, v) =>
-        if (!unequal.contains$(k) && !f(v)) unequal += k
-        else if (unequal.contains$(k) && f(v)) unequal -= k
-      case Delta.Remove(k) if unequal.contains$(k) => unequal -= k
-      case Delta.Clear() => unequal.clear()
+        if (!filtered.contains$(k) && f(v)) filtered += k
+        else if (filtered.contains$(k) && !f(v)) filtered -= k
+      case Delta.Remove(k) if filtered.contains$(k) => filtered -= k
+      case Delta.Clear() => filtered.clear()
     }
 
-    unequal
+    filtered
   }
-
-  def forall(f: B => Boolean): ReadChannel[Boolean] = areNot(f).isEmpty
 
   def value(key: A): ReadPartialChannel[B] = {
     val res = Opt[B]()

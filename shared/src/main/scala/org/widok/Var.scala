@@ -5,8 +5,6 @@ sealed class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaul
 
   def flush(f: T => Unit) { f(v) }
   def get: T = v
-  def isEmpty: ReadChannel[Boolean] = Var(false)
-  def nonEmpty: ReadChannel[Boolean] = Var(true)
 
   override def toString = s"Var(${v.toString})"
 }
@@ -24,8 +22,6 @@ object LazyVar {
     def flush(f: T => Unit) { f(v) }
     // TODO Should not provide produce(T), only produce()
     def produce() { this := v }
-    def isEmpty: ReadChannel[Boolean] = Var(false)
-    def nonEmpty: ReadChannel[Boolean] = Var(true)
 
     override def toString = s"LazyVar(${v.toString})"
   }
@@ -44,11 +40,8 @@ object PtrVar {
     change.attach(_ => produce())
 
     def get: T = _get
-
     def flush(f: T => Unit) { f(get) }
     def produce() { produce(get, sub) }
-    def isEmpty: ReadChannel[Boolean] = Var(false)
-    def nonEmpty: ReadChannel[Boolean] = Var(true)
 
     override def toString = s"PtrVar(${get.toString})"
   }

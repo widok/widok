@@ -1,5 +1,7 @@
 package org.widok.reactive.stream
 
+import org.widok.ReadChannel
+
 trait Take[Container[_], T] {
   /**
    * @note Buffers: Will always contain the first `count` (or less) elements
@@ -17,4 +19,7 @@ trait Take[Container[_], T] {
    *                 initial value.
    */
   def drop(count: Int): Container[T]
+
+  /** Take all elements until `ch` produces any value */
+  def takeUntil(ch: ReadChannel[_]): Container[T]
 }

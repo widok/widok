@@ -67,7 +67,7 @@ object ChannelSpec extends SimpleTestSuite {
   }
 
   test("equal") {
-    forallChVal((ch, value) => (ch.equal(value), ch.unequal(value).map(!_)))
+    forallChVal((ch, value) => (ch.is(value), ch.isNot(value).map(!_)))
   }
 
   /* TODO Generalise values */

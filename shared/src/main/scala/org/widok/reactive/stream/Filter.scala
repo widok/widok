@@ -1,24 +1,53 @@
 package org.widok.reactive.stream
 
-import org.widok.{ReadBufSet, ReadChannel}
+import org.widok.ReadChannel
 
-trait Filter[Container[_], T] {
-  /** Take all elements until `ch` produces any value */
-  def takeUntil(ch: ReadChannel[_]): Container[T]
-
+trait Filter[Container[_] <: Size, A, B] {
   /** Only include elements for which `f` is true */
-  def filter(f: T => Boolean): Container[T]
+  def filter(f: B => Boolean): Container[A]
 
-  /** Filters out duplicates */
-  def distinct: Container[T]
+  def filterNot(f: B => Boolean): Container[A] =
+    filter((!(_: Boolean)).compose(f))
+
+  /** All elements are equal to `value` */
+  def all(value: B): ReadChannel[Boolean] = filterNot(_ == value).isEmpty
+
+  /** At least one element is equal to `value`
+   * Inequality check
+   *
+   * @note Buffers: All rows are unequal to `value`
+   * @see [[all]]
+   */
+  def any(value: B): ReadChannel[Boolean] = filter(_ == value).nonEmpty
 
   /**
-   * Splits stream into two sub-streams
+   * Checks for existence of a value for which `f` is true
    *
-   * The left stream contains all elements as long as `f` is true, all
-   * subsequent elements go to the right stream.
+   * @note Buffers: false as long as no row exists where `f` is true, then true
+   * @note Channels: false as long as `f` returns false, then true
    */
-  def span(f: T => Boolean): (Container[T], Container[T])
+  def exists(f: B => Boolean): ReadChannel[Boolean] = filter(f).nonEmpty
+
+  /**
+   * Checks whether `f` is true for all elements
+   */
+  def forall(f: B => Boolean): ReadChannel[Boolean] = filterNot(f).isEmpty
+
+  /**
+   * Count number of occurrence of `value`.
+   *
+   * @note Buffers: When the element is removed, the counter is decreased.
+   * @note Channels: With every matching element, the counter is increased.
+   */
+  def count(value: B): ReadChannel[Int] = filter(_ == value).size
+
+  /**
+   * Stream contains at least one occurrence of `value`.
+   *
+   * @note Buffers: When the item is removed, it will produce false.
+   * @note Channels: Once true, will never produce any other value.
+   */
+  def contains(value: B): ReadChannel[Boolean] = filter(_ == value).nonEmpty
 
   /**
    * Partitions stream into two sub-stream
@@ -26,13 +55,6 @@ trait Filter[Container[_], T] {
    * The left stream contains all elements for which `f` is true, all other
    * elements go to the right stream.
    */
-  def partition(f: T => Boolean): (Container[T], Container[T])
-
-  /** Finds first value for which `f` is true */
-  def find(f: T => Boolean): PartialChannel[T]
-
-  /** Remove all elements from `other` */
-  def diff(other: ReadBufSet[T]): Container[T]
-
-  def -(other: ReadBufSet[T]) = diff(other)
+  def partition(f: B => Boolean): (Container[A], Container[A]) =
+    (filter(f), filterNot(f))
 }

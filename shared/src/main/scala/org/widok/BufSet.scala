@@ -29,76 +29,33 @@ object DeltaBufSet {
 
 trait DeltaBufSet[T]
   extends reactive.stream.Size
-  with reactive.stream.Empty
-  with reactive.stream.Count[T]
+  with reactive.stream.Filter[ReadBufSet, T, T]
 {
   import BufSet.Delta
   val changes: ReadChannel[Delta[T]]
 
   def size: ReadChannel[Int] = {
-    var values = mutable.HashSet.empty[T]
-    val count = LazyVar(values.size)
+    val count = Var(0)
 
     changes.attach {
-      case Delta.Insert(k) if !values.contains(k) =>
-        values += k
-        count.produce()
-      case Delta.Remove(k) =>
-        values -= k
-        count.produce()
-      case Delta.Clear() if values.nonEmpty =>
-        count.produce()
-      case _ =>
+      case Delta.Insert(_) => count.update(_ + 1)
+      case Delta.Remove(_) => count.update(_ - 1)
+      case Delta.Clear() if count.get != 0 => count := 0
     }
 
     count
   }
 
-  def isEmpty: ReadChannel[Boolean] = size.equal(0)
-  def nonEmpty: ReadChannel[Boolean] = size.unequal(0)
-
-  def exists(f: T => Boolean): ReadChannel[Boolean] = ???
-  def count(value: T): ReadChannel[Int] = ???
-  def unequal(value: T): ReadChannel[Boolean] = ???
-
-  def contains(value: T): ReadChannel[Boolean] = {
-    val state = Var(false)
+  def filter(f: T => Boolean): ReadBufSet[T] = {
+    val result = BufSet[T]()
 
     changes.attach {
-      case Delta.Insert(k) if k == value && !state.get => state := true
-      case Delta.Remove(k) if k == value && state.get => state := false
-      case Delta.Clear() if !state.get => state := false
-      case _ =>
+      case Delta.Insert(value) if f(value) => result += value
+      case Delta.Remove(value) if result.contains$(value) => result -= value
+      case Delta.Clear() if result.nonEmpty$ => result.clear()
     }
 
-    state
-  }
-
-  def equal(value: T): ReadChannel[Boolean] = ???
-  def countUnequal(value: T): ReadChannel[Int] = ???
-
-  def forall(f: T => Boolean): ReadChannel[Boolean] = {
-    var values = mutable.HashSet.empty[T]
-    val unequal = Var(0)
-
-    changes.attach {
-      case Delta.Insert(k) if values.contains(k) && f(k) =>
-        unequal.update(_ - 1)
-        values -= k
-      case Delta.Insert(k) if !values.contains(k) && !f(k) =>
-        unequal.update(_ + 1)
-        values += k
-      case Delta.Remove(k) if values.contains(k) =>
-        unequal.update(_ - 1)
-        values -= k
-      case Delta.Clear() if unequal.get != 0 =>
-        unequal := 0
-      case _ =>
-    }
-
-    unequal
-      .map(_ == 0)
-      .distinct
+    result
   }
 }
 
@@ -114,7 +71,9 @@ trait StateBufSet[T] extends Disposable {
   }
 
   private[widok] val subscription = changes.attach {
-    case Delta.Insert(value) => elements += value
+    case Delta.Insert(value) =>
+      assert(!elements.contains(value), "Element does not occur")
+      elements += value
     case Delta.Remove(value) => elements -= value
     case Delta.Clear() => elements.clear()
   }
@@ -164,6 +123,7 @@ trait WriteBufSet[T]
 
 trait PollBufSet[T]
   extends reactive.poll.Count[T]
+  with reactive.poll.Empty
 {
   import BufSet.Delta
 
@@ -171,6 +131,8 @@ trait PollBufSet[T]
 
   val changes: ReadChannel[Delta[T]]
 
+  def isEmpty$: Boolean = elements.isEmpty
+  def nonEmpty$: Boolean = elements.nonEmpty
   def contains$(value: T): Boolean = elements.contains(value)
 
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements.toSeq)

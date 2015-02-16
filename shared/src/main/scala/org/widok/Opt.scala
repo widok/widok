@@ -42,10 +42,8 @@ trait Opt[T]
   def nonEmpty$: Boolean = cached.nonEmpty
   def contains$(value: T): Boolean = cached.contains(value)
 
-  def isEmpty: ReadChannel[Boolean] = defined.map(!_)
-  def nonEmpty: ReadChannel[Boolean] = defined
-
   def isDefined: ReadChannel[Boolean] = defined
+  def undefined: ReadChannel[Boolean] = defined.map(!_)
 
   def flush(f: T => Unit) {
     if (cached.isDefined) f(cached.get)
@@ -65,7 +63,7 @@ trait Opt[T]
       count += 1
       Result.Next(Some(count))
     }, Some(count)).asInstanceOf[ChildChannel[Int, Int]]
-    defined.attach(d ⇒ if (!d) {
+    defined.attach(d => if (!d) {
       count = 0
       res := 0
     })

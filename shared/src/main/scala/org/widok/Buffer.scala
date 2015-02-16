@@ -61,8 +61,6 @@ object DeltaBuffer {
 
 trait DeltaBuffer[T]
   extends reactive.stream.Size
-  with reactive.stream.Empty
-  with reactive.stream.Count[T]
   with reactive.stream.Map[DeltaBuffer, T]
 {
   import Buffer.Delta
@@ -79,87 +77,6 @@ trait DeltaBuffer[T]
     }
 
     count
-  }
-
-  def isEmpty: ReadChannel[Boolean] = size.map(_ == 0)
-  def nonEmpty: ReadChannel[Boolean] = size.map(_ != 0)
-
-  def count(value: T): ReadChannel[Int] = {
-    val found = Var(0)
-
-    changes.attach {
-      case Delta.Insert(_, `value`) => found.update(_ + 1)
-      case Delta.Replace(`value`, _) => found.update(_ - 1)
-      case Delta.Replace(_, `value`) => found.update(_ + 1)
-      case Delta.Remove(`value`) => found.update(_ - 1)
-      case Delta.Clear() if found.get != 0 => found := 0
-      case _ =>
-    }
-
-    found
-  }
-
-  def countUnequal(value: T): ReadChannel[Int] = {
-    val unequal = Var(0)
-
-    changes.attach {
-      case Delta.Insert(_, v) if v != value => unequal.update(_ + 1)
-      case Delta.Replace(_, v) if v != value => unequal.update(_ + 1)
-      case Delta.Remove(v) if v != value => unequal.update(_ - 1)
-      case Delta.Clear() if unequal.get != 0 => unequal := 0
-      case _ =>
-    }
-
-    unequal
-  }
-
-  def contains(value: T): ReadChannel[Boolean] =
-    count(value)
-      .map(_ != 0)
-      .distinct
-
-  def equal(value: T): ReadChannel[Boolean] =
-    countUnequal(value)
-      .map(_ == 0)
-      .distinct
-
-  def unequal(value: T): ReadChannel[Boolean] =
-    count(value)
-      .map(_ == 0)
-      .distinct
-
-  def exists(f: T => Boolean): ReadChannel[Boolean] = {
-    val equal = Var(0)
-
-    changes.attach {
-      case Delta.Insert(_, v) if f(v) => equal.update(_ + 1)
-      case Delta.Replace(k, v) if f(k) && !f(v) => equal.update(_ - 1)
-      case Delta.Replace(k, v) if !f(k) && f(v) => equal.update(_ + 1)
-      case Delta.Remove(v) if f(v) => equal.update(_ - 1)
-      case Delta.Clear() if equal.get != 0 => equal := 0
-      case _ =>
-    }
-
-    equal
-      .map(_ == 0)
-      .distinct
-  }
-
-  def forall(f: T => Boolean): ReadChannel[Boolean] = {
-    val unequal = Var(0)
-
-    changes.attach {
-      case Delta.Insert(_, v) if !f(v) => unequal.update(_ + 1)
-      case Delta.Replace(k, v) if f(k) && !f(v) => unequal.update(_ + 1)
-      case Delta.Replace(k, v) if !f(k) && f(v) => unequal.update(_ - 1)
-      case Delta.Remove(v) if !f(v) => unequal.update(_ - 1)
-      case Delta.Clear() if unequal.get != 0 => unequal := 0
-      case _ =>
-    }
-
-    unequal
-      .map(_ == 0)
-      .distinct
   }
 
   def insertions: ReadChannel[T] = changes.partialMap {
@@ -259,8 +176,10 @@ trait PollBuffer[T]
   with reactive.poll.RelativeOrder[T]
   with reactive.poll.Iterate[T]
   with reactive.poll.Filter[ReadBuffer, T]
+  with reactive.stream.Filter[ReadBuffer, T, T]
   with reactive.stream.RelativeOrder[T]
-  with reactive.stream.Filter[ReadBuffer, T]
+  with reactive.stream.Aggregate[ReadBuffer, T]
+  with reactive.stream.FilterOrdered[ReadBuffer, T]
   with reactive.stream.MapExtended[ReadBuffer, T]
   with reactive.stream.AbsoluteOrder[ReadBuffer, T]
 {
@@ -326,9 +245,6 @@ trait PollBuffer[T]
 
     buf
   }
-
-  def partition(f: T => Boolean): (ReadBuffer[T], ReadBuffer[T]) =
-    (filter(f), filter((!(_: Boolean)).compose(f)))
 
   def filter$(f: T => Boolean): ReadBuffer[T] = Buffer(elements.filter(f): _*)
   def distinct$: ReadBuffer[T] = Buffer(elements.distinct: _*)

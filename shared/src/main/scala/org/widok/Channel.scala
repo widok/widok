@@ -32,15 +32,14 @@ trait ReadChannel[T]
   extends reactive.stream.Head[T]
   with reactive.stream.Tail[ReadChannel, T]
   with reactive.stream.Take[ReadChannel, T]
-  with reactive.stream.Empty
   with reactive.stream.Fold[T]
-  with reactive.stream.Filter[ReadChannel, T]
+  with reactive.stream.Is[T]
+  with reactive.stream.Aggregate[ReadChannel, T]
+  with reactive.stream.Filter[ReadChannel, T, T]
   with reactive.stream.Map[ReadChannel, T]
   with reactive.stream.MapExtended[ReadChannel, T]
-  with reactive.stream.RelativeOrder[T]
   with reactive.stream.Cache[T]
   with reactive.stream.Size
-  with reactive.stream.Count[T]
   with reactive.poll.Flush[T]
   with Disposable
 {
@@ -60,21 +59,11 @@ trait ReadChannel[T]
     res
   }
 
-  def before(value: T): ReadChannel[T] = ???
-  def after(value: T): ReadChannel[T] = ???
-  def beforeOption(value: T): PartialChannel[T] = ???
-  def afterOption(value: T): PartialChannel[T] = ???
-
-  def diff(other: ReadBufSet[T]): ReadChannel[T] = ???
-
   def flush(f: T => Unit)
 
   def publish(ch: WriteChannel[T]): ReadChannel[Unit] = ch.subscribe(this)
   def publish[U](ch: WriteChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = ch.subscribe(this, ignore)
   def >>(ch: WriteChannel[T]) = publish(ch)
-
-  def count(value: T): ReadChannel[Int] = ???
-  def countUnequal(value: T): ReadChannel[Int] = ???
 
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
     val that = this
@@ -154,9 +143,6 @@ trait ReadChannel[T]
   def filterCycles: ReadChannel[T] =
     forkUni(value => Result.Next(Some(value)), filterCycles = true)
 
-  def partition(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) =
-    (filter(f), filter((!(_: Boolean)).compose(f)))
-
   def take(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
@@ -184,21 +170,25 @@ trait ReadChannel[T]
   def isHead(value: T): ReadChannel[Boolean] =
     take(1).map(_ == value)
 
-  def span(f: T => Boolean): (ReadChannel[T], ReadChannel[T]) = ???
-
   def map[U](f: T => U): ReadChannel[U] =
     forkUni { value =>
       Result.Next(Some(f(value)))
     }
 
-  def mapTo[U](f: T => U): DeltaDict[T, U] = ???
+  def mapTo[U](f: T => U): DeltaDict[T, U] = {
+    val delta: ReadChannel[Dict.Delta[T, U]] = map[Dict.Delta[T, U]] { value =>
+      Dict.Delta.Insert(value, f(value))
+    }
 
-  def equal(value: T): ReadChannel[Boolean] =
+    DeltaDict(delta)
+  }
+
+  def is(value: T): ReadChannel[Boolean] =
     forkUni { t =>
       Result.Next(Some(t == value))
     }.distinct
 
-  def unequal(value: T): ReadChannel[Boolean] =
+  def isNot(value: T): ReadChannel[Boolean] =
     forkUni { t =>
       Result.Next(Some(t != value))
     }.distinct
@@ -234,22 +224,6 @@ trait ReadChannel[T]
       Result.Next(Some(accum))
     }, Some(accum))
   }
-
-  def find(f: T => Boolean): PartialChannel[T] = ???
-
-  def exists(f: T => Boolean): ReadChannel[Boolean] =
-    forkUni { value =>
-      if (f(value)) Result.Done(Some(true))
-      else Result.Next(Some(false))
-    }.distinct
-
-  def forall(f: T => Boolean): ReadChannel[Boolean] = ???
-
-  def contains(needle: T): ReadChannel[Boolean] =
-    forkUni { value =>
-      if (value == needle) Result.Done(Some(true))
-      else Result.Next(Some(false))
-    }.distinct
 
   def takeUntil(ch: ReadChannel[_]): ReadChannel[T] = {
     val res = forkUni { value =>
@@ -385,7 +359,6 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
 trait ChildChannel[T, U]
   extends Channel[U]
   with ChannelDefaultSize[U]
-  with ChannelDefaultEmpty[U]
 {
   /** Return true if the stream is completed. */
   def process(value: T)
@@ -584,30 +557,9 @@ trait ChannelDefaultSize[T] {
     foldLeft(0) { case (acc, cur) => acc + 1 }
 }
 
-trait ChannelDefaultEmpty[T] {
-  this: ReadChannel[T] =>
-
-  def isEmpty: ReadChannel[Boolean] = {
-    var state = true
-    forkUniState(
-      t => { state = false; Result.Done(Some(state)) },
-      Some(state)
-    )
-  }
-
-  def nonEmpty: ReadChannel[Boolean] = {
-    var state = false
-    forkUniState(
-      t => { state = true; Result.Done(Some(state)) },
-      Some(state)
-    )
-  }
-}
-
 trait RootChannel[T]
   extends Channel[T]
   with ChannelDefaultSize[T]
-  with ChannelDefaultEmpty[T]
 {
   def dispose() {
     children.foreach(_.dispose())

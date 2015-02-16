@@ -15,7 +15,7 @@ trait MapExtended[Container[_], T] {
   def flatMap[U](f: T => Container[U]): Container[U]
 
   /**
-   * Map `f` on each element and turn stream into a dictionary.
+   * Map `f` on each element and turn stream into a dictionary
    */
   def mapTo[U](f: T => U): DeltaDict[T, U]
 }
