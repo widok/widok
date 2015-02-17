@@ -124,6 +124,7 @@ trait ReadChannel[T]
   def forkUniFlat[U](observer: Observer[T, ReadChannel[U]]): ReadChannel[U] = {
     val ch = FlatChildChannel[T, U](this, observer)
     children += ch
+    flush(ch.process)
     ch
   }
 
@@ -395,7 +396,15 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   }
 
   def flush(f: U => Unit) {
-    parent.flush(process)
+    parent.flush { value =>
+      observer(value) match {
+        case Result.Next(resultValue) =>
+          resultValue.foreach(_.flush(f))
+        case Result.Done(resultValue) =>
+          resultValue.foreach(_.flush(f))
+          dispose()
+      }
+    }
   }
 
   def dispose() {

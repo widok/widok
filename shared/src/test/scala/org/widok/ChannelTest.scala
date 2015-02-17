@@ -509,4 +509,10 @@ object ChannelTest extends SimpleTestSuite {
 
     assertEquals(states, mutable.ArrayBuffer(true))
   }
+
+  test("flatMap()") {
+    var value = ""
+    Var(42).flatMap(x => Var(x.toString)).filter(_ => true).attach(value = _)
+    assertEquals(value, "42")
+  }
 }
