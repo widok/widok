@@ -171,7 +171,7 @@ object App extends PageApplication {
     h1("Welcome to Widok!")
   , p("Please enter your name:")
 
-  , text().bindLive(name)
+  , text().bind(name)
 
   , p("Hello, ", name)
       .show(hasName)
@@ -191,7 +191,7 @@ object App extends PageApplication {
 
 The first striking change from the previous examples is that we now use the HTML aliases (``import org.widok.html._``).
 
-More importantly, this example shows that widgets provide methods to interact with channels. For example, the method ``bindLive()`` on textual input fields realises two-way binding, i.e., every key stroke produces a new value on the channel and notifies all other subscribers.
+More importantly, this example shows that widgets provide methods to interact with channels. For example, the method ``bind()`` on textual input fields realises two-way binding, i.e., every key stroke produces a new value on the channel and notifies all other subscribers.
 
 Another such method is ``show()`` which will only show a certain widget if the passed channel produces the value ``true``.
 

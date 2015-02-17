@@ -70,22 +70,22 @@ object Widget {
     trait Text[V] extends Widget[V] { self: V =>
       val rendered: dom.HTMLInputElement
 
-      /** Produce current value after enter was pressed. */
+      /** Produce current value after every key press. */
       lazy val value = PtrVar[String](
+        keyUp, rendered.value, rendered.value = _)
+
+      /** Produce current value after enter was pressed. */
+      lazy val enterValue = PtrVar[String](
         keyUp.filter(_.keyCode == KeyCode.enter),
         rendered.value, rendered.value = _)
-
-      /** Produce current value after every key press. */
-      lazy val liveValue = PtrVar[String](
-        keyUp, rendered.value, rendered.value = _)
 
       def bind(ch: Channel[String]) = { value.bind(ch); self }
       def subscribe(ch: ReadChannel[String]) = { value.subscribe(ch); self }
       def attach(f: String => Unit) = { value.attach(f); self }
 
-      def bindLive(ch: Channel[String]) = { liveValue.bind(ch); self }
-      def subscribeLive(ch: ReadChannel[String]) = { liveValue.subscribe(ch); self }
-      def attachLive(f: String => Unit) = { liveValue.attach(f); self }
+      def bindEnter(ch: Channel[String]) = { enterValue.bind(ch); self }
+      def subscribeEnter(ch: ReadChannel[String]) = { enterValue.subscribe(ch); self }
+      def attachEnter(f: String => Unit) = { enterValue.attach(f); self }
     }
 
     trait Checkbox[V] extends Widget[V] { self: V =>
