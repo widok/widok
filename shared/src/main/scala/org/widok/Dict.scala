@@ -200,6 +200,8 @@ trait PollDict[A, B]
   def keys$: Set[A] = mapping.keySet.toSet
   def values$: Iterable[B] = mapping.values
 
+  def isDefinedAt$(key: A): Boolean = mapping.isDefinedAt(key)
+
   def isEmpty$: Boolean = mapping.isEmpty
   def nonEmpty$: Boolean = mapping.nonEmpty
 

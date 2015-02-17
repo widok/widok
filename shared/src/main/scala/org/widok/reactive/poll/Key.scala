@@ -10,6 +10,9 @@ trait Key[A, B] {
   /** Value associated to `key` */
   def get(key: A): Option[B]
 
+  /** Returns true if key is defined */
+  def isDefinedAt$(key: A): Boolean
+
   /** Returns key set */
   def keys$: Set[A]
 

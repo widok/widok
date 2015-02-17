@@ -390,10 +390,14 @@ trait Widget[T] extends Node { self: T =>
 
   def id(value: String) = { nodeId := value; self }
 
-  def css(cssTags: String*) = { className ++= cssTags; self }
+  def css(cssTags: String*) = {
+    cssTags.filterNot(className.contains$).foreach(className.insert)
+    self
+  }
 
   def css(state: Boolean, cssTags: String*) = {
-    className.toggle(state, cssTags: _*)
+    if (state) cssTags.filterNot(className.contains$).foreach(className.insert)
+    else cssTags.filter(className.contains$).foreach(className.remove)
     self
   }
 
@@ -404,22 +408,26 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
-  def attribute(key: String, value: String) = { attributes += key -> value; self }
+  def attribute(key: String, value: String) = {
+    if (attributes.isDefinedAt$(key)) attributes.update(key, value)
+    else attributes += key -> value
+    self
+  }
 
   def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
     value.attach {
-      case Some(v) => attributes += key -> v
-      case None => attributes -= key
+      case Some(v) => attribute(key, v)
+      case None => if (attributes.isDefinedAt$(key)) attributes -= key
     }
 
     self
   }
 
-  def tabIndex(value: Int) = { attributes += "tabindex" -> value.toString; self }
-  def title(value: String) = { attributes += "title" -> value;  self }
+  def tabIndex(value: Int) = attribute("tabindex", value.toString)
+  def title(value: String) = attribute("title", value)
 
   def titleCh(value: ReadChannel[String]) = {
-    value.attach(attributes += "title" -> _)
+    value.attach(title => attribute("title", title))
     self
   }
 

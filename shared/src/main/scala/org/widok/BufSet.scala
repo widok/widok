@@ -67,7 +67,7 @@ trait StateBufSet[T] extends Disposable {
 
   private[widok] val subscription = changes.attach {
     case Delta.Insert(value) =>
-      assert(!elements.contains(value), "Element does not occur")
+      assert(!elements.contains(value), "Value already exists")
       elements += value
     case Delta.Remove(value) => elements -= value
     case Delta.Clear() => elements.clear()
