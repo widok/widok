@@ -409,15 +409,14 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def attribute(key: String, value: String) = {
-    if (attributes.isDefinedAt$(key)) attributes.update(key, value)
-    else attributes += key -> value
+    attributes.insertOrUpdate(key, value)
     self
   }
 
   def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
     value.attach {
-      case Some(v) => attribute(key, v)
-      case None => if (attributes.isDefinedAt$(key)) attributes -= key
+      case Some(v) => attributes.insertOrUpdate(key, v)
+      case None => attributes.removeIfExists(key)
     }
 
     self

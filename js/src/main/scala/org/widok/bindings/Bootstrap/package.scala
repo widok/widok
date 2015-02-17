@@ -599,10 +599,19 @@ package object Bootstrap {
     validations.foreach { case Validation(ch, f) =>
       ch.attach { input =>
         f(input) match {
-          case Some(err) => invalid += ch -> err
-          case None => invalid -= ch
+          case Some(err) => invalid.insertOrUpdate(ch, err)
+          case None => invalid.removeIfExists(ch)
         }
       }
+    }
+
+    val validators = validations
+      .foldLeft(Map.empty[ReadChannel[_], ReadChannel[Option[String]]])
+    { case (acc, Validation(ch, _)) =>
+      acc + (ch -> dirty.flatMap(
+        if (_) invalid.value(ch).values
+        else Var(None)
+      ))
     }
 
     val maySubmit = dirty.flatMap {
@@ -614,19 +623,13 @@ package object Bootstrap {
       valid.get
     }
 
-    private def validator(ch: ReadChannel[_]): ReadChannel[Option[String]] =
-      dirty.flatMap(
-        if (_) invalid.value(ch).values
-        else Var(None)
-      )
-
     def validate[T](x: Widget[T], field: ReadChannel[_]) =
-      x.cssCh(validator(field).map(_.nonEmpty), "has-error")
+      x.cssCh(validators(field).map(_.nonEmpty), "has-error")
 
     def errors(field: ReadChannel[_]) =
       HTML.Container.Inline(
-        validator(field).map(_.getOrElse(""))
-      ).cssCh(validator(field).map(_.nonEmpty), "help-block", "with-errors")
+        validators(field).map(_.getOrElse(""))
+      ).cssCh(validators(field).map(_.nonEmpty), "help-block", "with-errors")
   }
 
   implicit class ValidateWidget[T](widget: Widget[T]) {

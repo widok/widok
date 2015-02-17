@@ -233,3 +233,13 @@ trait Dict[A, B]
   extends ReadDict[A, B]
   with WriteDict[A, B]
   with StateDict[A, B]
+{
+  def insertOrUpdate(key: A, value: B) {
+    if (isDefinedAt$(key)) update(key, value)
+    else insert(key, value)
+  }
+
+  def removeIfExists(key: A) {
+    if (isDefinedAt$(key)) remove(key)
+  }
+}
