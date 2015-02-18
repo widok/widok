@@ -108,7 +108,7 @@ trait DeltaBuffer[T]
         mapping += element -> mapped /* TODO Use correct position */
         res
       case Delta.Replace(reference, element) =>
-        val mapped = f(reference)
+        val mapped = f(element)
         val res = Delta.Replace(cached(reference), mapped)
         replace(reference, element -> mapped)
         res
