@@ -61,7 +61,7 @@ trait Opt[T]
     var count = 0
     val res = forkUniState(t => {
       count += 1
-      Result.Next(Some(count))
+      Result.Next(count)
     }, Some(count)).asInstanceOf[ChildChannel[Int, Int]]
     defined.attach(d => if (!d) {
       count = 0

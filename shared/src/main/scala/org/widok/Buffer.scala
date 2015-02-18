@@ -147,17 +147,14 @@ trait DeltaBuffer[T]
   }
 
   def mapTo[U](f: T => U): DeltaDict[T, U] = {
-    // TODO Implement Channel.flatMapSeq(f: T => Seq[T])
-    val delta: ReadChannel[Dict.Delta[T, U]] = changes.map[Dict.Delta[T, U]] {
+    val delta: ReadChannel[Dict.Delta[T, U]] = changes.flatMapSeq {
       case Delta.Insert(position, element) =>
-        Dict.Delta.Insert(element, f(element))
-      case Delta.Replace(reference, element) => ???
-        /*(Dict.Delta.Remove(f(reference)),
-          Dict.Delta.Insert(element, f(element)))*/
-      case Delta.Remove(element) =>
-        Dict.Delta.Remove(element)
-      case Delta.Clear() =>
-        Dict.Delta.Clear()
+        Seq(Dict.Delta.Insert(element, f(element)))
+      case Delta.Replace(reference, element) =>
+        Seq(Dict.Delta.Remove(reference),
+          Dict.Delta.Insert(element, f(element)))
+      case Delta.Remove(element) => Seq(Dict.Delta.Remove(element))
+      case Delta.Clear() => Seq(Dict.Delta.Clear())
     }
 
     DeltaDict(delta)

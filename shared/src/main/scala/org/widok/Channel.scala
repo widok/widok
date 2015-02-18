@@ -20,12 +20,12 @@ object Channel {
 }
 
 trait Result[T] {
-  def valueOpt: Option[T]
+  val values: Seq[T]
 }
 
 object Result {
-  case class Next[T](value: Option[T]) extends Result[T] { def valueOpt = value }
-  case class Done[T](value: Option[T]) extends Result[T] { def valueOpt = value }
+  case class Next[T](values: T*) extends Result[T]
+  case class Done[T](values: T*) extends Result[T]
 }
 
 trait ReadChannel[T]
@@ -82,12 +82,12 @@ trait ReadChannel[T]
   }
 
   def child(): ReadChannel[T] =
-    forkUni(t => Result.Next(Some(t)))
+    forkUni(t => Result.Next(t))
 
   def silentAttach(f: T => Unit): ReadChannel[Unit] =
     forkUni { value =>
       f(value)
-      Result.Next(None)
+      Result.Next()
     }
 
   def attach(f: T => Unit): ReadChannel[Unit] = {
@@ -137,19 +137,19 @@ trait ReadChannel[T]
 
   def filter(f: T => Boolean): ReadChannel[T] =
     forkUni { value =>
-      if (f(value)) Result.Next(Some(value))
-      else Result.Next(None)
+      if (f(value)) Result.Next(value)
+      else Result.Next()
     }
 
   def filterCycles: ReadChannel[T] =
-    forkUni(value => Result.Next(Some(value)), filterCycles = true)
+    forkUni(value => Result.Next(value), filterCycles = true)
 
   def take(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
     forkUni { value =>
-      if (cnt > 1) { cnt -= 1; Result.Next(Some(value)) }
-      else Result.Done(Some(value))
+      if (cnt > 1) { cnt -= 1; Result.Next(value) }
+      else Result.Done(value)
     }
   }
 
@@ -157,15 +157,15 @@ trait ReadChannel[T]
     assert(count > 0)
     var cnt = count
     forkUni { value =>
-      if (cnt > 0) { cnt -= 1; Result.Next(None) }
+      if (cnt > 0) { cnt -= 1; Result.Next() }
 
       // TODO Create a new result type which continues processing
       // the stream without calling this callback.
-      else Result.Next(Some(value))
+      else Result.Next(value)
     }
   }
 
-  def head: ReadChannel[T] = forkUni(value => Result.Done(Some(value)))
+  def head: ReadChannel[T] = forkUni(value => Result.Done(value))
   def tail: ReadChannel[T] = drop(1)
 
   def isHead(value: T): ReadChannel[Boolean] =
@@ -173,7 +173,7 @@ trait ReadChannel[T]
 
   def map[U](f: T => U): ReadChannel[U] =
     forkUni { value =>
-      Result.Next(Some(f(value)))
+      Result.Next(f(value))
     }
 
   def mapTo[U](f: T => U): DeltaDict[T, U] = {
@@ -186,20 +186,23 @@ trait ReadChannel[T]
 
   def is(value: T): ReadChannel[Boolean] =
     forkUni { t =>
-      Result.Next(Some(t == value))
+      Result.Next(t == value)
     }.distinct
 
   def isNot(value: T): ReadChannel[Boolean] =
     forkUni { t =>
-      Result.Next(Some(t != value))
+      Result.Next(t != value)
     }.distinct
 
   def flatMap[U](f: T => ReadChannel[U]): ReadChannel[U] =
-    forkUniFlat(value => Result.Next(Some(f(value))))
+    forkUniFlat(value => Result.Next(f(value)))
+
+  def flatMapSeq[U](f: T => Seq[U]): ReadChannel[U] =
+    forkUni(value => Result.Next(f(value): _*))
 
   /** flatMap with back-propagation. */
   def flatMapCh[U](f: T => Channel[U]): Channel[U] =
-    forkBiFlat(value => Result.Next(Some(f(value))))
+    forkBiFlat(value => Result.Next(f(value)))
 
   def flatMapBuf[U](f: T => ReadBuffer[U]): ReadBuffer[U] = {
     val buf = Buffer[U]()
@@ -214,7 +217,7 @@ trait ReadChannel[T]
 
   def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
     forkUni { value =>
-      Result.Next(f.lift(value))
+      Result.Next(f.lift(value).toSeq: _*)
     }
 
   /** @note Caches the accumulator value. */
@@ -222,18 +225,18 @@ trait ReadChannel[T]
     var accum = acc
     forkUniState(value => {
       accum = f(accum, value)
-      Result.Next(Some(accum))
+      Result.Next(accum)
     }, Some(accum))
   }
 
   def takeUntil(ch: ReadChannel[_]): ReadChannel[T] = {
     val res = forkUni { value =>
-      Result.Next(Some(value))
+      Result.Next(value)
     }
 
     ch.forkUni[Any] { _ =>
       res.dispose()
-      Result.Done(None)
+      Result.Done()
     }
 
     res
@@ -249,10 +252,10 @@ trait ReadChannel[T]
   def distinct: ReadChannel[T] = {
     var cur = Option.empty[T]
     forkUniState(value => {
-      if (cur.contains(value)) Result.Next(None)
+      if (cur.contains(value)) Result.Next()
       else {
         cur = Some(value)
-        Result.Next(cur)
+        Result.Next(value)
       }
     }, cur)
   }
@@ -316,13 +319,13 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
 
   def biMap[U](f: T => U, g: U => T): Channel[U] =
     forkBi(
-      fwdValue => Result.Next(Some(f(fwdValue))),
-      bwdValue => Result.Next(Some(g(bwdValue))))
+      fwdValue => Result.Next(f(fwdValue)),
+      bwdValue => Result.Next(g(bwdValue)))
 
   def partialBiMap[U](f: T => Option[U], g: U => Option[T]): Channel[U] =
     forkBi(
-      fwdValue => Result.Next(f(fwdValue)),
-      bwdValue => Result.Next(g(bwdValue)))
+      fwdValue => Result.Next(f(fwdValue).toSeq: _*),
+      bwdValue => Result.Next(g(bwdValue).toSeq: _*))
 
   /** Two-way binding; synchronises `this` and `other`. */
   def bind(other: Channel[T]) {
@@ -372,25 +375,19 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   private var bound: ReadChannel[U] = null
   private var subscr: ReadChannel[Unit] = null
 
-  def onChannel(ch: Option[ReadChannel[U]]) {
+  def onChannel(ch: ReadChannel[U]) {
     if (subscr != null) subscr.dispose()
-
-    if (ch.isDefined) {
-      bound = ch.get
-      subscr = bound.attach(this := _)
-    } else {
-      subscr = null
-      bound = null
-    }
+    bound = ch
+    subscr = bound.attach(this := _)
   }
 
   def process(value: T) {
     observer(value) match {
-      case Result.Next(resultValue) =>
-        onChannel(resultValue)
+      case Result.Next(values @ _*) =>
+        values.foreach(onChannel)
 
-      case Result.Done(resultValue) =>
-        onChannel(resultValue)
+      case Result.Done(values @ _*) =>
+        values.foreach(onChannel)
         dispose()
     }
   }
@@ -398,10 +395,10 @@ case class FlatChildChannel[T, U](parent: ReadChannel[T],
   def flush(f: U => Unit) {
     parent.flush { value =>
       observer(value) match {
-        case Result.Next(resultValue) =>
-          resultValue.foreach(_.flush(f))
-        case Result.Done(resultValue) =>
-          resultValue.foreach(_.flush(f))
+        case Result.Next(values @ _*) =>
+          values.foreach(_.flush(f))
+        case Result.Done(values @ _*) =>
+          values.foreach(_.flush(f))
           dispose()
       }
     }
@@ -436,10 +433,10 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
     inProcess = true
 
     observer(value) match {
-      case Result.Next(resultValue) =>
-        flatProduce(resultValue)
-      case Result.Done(resultValue) =>
-        flatProduce(resultValue)
+      case Result.Next(values @ _*) =>
+        values.foreach(produce)
+      case Result.Done(values @ _*) =>
+        values.foreach(produce)
         dispose()
     }
 
@@ -449,7 +446,7 @@ case class UniChildChannel[T, U](parent: ReadChannel[T],
   def flush(f: U => Unit) {
     inProcess = true
     if (onFlush.isDefined) onFlush.get().foreach(f)
-    else parent.flush(observer(_).valueOpt.foreach(f))
+    else parent.flush(observer(_).values.foreach(f))
     inProcess = false
   }
 
@@ -471,27 +468,27 @@ case class BiChildChannel[T, U](parent: WriteChannel[T],
 {
   val back = silentAttach { value =>
     bwd(value) match {
-      case Result.Next(resultValue) =>
-        resultValue.foreach(r => parent.produce(r, this))
-        Result.Next(None)
-      case Result.Done(resultValue) =>
-        resultValue.foreach(r => parent.produce(r, this))
-        Result.Done(None)
+      case Result.Next(values @ _*) =>
+        values.foreach(r => parent.produce(r, this))
+        Result.Next()
+      case Result.Done(values @ _*) =>
+        values.foreach(r => parent.produce(r, this))
+        Result.Done()
     }
   }
 
   def process(value: T) {
     fwd(value) match {
-      case Result.Next(resultValue) =>
-        resultValue.foreach(r => produce(r, back))
-      case Result.Done(resultValue) =>
-        resultValue.foreach(r => produce(r, back))
+      case Result.Next(values @ _*) =>
+        values.foreach(r => produce(r, back))
+      case Result.Done(values @ _*) =>
+        values.foreach(r => produce(r, back))
         dispose()
     }
   }
 
   def flush(f: U => Unit) {
-    parent.flush(fwd(_).valueOpt.foreach(f))
+    parent.flush(fwd(_).values.foreach(f))
   }
 
   def dispose() {
@@ -517,26 +514,20 @@ case class BiFlatChildChannel[T, U](parent: ReadChannel[T],
     if (bound != null && subscr != null) bound.produce(value, subscr)
   }
 
-  def onChannel(ch: Option[Channel[U]]) {
+  def onChannel(ch: Channel[U]) {
     if (subscr != null) subscr.dispose()
-
-    if (ch.isDefined) {
-      bound = ch.get
-      subscr = bound.silentAttach(produce(_, back))
-      bound.flush(produce(_, back))
-    } else {
-      bound = null
-      subscr = null
-    }
+    bound = ch
+    subscr = bound.silentAttach(produce(_, back))
+    bound.flush(produce(_, back))
   }
 
   def process(value: T) {
     observer(value) match {
-      case Result.Next(resultValue) =>
-        onChannel(resultValue)
+      case Result.Next(values @ _*) =>
+        values.foreach(onChannel)
 
-      case Result.Done(resultValue) =>
-        onChannel(resultValue)
+      case Result.Done(values @ _*) =>
+        values.foreach(onChannel)
         dispose()
     }
   }
