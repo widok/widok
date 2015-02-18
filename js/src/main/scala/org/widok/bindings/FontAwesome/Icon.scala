@@ -18,14 +18,14 @@ trait Icon extends Widget[Icon] {
     css(s"fa-stack-${size}x")
   }
 
-  def fixedWith(state: Boolean) = css(state, "fa-fw")
-  def unorderedList(state: Boolean) = css(state, "fa-ul")
-  def orderedList(state: Boolean) = css(state, "fa-li")
-  def border(state: Boolean) = css(state, "fa-border")
-  def spin(state: Boolean) = css(state, "fa-spin")
-  def pulse(state: Boolean) = css(state, "fa-pulse")
+  def fixedWith(state: Boolean) = cssState(state, "fa-fw")
+  def unorderedList(state: Boolean) = cssState(state, "fa-ul")
+  def orderedList(state: Boolean) = cssState(state, "fa-li")
+  def border(state: Boolean) = cssState(state, "fa-border")
+  def spin(state: Boolean) = cssState(state, "fa-spin")
+  def pulse(state: Boolean) = cssState(state, "fa-pulse")
   def rotate(deg: Int) = css(s"fa-rotate-$deg")
-  def flipHorizontal(state: Boolean) = css(state, "fa-flip-horizontal")
-  def flipVertical(state: Boolean) = css(state, "fa-flip-vertical")
-  def inverse(state: Boolean) = css(state, "fa-inverse")
+  def flipHorizontal(state: Boolean) = cssState(state, "fa-flip-horizontal")
+  def flipVertical(state: Boolean) = cssState(state, "fa-flip-vertical")
+  def inverse(state: Boolean) = cssState(state, "fa-inverse")
 }

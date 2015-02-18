@@ -122,12 +122,11 @@ package object Bootstrap {
     css("btn", "btn-default")
 
     def size(value: Size) = css(s"btn-${value.cssSuffix}")
-    def style(value: Style) = {
-      css(false, "btn-default")
-      css(s"btn-${value.cssSuffix}")
-    }
-    def block(state: Boolean) = css(state, "btn-block")
-    def link(state: Boolean) = css(state, "btn-link")
+    def style(value: Style) =
+      cssState(false, "btn-default")
+        .css(s"btn-${value.cssSuffix}")
+    def block(state: Boolean) = cssState(state, "btn-block")
+    def link(state: Boolean) = cssState(state, "btn-link")
   }
 
   trait Size { val cssSuffix: String }
@@ -207,7 +206,7 @@ package object Bootstrap {
 
   case class Item(contents: View*) extends Widget.List.Item[Item] {
     val rendered = DOM.createElement("li", contents)
-    def active(active: ReadChannel[Boolean]) = cssCh(active, "active")
+    def active(active: ReadChannel[Boolean]) = cssState(active, "active")
   }
 
   object NavigationBar {
@@ -270,7 +269,7 @@ package object Bootstrap {
           .css("dropdown-menu")
           .attribute("role", "menu")
       ).css("dropdown")
-        .cssCh(open, "open")
+        .cssState(open, "open")
         .onClick(_ => open := !open.get)
     }
 
@@ -321,7 +320,7 @@ package object Bootstrap {
     css("panel-default")
 
     def style(value: Style) = {
-      css(false, "panel-default")
+      cssState(false, "panel-default")
       css(s"panel-${value.cssSuffix}")
     }
   }
@@ -378,8 +377,8 @@ package object Bootstrap {
       val rendered = DOM.createElement("li", contents)
 
       def size(value: Size) = css(s"pagination-${value.cssSuffix}")
-      def active(state: Boolean) = css(state, "active")
-      def disabled(state: Boolean) = css(state, "disabled")
+      def isActive(state: Boolean) = cssState(state, "active")
+      def isDisabled(state: Boolean) = cssState(state, "disabled")
     }
   }
 
@@ -395,10 +394,10 @@ package object Bootstrap {
         .css("list-group-item")
       val rendered = widget.rendered
 
-      def active(state: Boolean) = css(state, "active")
+      def active(state: Boolean) = cssState(state, "active")
 
       /** Needed in conjunction with PullRight(). */
-      def clearfix(state: Boolean) = css(state, "clearfix")
+      def clearfix(state: Boolean) = cssState(state, "clearfix")
     }
 
     def ItemHeading1(contents: View*) =
@@ -450,7 +449,7 @@ package object Bootstrap {
     val rendered = DOM.createElement("div", contents)
     css("modal")
 
-    def fade(state: Boolean) = css(state, "fade")
+    def fade(state: Boolean) = cssState(state, "fade")
   }
 
   object Modal {
@@ -485,18 +484,18 @@ package object Bootstrap {
 
   case class ModalBuilder(contents: Modal.ContentElement*) extends Widget[ModalBuilder] {
     val shown = Var(false)
-    val height = Channel[Option[String]]()
+    val height = Var("")
 
     def open() = { shown := true; this }
     def dismiss() = { shown := false; this }
 
     val rendered = Modal(
-      Modal.Backdrop().attributeCh("style", height)
+      Modal.Backdrop().attribute("style", height)
       , Modal.Dialog(
         Modal.Content(contents: _*)
       )
     ).fade(true)
-      .cssCh(shown, "in")
+      .cssState(shown, "in")
       .rendered
 
     /* .show(shown) wouldn't work here because Bootstrap uses
@@ -505,7 +504,7 @@ package object Bootstrap {
 
     val resize = (e: dom.Event) => {
       val h = dom.document.body.scrollHeight
-      height := Some(s"height: ${h}px")
+      height := s"height: ${h}px"
     }
 
     shown.attach(
@@ -563,10 +562,10 @@ package object Bootstrap {
     val rendered = DOM.createElement("table", contents)
     css("table")
 
-    def striped(state: Boolean) = css(state, "table-striped")
-    def bordered(state: Boolean) = css(state, "table-bordered")
-    def hover(state: Boolean) = css(state, "table-hover")
-    def condensed(state: Boolean) = css(state, "table-condensed")
+    def striped(state: Boolean) = cssState(state, "table-striped")
+    def bordered(state: Boolean) = cssState(state, "table-bordered")
+    def hover(state: Boolean) = cssState(state, "table-hover")
+    def condensed(state: Boolean) = cssState(state, "table-condensed")
   }
 
   object Table {
@@ -577,14 +576,14 @@ package object Bootstrap {
     case class Row(contents: View*) extends HTML.Table.RowBase[Row] {
       val rendered = DOM.createElement("tr", contents)
 
-      def active(state: Boolean) = css(state, "active")
+      def active(state: Boolean) = cssState(state, "active")
       def style(style: Style) = css(style.cssSuffix)
     }
 
     case class Column(contents: View*) extends Widget[Column] {
       val rendered = DOM.createElement("td", contents)
 
-      def active(state: Boolean) = css(state, "active")
+      def active(state: Boolean) = cssState(state, "active")
       def style(style: Style) = css(style.cssSuffix)
     }
   }
@@ -624,12 +623,12 @@ package object Bootstrap {
     }
 
     def validate[T](x: Widget[T], field: ReadChannel[_]) =
-      x.cssCh(validators(field).map(_.nonEmpty), "has-error")
+      x.cssState(validators(field).map(_.nonEmpty), "has-error")
 
     def errors(field: ReadChannel[_]) =
       HTML.Container.Inline(
         validators(field).map(_.getOrElse(""))
-      ).cssCh(validators(field).map(_.nonEmpty), "help-block", "with-errors")
+      ).cssState(validators(field).map(_.nonEmpty), "help-block", "with-errors")
   }
 
   implicit class ValidateWidget[T](widget: Widget[T]) {

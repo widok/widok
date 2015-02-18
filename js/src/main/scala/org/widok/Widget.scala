@@ -6,7 +6,6 @@ import org.scalajs.dom.ext.KeyCode
 import org.widok.bindings._
 
 import scala.collection.mutable
-import scala.scalajs.js
 
 object Widget {
   object List {
@@ -326,33 +325,43 @@ trait Widget[T] extends Node { self: T =>
 
   def onChange(f: dom.Event => Unit) = { change.attach(f); self }
 
-  def id(value: String) = { nodeId := value; self }
+  def id(value: String): T = { nodeId := value; self }
 
-  def css(cssTags: String*) = {
+  def id(value: ReadChannel[String]): T = { nodeId.subscribe(value); self }
+
+  def css(cssTags: String*): T = {
     cssTags.filterNot(className.contains$).foreach(className.insert)
     self
   }
 
-  def css(state: Boolean, cssTags: String*) = {
+  def css(tags: ReadChannel[Seq[String]]): T = {
+    tags.attach(className.set)
+    self
+  }
+
+  def cssState(state: Boolean, cssTags: String*): T = {
     if (state) cssTags.filterNot(className.contains$).foreach(className.insert)
     else cssTags.filter(className.contains$).foreach(className.remove)
     self
   }
 
-  def cssCh(tag: ReadChannel[Seq[String]]) = { tag.attach(className.set); self }
-
-  def cssCh(state: ReadChannel[Boolean], cssTags: String*) = {
-    state.attach(value => css(value, cssTags: _*))
+  def cssState(state: ReadChannel[Boolean], cssTags: String*): T = {
+    state.attach(value => cssState(value, cssTags: _*))
     self
   }
 
-  def attribute(key: String, value: String) = {
+  def attribute(key: String, value: String): T = {
     attributes.insertOrUpdate(key, value)
     self
   }
 
-  def attributeCh(key: String, value: ReadChannel[Option[String]]) = {
-    value.attach {
+  def attribute(key: String, value: ReadChannel[String]): T = {
+    value.attach(attributes.insertOrUpdate(key, _))
+    self
+  }
+
+  def attributeOpt(key: String, value: PartialChannel[String]): T = {
+    value.values.attach {
       case Some(v) => attributes.insertOrUpdate(key, v)
       case None => attributes.removeIfExists(key)
     }
@@ -360,27 +369,46 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
-  def tabIndex(value: Int) = attribute("tabindex", value.toString)
-  def title(value: String) = attribute("title", value)
+  def tabIndex(value: Int): T = attribute("tabindex", value.toString)
+  def tabIndex(value: ReadChannel[Int]): T = { value.attach(tabIndex(_)); self }
 
-  def titleCh(value: ReadChannel[String]) = {
-    value.attach(title => attribute("title", title))
+  def title(value: String): T = attribute("title", value)
+  def title(value: ReadChannel[String]): T = attribute("title", value)
+
+  def cursor(cursor: HTML.Cursor): T = { style.cursor := cursor; self }
+  def cursor(cursor: ReadChannel[HTML.Cursor]): T = {
+    style.cursor.subscribe(cursor)
     self
   }
 
-  def cursor(cursor: HTML.Cursor) = { style.cursor := cursor; self }
-
-  def show(value: ReadChannel[Boolean], remove: Boolean = true) = {
-    value.attach { cur =>
-      if (remove) style.display := (if (cur) "" else "none")
-      else style.visibility := (if (cur) "visible" else "hidden")
-    }
-
+  def show(value: Boolean): T = {
+    style.display := (if (value) "" else "none")
     self
   }
 
-  def disabled(value: ReadChannel[Boolean]) = {
-    attributeCh("disabled", value.map(if (_) None else Some("")))
+  def show(value: ReadChannel[Boolean]): T = {
+    value.attach(show(_))
+    self
+  }
+
+  def visible(value: Boolean): T = {
+    style.visibility := (if (value) "visible" else "hidden")
+    self
+  }
+
+  def visible(value: ReadChannel[Boolean]): T = {
+    value.attach(visible(_))
+    self
+  }
+
+  def disabled(value: Boolean): T = {
+    if (value) attributes.insertOrUpdate("disabled", "")
+    else attributes.removeIfExists("disabled")
+    self
+  }
+
+  def disabled(value: ReadChannel[Boolean]): T = {
+    value.attach(disabled(_))
     self
   }
 }

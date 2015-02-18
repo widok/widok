@@ -8,7 +8,7 @@ package object FontAwesome {
     css("fa-stack")
 
     def large(state: Boolean) = {
-      css(state, "fa-lg")
+      cssState(state, "fa-lg")
     }
   }
 }

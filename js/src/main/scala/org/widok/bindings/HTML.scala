@@ -182,12 +182,10 @@ object HTML {
         val rendered = DOM.createElement("option", Seq(HTML.Text(caption)))
 
         def bind(ch: ReadChannel[Boolean]) = {
-          val obs = ch.map { selected =>
-            if (selected) Some("")
-            else None
+          ch.attach { selected =>
+            if (selected) attributes.insertOrUpdate("selected", "")
+            else attributes.removeIfExists("selected")
           }
-
-          attributeCh("selected", obs)
         }
       }
     }
