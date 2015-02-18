@@ -87,8 +87,45 @@ trait DeltaBuffer[T]
     case Delta.Remove(element) => element
   }
 
-  /** @note `f` should not be side-effecting */
+  /** Unlike `mapPure`, stores mapping locally. This is currently needed as
+    * widget objects are not immutable.
+    */
   def map[U](f: T => U): DeltaBuffer[U] = {
+    val mapping = mutable.ArrayBuffer.empty[(T, U)]
+    def cached(key: T): U = mapping.find { case (k, _) => k == key }.get._2
+    def remove(key: T) = mapping.remove(
+      mapping.indexWhere { case (k, _) => k == key }
+    )
+    def replace(key: T, value: (T, U)) = mapping.update(
+      mapping.indexWhere { case (k, _) => k == key },
+      value
+    )
+
+    val chgs: ReadChannel[Delta[U]] = changes.map {
+      case Delta.Insert(position, element) =>
+        val mapped = f(element)
+        val res = Delta.Insert(position.map(cached), mapped)
+        mapping += element -> mapped /* TODO Use correct position */
+        res
+      case Delta.Replace(reference, element) =>
+        val mapped = f(reference)
+        val res = Delta.Replace(cached(reference), mapped)
+        replace(reference, element -> mapped)
+        res
+      case Delta.Remove(element) =>
+        val res = Delta.Remove(cached(element))
+        remove(element)
+        res
+      case Delta.Clear() =>
+        mapping.clear()
+        Delta.Clear()
+    }
+
+    DeltaBuffer(chgs)
+  }
+
+  /** @note `f` must not be side-effecting */
+  def mapPure[U](f: T => U): DeltaBuffer[U] = {
     val chgs: ReadChannel[Delta[U]] = changes.map {
       case Delta.Insert(position, element) =>
         Delta.Insert(position.map(f), f(element))
