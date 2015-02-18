@@ -21,6 +21,16 @@ object DOM {
   def getElement(id: String): Option[dom.Element] =
     Option(dom.document.getElementById(id))
 
+  def remove(parent: dom.Node, from: dom.Node, to: dom.Node) {
+    var cur = from
+    while (cur != null) {
+      val next = cur.nextSibling
+      parent.removeChild(cur)
+      if (cur == to) return
+      cur = next
+    }
+  }
+
   def clear(elem: dom.Node) {
     while (elem.lastChild != null)
       elem.removeChild(elem.lastChild)

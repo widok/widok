@@ -237,38 +237,36 @@ object HTML {
 
         DOM.insertAfter(parent, offset, rendered)
 
-        val mapping = mutable.Map.empty[Widget[_], dom.Node]
         var last: dom.Node = rendered
 
         buf.changes.attach {
           case Delta.Insert(Position.Head(), element) =>
             DOM.insertAfter(parent, rendered, element.rendered)
-            mapping += element -> element.rendered
-            if (last == rendered) last = mapping(element)
+            if (last == rendered) last = element.rendered
 
           case Delta.Insert(Position.Last(), element) =>
             DOM.insertAfter(parent, last, element.rendered)
-            mapping += element -> element.rendered
-            last = mapping(element)
+            last = element.rendered
 
           case Delta.Insert(Position.Before(reference), element) =>
-            parent.insertBefore(element.rendered, mapping(reference))
-            mapping += element -> element.rendered
+            parent.insertBefore(element.rendered, reference.rendered)
 
           case Delta.Insert(Position.After(reference), element) =>
-            DOM.insertAfter(parent, mapping(reference), element.rendered)
-            mapping += element -> element.rendered
-            if (last == mapping(reference)) last = mapping(element)
+            DOM.insertAfter(parent, reference.rendered, element.rendered)
+            if (last == reference.rendered) last = element.rendered
+
+          case Delta.Replace(reference, element) =>
+            parent.replaceChild(element.rendered, reference.rendered)
 
           case Delta.Remove(element) =>
-            if (last == mapping(element)) last = mapping(element).previousSibling
-            parent.removeChild(mapping(element))
-            mapping -= element
+            if (last == element.rendered) last = element.rendered.previousSibling
+            parent.removeChild(element.rendered)
 
           case Delta.Clear() =>
-            mapping.foreach { case (_, value) => parent.removeChild(value) }
-            mapping.clear()
-            last = rendered
+            if (last != rendered) {
+              DOM.remove(parent, rendered.nextSibling, last)
+              last = rendered
+            }
         }
       }
     }
