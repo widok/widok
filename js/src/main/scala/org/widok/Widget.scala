@@ -118,7 +118,7 @@ object Widget {
         self
       }
 
-      def bind[T, X <: List.Item[X]](buf: Buffer[T],
+      def bind[T, X <: List.Item[X]](buf: DeltaBuffer[T],
                                      f: T => String,
                                      selection: Channel[Option[T]]) =
       {
