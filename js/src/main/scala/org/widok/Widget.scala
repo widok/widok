@@ -16,50 +16,23 @@ object Widget {
   }
 
   trait List[V, ListItem <: Widget[_]] extends Widget[V] { self: V =>
-    def subscribe[T](channel: ReadChannel[Seq[T]])(f: T => List.Item[_]) = {
-      channel.attach { list =>
-        DOM.clear(rendered)
-
-        list.foreach { cur =>
-          rendered.appendChild(f(cur).rendered)
-        }
-      }
-
-      self
-    }
-
-    def bind[T](buffer: DeltaBuffer[T])(f: T => ListItem) = {
+    def bind(buffer: DeltaBuffer[ListItem]) = {
       import Buffer.Delta
       import Buffer.Position
 
-      val mapping = mutable.Map.empty[T, dom.Node]
-
       buffer.changes.attach {
         case Delta.Insert(Position.Head(), element) =>
-          mapping += element -> rendered.insertBefore(f(element).rendered, rendered.firstChild)
-
+          rendered.insertBefore(element.rendered, rendered.firstChild)
         case Delta.Insert(Position.Last(), element) =>
-          mapping += element -> rendered.appendChild(f(element).rendered)
-
+          rendered.appendChild(element.rendered)
         case Delta.Insert(Position.Before(reference), element) =>
-          mapping += element -> rendered.insertBefore(f(element).rendered, mapping(reference))
-
+          rendered.insertBefore(element.rendered, reference.rendered)
         case Delta.Insert(Position.After(reference), element) =>
-          val after = f(element).rendered
-          DOM.insertAfter(rendered, mapping(reference), after)
-          mapping += element -> after
-
+          DOM.insertAfter(rendered, reference.rendered, element.rendered)
         case Delta.Replace(reference, element) =>
-          mapping += element -> rendered.replaceChild(f(element).rendered, mapping(reference))
-          mapping -= reference
-
-        case Delta.Remove(element) =>
-          rendered.removeChild(mapping(element))
-          mapping -= element
-
-        case Delta.Clear() =>
-          mapping.clear()
-          DOM.clear(rendered)
+          rendered.replaceChild(element.rendered, reference.rendered)
+        case Delta.Remove(element) => rendered.removeChild(element.rendered)
+        case Delta.Clear() => DOM.clear(rendered)
       }
 
       self
