@@ -401,14 +401,14 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
-  def disabled(value: Boolean): T = {
-    if (value) attributes.insertOrUpdate("disabled", "")
-    else attributes.removeIfExists("disabled")
+  def enabled(value: Boolean): T = {
+    if (value) attributes.removeIfExists("disabled")
+    else attributes.insertOrUpdate("disabled", "")
     self
   }
 
-  def disabled(value: ReadChannel[Boolean]): T = {
-    value.attach(disabled(_))
+  def enabled(value: ReadChannel[Boolean]): T = {
+    value.attach(enabled(_))
     self
   }
 }

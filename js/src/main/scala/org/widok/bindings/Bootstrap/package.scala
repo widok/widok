@@ -377,8 +377,8 @@ package object Bootstrap {
       val rendered = DOM.createElement("li", contents)
 
       def size(value: Size) = css(s"pagination-${value.cssSuffix}")
-      def isActive(state: Boolean) = cssState(state, "active")
-      def isDisabled(state: Boolean) = cssState(state, "disabled")
+      def active(state: Boolean) = cssState(state, "active")
+      def disabled(state: Boolean) = cssState(state, "disabled")
     }
   }
 
