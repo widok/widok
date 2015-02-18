@@ -26,7 +26,7 @@ object Placeholder {
            textColour: String
           ): String =
   {
-    val canvas = dom.document.createElement("canvas").asInstanceOf[dom.HTMLCanvasElement]
+    val canvas = dom.document.createElement("canvas").asInstanceOf[dom.html.Canvas]
     val context = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
     val textSizePt = calculateTextSize(textSize, size)
 

@@ -59,7 +59,7 @@ object HTML {
 
   case class Text(value: String) extends Widget[Text] {
     val rendered = dom.document.createTextNode(value)
-      .asInstanceOf[org.scalajs.dom.HTMLElement]
+      .asInstanceOf[dom.html.Element]
   }
 
   case class Raw(html: String) extends Widget[Raw] {
@@ -121,7 +121,7 @@ object HTML {
   object Input {
     trait Textual[T] extends Widget.Input.Text[T] { self: T =>
       val rendered = DOM.createElement("input")
-        .asInstanceOf[dom.HTMLInputElement]
+        .asInstanceOf[dom.html.Input]
 
       def autofocus(value: Boolean) = {
         rendered.setAttribute("autofocus", "")
@@ -153,13 +153,13 @@ object HTML {
 
     case class Checkbox() extends Widget.Input.Checkbox[Checkbox] {
       val rendered = DOM.createElement("input")
-        .asInstanceOf[dom.HTMLInputElement]
+        .asInstanceOf[dom.html.Input]
       rendered.setAttribute("type", "checkbox")
     }
 
     case class File() extends Widget[File] {
       val rendered = DOM.createElement("input")
-        .asInstanceOf[dom.HTMLInputElement]
+        .asInstanceOf[dom.html.Input]
 
       def accept(value: String) = {
         rendered.setAttribute("accept", value)
@@ -180,7 +180,6 @@ object HTML {
     object Select {
       case class Option(caption: String) extends Widget[Option] {
         val rendered = DOM.createElement("option", Seq(HTML.Text(caption)))
-          .asInstanceOf[dom.HTMLElement]
 
         def bind(ch: ReadChannel[Boolean]) = {
           val obs = ch.map { selected =>
@@ -229,7 +228,7 @@ object HTML {
     }
 
     case class Items(buf: DeltaBuffer[Widget[_]]) extends Widget.List.Item[Items] {
-      val rendered: dom.HTMLElement = DOM.createElement(null)
+      val rendered = DOM.createElement(null)
 
       override def render(parent: dom.Node, offset: dom.Node) {
         import Buffer.Delta

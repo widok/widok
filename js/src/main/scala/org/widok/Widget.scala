@@ -1,7 +1,7 @@
 package org.widok
 
 import org.scalajs.dom
-import org.scalajs.dom.extensions.KeyCode
+import org.scalajs.dom.ext.KeyCode
 
 import org.widok.bindings._
 
@@ -21,7 +21,7 @@ object Widget {
 
   object Input {
     trait Text[V] extends Widget[V] { self: V =>
-      val rendered: dom.HTMLInputElement
+      val rendered: dom.html.Input
 
       /** Produce current value after every key press. */
       lazy val value = PtrVar[String](
@@ -42,7 +42,7 @@ object Widget {
     }
 
     trait Checkbox[V] extends Widget[V] { self: V =>
-      val rendered: dom.HTMLInputElement
+      val rendered: dom.html.Input
 
       lazy val checked = PtrVar[Boolean](change,
         rendered.checked, rendered.checked = _)
@@ -72,18 +72,9 @@ object Widget {
         import Buffer.Delta
         import Buffer.Position
 
-        def selected(): dom.HTMLSelectElement = {
-          val castRendered = rendered.asInstanceOf[dom.HTMLSelectElement]
-          val idx = castRendered.selectedIndex
-
-          // TODO Remove casts
-          // See https://github.com/scala-js/scala-js/issues/1384#issuecomment-66908750
-          // and https://github.com/scala-js/scala-js-dom/pull/78
-          rendered
-            .asInstanceOf[js.Dynamic]
-            .options
-            .asInstanceOf[js.Array[dom.HTMLSelectElement]]
-            .apply(idx)
+        def selected(): dom.html.Select = {
+          val castRendered = rendered.asInstanceOf[dom.html.Select]
+          castRendered.options(castRendered.selectedIndex)
         }
 
         val mapping = mutable.Map.empty[T, HTML.Input.Select.Option]
@@ -222,7 +213,7 @@ object DOMChannel {
     ev
   }
 
-  def touchEvent(rendered: dom.HTMLElement, id: String): Channel[dom.TouchEvent] = {
+  def touchEvent(rendered: dom.html.Element, id: String): Channel[dom.TouchEvent] = {
     val ev = Channel[dom.TouchEvent]()
     rendered.addEventListener(id,
       (e: dom.Event) => ev.produce(e.asInstanceOf[dom.TouchEvent]),
@@ -241,14 +232,14 @@ case class Inline(contents: Widget[_]*) extends View {
   }
 }
 
-case class CSSStyle(style: dom.CSSStyleDeclaration) {
+case class CSSStyle(style: dom.css.StyleDeclaration) {
   lazy val display: Opt[String] = DOMChannel.variable(style.display = _)
   lazy val visibility: Opt[String] = DOMChannel.variable(style.visibility = _)
   lazy val cursor: Opt[HTML.Cursor] = DOMChannel.variable(v => style.cursor = v.toString)
 }
 
 trait Node extends View {
-  val rendered: dom.HTMLElement
+  val rendered: dom.html.Element
 
   def render(parent: dom.Node, offset: dom.Node) {
     DOM.insertAfter(parent, offset, rendered)
@@ -303,7 +294,7 @@ trait Node extends View {
 }
 
 object Node {
-  def apply(node: dom.HTMLElement): Node =
+  def apply(node: dom.html.Element): Node =
     new Node {
       val rendered = node
     }

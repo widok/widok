@@ -139,7 +139,7 @@ object Build extends sbt.Build {
       sourceGenerators in Compile <+= codeGenerationTask,
 
       libraryDependencies ++= Seq(
-        "org.scala-js" %%% "scalajs-dom" % "0.7.0",
+        "org.scala-js" %%% "scalajs-dom" % "0.8.0",
         "org.monifu" %%% "minitest" % "0.11" % "test",
         "org.webjars" % "font-awesome" % "4.3.0-1",
         "org.webjars" % "bootstrap" % "3.3.2"

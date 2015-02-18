@@ -9,7 +9,7 @@ object Document {
 trait BasePage {
   val document = Document
 
-  val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.HTMLElement])
+  val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.html.Element])
 
   def view(): View
 
