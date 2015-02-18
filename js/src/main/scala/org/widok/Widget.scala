@@ -16,27 +16,7 @@ object Widget {
   }
 
   trait List[V, ListItem <: Widget[_]] extends Widget[V] { self: V =>
-    def bind(buffer: DeltaBuffer[ListItem]) = {
-      import Buffer.Delta
-      import Buffer.Position
 
-      buffer.changes.attach {
-        case Delta.Insert(Position.Head(), element) =>
-          rendered.insertBefore(element.rendered, rendered.firstChild)
-        case Delta.Insert(Position.Last(), element) =>
-          rendered.appendChild(element.rendered)
-        case Delta.Insert(Position.Before(reference), element) =>
-          rendered.insertBefore(element.rendered, reference.rendered)
-        case Delta.Insert(Position.After(reference), element) =>
-          DOM.insertAfter(rendered, reference.rendered, element.rendered)
-        case Delta.Replace(reference, element) =>
-          rendered.replaceChild(element.rendered, reference.rendered)
-        case Delta.Remove(element) => rendered.removeChild(element.rendered)
-        case Delta.Clear() => DOM.clear(rendered)
-      }
-
-      self
-    }
   }
 
   object Input {
