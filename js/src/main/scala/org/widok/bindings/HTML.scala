@@ -178,12 +178,12 @@ object HTML {
     }
 
     object Select {
-      case class Option() extends Widget[Option] {
-        val rendered = DOM.createElement("option")
+      case class Option(caption: String) extends Widget[Option] {
+        val rendered = DOM.createElement("option", Seq(HTML.Text(caption)))
           .asInstanceOf[dom.HTMLElement]
 
         def bind(ch: ReadChannel[Boolean]) = {
-          val obs = ch.map { selected ⇒
+          val obs = ch.map { selected =>
             if (selected) Some("")
             else None
           }

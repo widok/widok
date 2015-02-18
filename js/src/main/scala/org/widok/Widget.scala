@@ -55,17 +55,11 @@ object Widget {
     trait Select[V] extends Widget[V] { self: V =>
       private var optDefault = Option.empty[HTML.Input.Select.Option]
 
-      private def addOption(str: String): HTML.Input.Select.Option = {
-        val elem = HTML.Input.Select.Option()
-        elem.rendered.appendChild(HTML.Text(str).rendered)
-        elem
-      }
-
       /* All manually added elements will be ignored by bind() */
       def default(caption: String) = {
         assert(optDefault.isEmpty, "default() can only be used once")
         assert(!rendered.hasChildNodes(), "DOM modified externally")
-        val opt = addOption(caption)
+        val opt = HTML.Input.Select.Option(caption)
         rendered.appendChild(opt.rendered)
         optDefault = Some(opt)
         self
@@ -100,12 +94,12 @@ object Widget {
             else if (optDefault.nonEmpty) optDefault
             else None
 
-          node.foreach(_.rendered.setAttribute("selected", ""))
+          node.foreach(_.attribute("selected", ""))
         }
 
         buf.changes.attach {
           case Delta.Insert(Position.Head(), element) =>
-            mapping += element -> addOption(f(element))
+            mapping += element -> HTML.Input.Select.Option(f(element))
 
             if (optDefault.isEmpty)
               rendered.insertBefore(
@@ -120,26 +114,26 @@ object Widget {
             selection.flush(onSelect)
 
           case Delta.Insert(Position.Last(), element) =>
-            mapping += element -> addOption(f(element))
+            mapping += element -> HTML.Input.Select.Option(f(element))
             rendered.appendChild(mapping(element).rendered)
             selection.flush(onSelect)
 
           case Delta.Insert(Position.Before(reference), element) =>
-            mapping += element -> addOption(f(element))
+            mapping += element -> HTML.Input.Select.Option(f(element))
             rendered.insertBefore(
               mapping(element).rendered,
               mapping(reference).rendered)
             selection.flush(onSelect)
 
           case Delta.Insert(Position.After(reference), element) =>
-            mapping += element -> addOption(f(element))
+            mapping += element -> HTML.Input.Select.Option(f(element))
             DOM.insertAfter(rendered,
               mapping(reference).rendered,
               mapping(element).rendered)
             selection.flush(onSelect)
 
           case Delta.Replace(reference, element) =>
-            mapping += element -> addOption(f(element))
+            mapping += element -> HTML.Input.Select.Option(f(element))
             rendered.replaceChild(
               mapping(element).rendered,
               mapping(reference).rendered)
