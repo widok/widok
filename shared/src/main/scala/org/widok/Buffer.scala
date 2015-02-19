@@ -210,7 +210,8 @@ trait PollBuffer[T]
   with reactive.poll.RelativeOrder[T]
   with reactive.poll.Iterate[T]
   with reactive.poll.Filter[ReadBuffer, T]
-  with reactive.stream.Filter[ReadBuffer, T, T]
+  with reactive.stream.Find[T]
+  with reactive.stream.Filter[DeltaBuffer, T, T]
   with reactive.stream.RelativeOrder[T]
   with reactive.stream.Aggregate[ReadBuffer, T]
   with reactive.stream.FilterOrdered[ReadBuffer, T]
@@ -231,54 +232,46 @@ trait PollBuffer[T]
   }
 
   /** TODO Could this be implemented more efficiently without iterating over `elements`? */
-  def filter(f: T => Boolean): ReadBuffer[T] = {
-    val buf = Buffer[T]()
-
-    changes.attach {
+  def filter(f: T => Boolean): DeltaBuffer[T] =
+    DeltaBuffer(changes.partialMap {
       case Delta.Insert(Position.Head(), element) if f(element) =>
-        buf.changes := Delta.Insert(Position.Head(), element)
+        Delta.Insert(Position.Head(), element)
 
       case Delta.Insert(Position.Last(), element) if f(element) =>
-        buf.changes := Delta.Insert(Position.Last(), element)
+        Delta.Insert(Position.Last(), element)
 
       case Delta.Insert(Position.Before(reference), element) if f(reference) && f(element) =>
-        buf.changes := Delta.Insert(Position.Before(reference), element)
+        Delta.Insert(Position.Before(reference), element)
 
       case Delta.Insert(Position.Before(reference), element) if !f(reference) && f(element) =>
         val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
-        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
-        else buf.changes := Delta.Insert(Position.After(insert.get), element)
+        if (insert.isEmpty) Delta.Insert(Position.Last(), element)
+        else Delta.Insert(Position.After(insert.get), element)
 
       case Delta.Insert(Position.After(reference), element) if f(reference) && f(element) =>
-        buf.changes := Delta.Insert(Position.After(reference), element)
+        Delta.Insert(Position.After(reference), element)
 
       case Delta.Insert(Position.After(reference), element) if !f(reference) && f(element) =>
         val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
-        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
-        else buf.changes := Delta.Insert(Position.Before(insert.get), element)
+        if (insert.isEmpty) Delta.Insert(Position.Last(), element)
+        else Delta.Insert(Position.Before(insert.get), element)
 
       case Delta.Replace(reference, element) if f(reference) && f(element) =>
-        buf.changes := Delta.Replace(reference, element)
+        Delta.Replace(reference, element)
 
       case Delta.Replace(reference, element) if f(reference) && !f(element) =>
-        buf.changes := Delta.Remove(reference)
+        Delta.Remove(reference)
 
       case Delta.Replace(reference, element) if !f(reference) && f(element) =>
         val insert = elements.drop(indexOf(reference)).find(x => x != element && f(x))
-        if (insert.isEmpty) buf.changes := Delta.Insert(Position.Last(), element)
-        else buf.changes := Delta.Insert(Position.Before(insert.get), element)
+        if (insert.isEmpty) Delta.Insert(Position.Last(), element)
+        else Delta.Insert(Position.Before(insert.get), element)
 
       case Delta.Remove(element) if f(element) =>
-        buf.changes := Delta.Remove(element)
+        Delta.Remove(element)
 
-      case Delta.Clear() =>
-        buf.changes := Delta.Clear()
-
-      case _ =>
-    }
-
-    buf
-  }
+      case Delta.Clear() => Delta.Clear()
+    })
 
   def filter$(f: T => Boolean): ReadBuffer[T] = Buffer(elements.filter(f): _*)
   def distinct$: ReadBuffer[T] = Buffer(elements.distinct: _*)
@@ -391,13 +384,15 @@ trait PollBuffer[T]
 
   def headOption: ReadPartialChannel[T] = {
     val opt = Opt[T]()
-    changes.attach(_ => opt.set(get.headOption))
+    changes.attach(_ =>
+      if (opt.toOption != get.headOption) opt.set(get.headOption))
     opt
   }
 
   def lastOption: ReadPartialChannel[T] = {
     val opt = Opt[T]()
-    changes.attach(_ => opt.set(get.lastOption))
+    changes.attach(_ =>
+      if (opt.toOption != get.lastOption) opt.set(get.lastOption))
     opt
   }
 
@@ -520,10 +515,8 @@ trait PollBuffer[T]
 
   def takeUntil(ch: ReadChannel[_]): ReadBuffer[T] = ???
 
-  /* TODO Must always return the first matching row; if the row gets deleted,
-   * should pick the next match
-   */
-  def find(f: T => Boolean): PartialChannel[T] = ???
+  /** Returns first matching row; if it gets deleted, returns next match. */
+  def find(f: T => Boolean): ReadPartialChannel[T] = filter(f).buffer.headOption
 
   def diff(other: ReadBufSet[T]): ReadBuffer[T] = {
     val buf = Buffer[T]()

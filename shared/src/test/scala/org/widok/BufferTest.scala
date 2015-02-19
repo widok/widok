@@ -80,4 +80,39 @@ object BufferTest extends SimpleTestSuite {
 
     assertEquals(x.get, add.get)
   }
+
+  test("find") {
+    val buffer = Buffer(1, 2, 3)
+
+    var states = mutable.ArrayBuffer.empty[Int]
+    buffer.find(_ > 1).attach(states += _)
+    assertEquals(states, mutable.ArrayBuffer(2))
+
+    buffer.remove(2)
+    assertEquals(states, mutable.ArrayBuffer(2, 3))
+  }
+
+  test("toBuffer") {
+    val buffer = Buffer(1, 2, 3)
+
+    val states = buffer.find(_ > 1).buffer
+    assertEquals(states.get, Seq(2))
+
+    buffer.remove(2)
+    assertEquals(states.get, Seq(2, 3))
+  }
+
+  test("toBuffer") {
+    val buffer = Buffer[Int]()
+    val states = buffer.find(_ > 1).buffer
+
+    buffer += 1
+    buffer += 2
+    buffer += 3
+
+    assertEquals(states.get, Seq(2))
+
+    buffer.remove(2)
+    assertEquals(states.get, Seq(2, 3))
+  }
 }

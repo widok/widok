@@ -140,4 +140,8 @@ object BufferSpec extends SimpleTestSuite {
   test("filter") {
     forallBufSeq(buffer => (buffer.filter(_ > 1).buffer, () => buffer.get.filter(_ > 1)))
   }
+
+  test("find") {
+    forallBufSeq(buffer => (buffer.find(_ > 1).toBuffer, () => buffer.get.find(_ > 1).toSeq))
+  }
 }

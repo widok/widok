@@ -100,9 +100,17 @@ trait ReadChannel[T]
     children -= ch
   }
 
+  /** Buffers all produced elements */
   def buffer: Buffer[T] = {
     val buf = Buffer[T]()
     attach(value => buf.append(value))
+    buf
+  }
+
+  /** Buffers only current element */
+  def toBuffer: Buffer[T] = {
+    val buf = Buffer[T]()
+    attach(value => buf.set(Seq(value)))
     buf
   }
 

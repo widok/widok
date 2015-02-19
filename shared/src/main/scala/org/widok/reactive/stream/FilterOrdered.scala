@@ -11,9 +11,6 @@ trait FilterOrdered[Container[_], T] {
    */
   def span(f: T => Boolean): (Container[T], Container[T])
 
-  /** Finds first value for which `f` is true */
-  def find(f: T => Boolean): PartialChannel[T]
-
   /** Remove all elements from `other` */
   def diff(other: ReadBufSet[T]): Container[T]
 
