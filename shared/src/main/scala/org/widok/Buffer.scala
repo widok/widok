@@ -110,6 +110,9 @@ trait DeltaBuffer[T]
     count
   }
 
+  def takeUntil(ch: ReadChannel[_]): DeltaBuffer[T] =
+    DeltaBuffer(changes.takeUntil(ch))
+
   def insertions: ReadChannel[T] = changes.partialMap {
     case Delta.Insert(_, element) => element
   }
@@ -556,8 +559,6 @@ trait PollBuffer[T]
   */
 
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
-
-  def takeUntil(ch: ReadChannel[_]): ReadBuffer[T] = ???
 
   /** Returns first matching row; if it gets deleted, returns next match. */
   def find(f: T => Boolean): ReadPartialChannel[T] = filter(f).buffer.headOption

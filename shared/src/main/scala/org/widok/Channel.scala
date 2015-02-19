@@ -371,7 +371,6 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
     res
   }
 
-  /** @note Its public use is discouraged. takeUntil() is a safer alternative. */
   def dispose()
 
   override def toString = "Channel()"
