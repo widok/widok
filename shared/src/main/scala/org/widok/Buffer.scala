@@ -303,10 +303,17 @@ trait PollBuffer[T]
   def indexOf(handle: T): Int = elements.indexOf(handle)
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements)
 
-  def before(value: T): ReadChannel[T] = ???
-  def after(value: T): ReadChannel[T] = ???
-  def beforeOption(value: T): PartialChannel[T] = ???
-  def afterOption(value: T): PartialChannel[T] = ???
+  def before(value: T): ReadChannel[T] =
+    changes.map(_ => before$(value)).distinct
+
+  def after(value: T): ReadChannel[T] =
+    changes.map(_ => after$(value)).distinct
+
+  def beforeOption(value: T): ReadPartialChannel[T] =
+    changes.partialMap(Function.unlift(_ => beforeOption$(value)))
+
+  def afterOption(value: T): ReadPartialChannel[T] =
+    changes.partialMap(Function.unlift(_ => afterOption$(value)))
 
   def before$(value: T): T = {
     val position = indexOf(value) - 1

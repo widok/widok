@@ -1,6 +1,6 @@
 package org.widok.reactive.stream
 
-import org.widok.ReadChannel
+import org.widok.{ReadPartialChannel, ReadChannel}
 
 trait RelativeOrder[T] {
   /**
@@ -16,8 +16,8 @@ trait RelativeOrder[T] {
   def after(value: T): ReadChannel[T]
 
   /** @see [[before]] */
-  def beforeOption(value: T): org.widok.PartialChannel[T]
+  def beforeOption(value: T): ReadPartialChannel[T]
 
   /** @see [[after]] */
-  def afterOption(value: T): org.widok.PartialChannel[T]
+  def afterOption(value: T): ReadPartialChannel[T]
 }
