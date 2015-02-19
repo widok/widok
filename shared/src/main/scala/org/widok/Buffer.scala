@@ -562,7 +562,10 @@ trait PollBuffer[T]
   }
   */
 
-  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
+  def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] =
+    changes.map { _ =>
+      get.foldLeft(acc)(f)
+    }.distinct
 
   /** Returns first matching row; if it gets deleted, returns next match. */
   def find(f: T => Boolean): ReadPartialChannel[T] = filter(f).buffer.headOption
