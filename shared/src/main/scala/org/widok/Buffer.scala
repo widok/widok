@@ -479,7 +479,11 @@ trait PollBuffer[T]
   def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] =
     Buffer.flatten(map(f).buffer)
 
-  def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] = ???
+  def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] =
+    flatMap(value => f.lift(value) match {
+      case Some(v) => Buffer(v)
+      case None => Buffer()
+    })
 
   def flatMapCh[U](f: T => ReadPartialChannel[U]): ReadBuffer[U] =
     flatMap(value => f(value).values.flatMapBuf {
