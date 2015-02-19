@@ -81,7 +81,9 @@ trait Opt[T]
     else clear()
   }
 
-  def partialUpdate(f: PartialFunction[T, T]) = ???
+  def partialUpdate(f: PartialFunction[T, T]) {
+    cached.foreach(value => set(f.lift(value)))
+  }
 
   /** @note This method may only be called if the value is defined. */
   def get: T = cached.get
