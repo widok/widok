@@ -47,7 +47,38 @@ object Buffer {
     buf
   }
 
-  implicit def BufferToSeq[T](buf: Buffer[T]): Seq[T] = buf.elements
+  implicit def ReadBufferToSeq[T](buf: ReadBuffer[T]): Seq[T] = buf.elements
+
+  implicit def flatten[T](buf: ReadBuffer[ReadBuffer[T]]): ReadBuffer[T] = {
+    /** TODO Find a more efficient implementation */
+    val result = Buffer[T]()
+    val attached = mutable.HashMap.empty[ReadBuffer[T], ReadChannel[Unit]]
+
+    def refresh() {
+      result.clear()
+      buf.get.foreach(result ++= _.get)
+    }
+
+    buf.changes.attach {
+      case Delta.Insert(position, element) =>
+        attached += element -> element.changes.attach(_ => refresh())
+        refresh()
+      case Delta.Replace(reference, element) =>
+        attached(reference).dispose()
+        attached -= reference
+        attached += element -> element.changes.attach(_ => refresh())
+        refresh()
+      case Delta.Remove(element) =>
+        attached(element).dispose()
+        attached -= element
+        refresh()
+      case Delta.Clear() =>
+        attached.clear()
+        result.clear()
+    }
+
+    result
+  }
 }
 
 object DeltaBuffer {
@@ -140,7 +171,7 @@ trait DeltaBuffer[T]
     DeltaBuffer(chgs)
   }
 
-  def buffer: Buffer[T] = {
+  def buffer: ReadBuffer[T] = {
     val buf = Buffer[T]()
     buf.changes << changes
     buf
@@ -440,9 +471,21 @@ trait PollBuffer[T]
     res
   }
 
-  def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] = ???
+  def map[U](f: T => U): DeltaBuffer[U]
+
+  def flatMap[U](f: T => ReadBuffer[U]): ReadBuffer[U] =
+    Buffer.flatten(map(f).buffer)
 
   def partialMap[U](f: PartialFunction[T, U]): ReadBuffer[U] = ???
+
+  def flatMapCh[U](f: T => ReadPartialChannel[U]): ReadBuffer[U] =
+    flatMap(value => f(value).values.flatMapBuf {
+      case Some(v) => Buffer(v)
+      case None => Buffer()
+    })
+
+  /* Has some conceptual issues, but some ideas may be ported to flatten()
+     for better performance.
 
   def flatMapCh[U](f: T => ReadPartialChannel[U]): ReadBuffer[U] = {
     val res = Buffer[U]()
@@ -510,6 +553,7 @@ trait PollBuffer[T]
 
     res
   }
+  */
 
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = ???
 

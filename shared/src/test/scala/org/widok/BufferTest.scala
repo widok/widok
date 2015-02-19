@@ -5,6 +5,8 @@ import minitest._
 import scala.collection.mutable
 
 object BufferTest extends SimpleTestSuite {
+  import Buffer._
+
   test("forall()") {
     val buf = Buffer(1, 2, 3)
 
@@ -48,6 +50,27 @@ object BufferTest extends SimpleTestSuite {
     assertEquals(x.get, y.buffer.get)
   }
 
+  test("flatMap()") {
+    val x = Buffer(1, 2, 3)
+    val buf = Buffer(42)
+    val y = x.flatMap[Int](value =>
+      if (value == 4) buf else Buffer(value))
+
+    assertEquals(y.get, Seq(1, 2, 3))
+
+    x.prepend(4)
+    assertEquals(y.get, Seq(42, 1, 2, 3))
+
+    buf.clear()
+    assertEquals(y.get, Seq(1, 2, 3))
+
+    x.prepend(5)
+    assertEquals(y.get, Seq(5, 1, 2, 3))
+
+    buf += 9
+    assertEquals(y.get, Seq(5, 9, 1, 2, 3))
+  }
+
   test("flatMapCh()") {
     val x = Buffer(1, 2, 3)
     val y = x.flatMapCh[Int](value => Opt(value))
@@ -57,6 +80,27 @@ object BufferTest extends SimpleTestSuite {
     x.remove(fst)
     x.prepend(fst)
     assertEquals(x.get, y.buffer.get)
+  }
+
+  test("flatMapCh()") {
+    val x = Buffer(1, 2, 3)
+    val ch: Opt[Int] = Opt(42)
+    val y = x.flatMapCh[Int](value =>
+      if (value == 4) ch else Opt(value))
+
+    assertEquals(y.get, Seq(1, 2, 3))
+
+    x.prepend(4)
+    assertEquals(y.get, Seq(42, 1, 2, 3))
+
+    ch.clear()
+    assertEquals(y.get, Seq(1, 2, 3))
+
+    x.prepend(5)
+    assertEquals(y.get, Seq(5, 1, 2, 3))
+
+    ch := 9
+    assertEquals(y.get, Seq(5, 9, 1, 2, 3))
   }
 
   test("removeAll()") {

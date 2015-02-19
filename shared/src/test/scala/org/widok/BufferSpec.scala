@@ -26,7 +26,7 @@ object BufferSpec extends SimpleTestSuite {
     nonEmptyChannel()
   }
 
-  def forallBufSeq[T](f: Buffer[Int] => (Buffer[T], () => Seq[T])) {
+  def forallBufSeq[T](f: Buffer[Int] => (ReadBuffer[T], () => Seq[T])) {
     val elems = Seq(1, 2, 3)
 
     def testInsert() {
