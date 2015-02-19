@@ -216,8 +216,16 @@ trait ReadChannel[T]
   }
 
   def partialMap[U](f: PartialFunction[T, U]): ReadPartialChannel[U] = {
-    val res = Opt[U]()
-    attach(value => res.set(f.lift(value)))
+    val that = this
+    val res = new Opt[U] {
+      override def flush(o: U => Unit) {
+        that.flush { t =>
+          val u = f.lift(t)
+          u.foreach(o)
+        }
+      }
+    }
+    silentAttach(value => res.set(f.lift(value)))
     res
   }
 

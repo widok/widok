@@ -530,4 +530,14 @@ object ChannelTest extends SimpleTestSuite {
 
     assertEquals(states, mutable.ArrayBuffer(None, Some(42), None))
   }
+
+  test("partialMap()") {
+    val ch = Buffer[Int](1, 2, 3).buffer
+    val map = ch.changes.partialMap { case Buffer.Delta.Insert(_, 2) => 42 }
+
+    var states = mutable.ArrayBuffer.empty[Option[Int]]
+    map.values.attach(states += _)
+
+    assertEquals(states, mutable.ArrayBuffer(Some(42)))
+  }
 }
