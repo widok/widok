@@ -215,10 +215,11 @@ trait ReadChannel[T]
     buf
   }
 
-  def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
-    forkUni { value =>
-      Result.Next(f.lift(value).toSeq: _*)
-    }
+  def partialMap[U](f: PartialFunction[T, U]): ReadPartialChannel[U] = {
+    val res = Opt[U]()
+    attach(value => res.set(f.lift(value)))
+    res
+  }
 
   /** @note Caches the accumulator value. */
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = {
