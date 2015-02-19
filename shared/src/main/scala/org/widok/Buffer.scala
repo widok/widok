@@ -295,10 +295,6 @@ trait PollBuffer[T]
 
   def find$(f: T => Boolean): Option[T] = elements.find(f)
 
-  def update(f: T => T) {
-    ???
-  }
-
   def value(index: Int): T = elements(index)
   def indexOf(handle: T): Int = elements.indexOf(handle)
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements)
@@ -607,6 +603,11 @@ trait Buffer[T]
   extends ReadBuffer[T]
   with WriteBuffer[T]
   with StateBuffer[T]
+{
+  def update(f: T => T) {
+    foreach(t => replace(t, f(t)))
+  }
+}
 
 case class RefBuf[T]() extends Buffer[Ref[T]] {
   /** All row values that are stored within the [[Ref]] objects */
