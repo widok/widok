@@ -65,6 +65,24 @@ trait ReadChannel[T]
   def publish[U](ch: WriteChannel[T], ignore: ReadChannel[U]): ReadChannel[Unit] = ch.subscribe(this, ignore)
   def >>(ch: WriteChannel[T]) = publish(ch)
 
+  def or(ch: ReadChannel[_]): ReadChannel[Unit] = {
+    val that = this
+
+    val res = new RootChannel[Unit] {
+      def flush(f: Unit => Unit) {
+        that.flush(_ => f(()))
+        ch.flush(_ => f(()))
+      }
+    }
+
+    attach(_ => res := (()))
+    ch.attach(_ => res := (()))
+
+    res
+  }
+
+  def |(ch: ReadChannel[_]) = or(ch)
+
   def merge(ch: ReadChannel[T]): ReadChannel[T] = {
     val that = this
 

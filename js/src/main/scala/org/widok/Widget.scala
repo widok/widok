@@ -24,7 +24,7 @@ object Widget {
 
       /** Produce current value after every key press. */
       lazy val value = PtrVar[String](
-        keyUp, rendered.value, rendered.value = _)
+        keyUp | paste, rendered.value, rendered.value = _)
 
       /** Produce current value after enter was pressed. */
       lazy val enterValue = PtrVar[String](
@@ -200,6 +200,12 @@ object DOMChannel {
     ev
   }
 
+  def dragEvent(f: (dom.DragEvent => Unit) => Unit): Channel[dom.DragEvent] = {
+    val ev = Channel[dom.DragEvent]()
+    f((e: dom.DragEvent) => ev.produce(e))
+    ev
+  }
+
   def keyboardEvent(f: (dom.KeyboardEvent => Unit) => Unit): Channel[dom.KeyboardEvent] = {
     val ev = Channel[dom.KeyboardEvent]()
     f((e: dom.KeyboardEvent) => ev.produce(e))
@@ -254,6 +260,8 @@ trait Node extends View {
   lazy val mouseDown = DOMChannel.mouseEvent(rendered.onmousedown = _)
   lazy val mouseMove = DOMChannel.mouseEvent(rendered.onmousemove = _)
   lazy val contextMenu = DOMChannel.mouseEvent(rendered.oncontextmenu = _)
+
+  lazy val paste = DOMChannel.dragEvent(rendered.onpaste = _)
 
   lazy val keyUp = DOMChannel.keyboardEvent(rendered.onkeyup = _)
   lazy val keyDown = DOMChannel.keyboardEvent(rendered.onkeydown = _)
