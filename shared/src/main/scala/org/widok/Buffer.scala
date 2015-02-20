@@ -322,6 +322,9 @@ trait PollBuffer[T]
 
   def find$(f: T => Boolean): Option[T] = elements.find(f)
 
+  def exists$(f: T => Boolean): Boolean = elements.exists(f)
+  def forall$(f: T => Boolean): Boolean = elements.forall(f)
+
   def value(index: Int): T = elements(index)
   def indexOf(handle: T): Int = elements.indexOf(handle)
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements)
