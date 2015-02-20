@@ -456,6 +456,10 @@ package object Bootstrap {
     def Backdrop() =
       HTML.Container.Generic().css("modal-backdrop", "fade", "in")
 
+    def Close(dismiss: () => Any) =
+      HTML.Button(HTML.Container.Inline("×"))
+        .css("close").onClick { _ => dismiss(); () }
+
     def Title(contents: View*) =
       HTML.Heading.Level4(contents: _*).css("modal-title")
 
