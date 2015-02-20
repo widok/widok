@@ -197,6 +197,10 @@ trait PollDict[A, B]
 
   val changes: ReadChannel[Delta[A, B]]
 
+  def foreach(f: ((A, B)) => Unit) {
+    mapping.foreach(f)
+  }
+
   def keys$: Set[A] = mapping.keySet.toSet
   def values$: Iterable[B] = mapping.values
 
@@ -211,6 +215,9 @@ trait PollDict[A, B]
 
   def filter$(f: ((A, B)) => Boolean): ReadDict[A, B] =
     Dict(mapping.filter(f).toMap)
+
+  def exists$(f: ((A, B)) => Boolean): Boolean = mapping.exists(f)
+  def forall$(f: ((A, B)) => Boolean): Boolean = mapping.forall(f)
 
   def toMap: Map[A, B] = mapping.toMap
 
