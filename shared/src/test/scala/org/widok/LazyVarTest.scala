@@ -67,6 +67,7 @@ object LazyVarTest extends SimpleTestSuite {
     expect(sum).toBe(45)
   }
 
+  /*
   test("+()") {
     val ch = LazyVar(42)
     val childCh = ch + ((_: Int) => ())
@@ -74,5 +75,5 @@ object LazyVarTest extends SimpleTestSuite {
     var sum = 0
     childCh.attach(sum += _)
     expect(sum).toBe(42)
-  }
+  }*/
 }

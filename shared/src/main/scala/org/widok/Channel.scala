@@ -380,14 +380,14 @@ trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
   def <<>>(other: Channel[T]) { bind(other) }
   def <<>>(other: Channel[T], ignoreOther: ReadChannel[Unit]) { bind(other, ignoreOther) }
 
-  def +(write: WriteChannel[T]): Channel[T] = {
+  /*def +(write: WriteChannel[T]): Channel[T] = {
     val res = new RootChannel[T] {
       def flush(f: T => Unit) { Channel.this.flush(f) }
     }
     val ignore = write << res
     this <<>> (res, ignore)
     res
-  }
+  }*/
 
   def dispose()
 

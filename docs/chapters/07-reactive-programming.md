@@ -223,17 +223,6 @@ As the return values are channels themselves, chaining is possible.
 
 Operations are FP methods such as ``map()``, ``filter()``or ``take()``. It must be noted that they have different semantics than their non-reactive counterparts. For brevity, only certain combinators are covered by the manual. For the rest, please refer to the [ScalaDoc documentation](http://widok.github.io/api/v0.2/index.html#org.widok.Channel).
 
-> **TODO:** Rethink
-
-A particular operator defined on channels is the addition. By adding up channels a new container channel is constructed. All values produced by the operands are propagated to this resulting channel and vice-versa (two-way propagation), but not amongst the operands:
-
-```scala
-val cont = ch + ch2  // more operands are possible, too
-ch  := 42            // propagated to cont
-ch2 := 23            // propagated to cont
-cont := 65           // propagated to ch and ch2
-```
-
 An optional channel is constructed as follows:
 
 ```scala
@@ -496,8 +485,6 @@ def contents() = Seq(
 
 This creates two text fields. When the page is loaded, both have the same content: "Hello world". If the user changes the text of the first field, the second text field is updated on-the-fly. The second field has the live mode disabled and an enter press is required before the change gets propagated to the first text box.
 
-> **Note:** ``bind()`` may only be used once. If you want to have multiple event handlers, you can chain these using the ``+`` operator that was mentioned above.
-
 Channels are consistently used for all kind of DOM events. This allows to connect even two unrelated widgets. The following example connects a text field with a button:
 
 ```scala
@@ -550,19 +537,6 @@ val widget = HTML.Container.Inline("The list is empty.")
 
 val widget2 = HTML.Container.Inline("The list is not empty.")
   .show(agg.nonEmpty)
-```
-
-## Debugging
-TODO This is not working anymore.
-
-Although, channels and aggregates are used by widgets, they do not depend on JavaScript features. You can therefore debug their use directly on the console:
-
-```bash
-$ sbt console
-import org.widok._
-val ch = Channel[Int]()
-ch.attach(println)
-ch := 42
 ```
 
 ## Future Work

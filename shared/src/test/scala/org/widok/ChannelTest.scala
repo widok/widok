@@ -219,6 +219,7 @@ object ChannelTest extends SimpleTestSuite {
     assertEquals(sum, 42 + 43)
   }
 
+  /*
   test("+()") {
     val ch = Channel[Int]()
 
@@ -278,6 +279,7 @@ object ChannelTest extends SimpleTestSuite {
     assertEquals(chSum2, 43 + 23)
     assertEquals(chSum3, 44 + 23)
   }
+  */
 
   test("map()") {
     val ch = Channel[Int]()
