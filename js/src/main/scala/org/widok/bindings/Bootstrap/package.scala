@@ -1,7 +1,5 @@
 package org.widok.bindings
 
-import org.scalajs.dom
-
 import org.widok._
 
 /**
@@ -174,10 +172,6 @@ package object Bootstrap {
   def PullRight(contents: View*) =
     HTML.Container.Inline(contents: _*)
       .css("pull-right")
-
-  def MutedText(contents: View*) =
-    HTML.Paragraph(contents: _*)
-      .css("text-muted")
 
   object Navigation {
     case class Tab(name: String)
