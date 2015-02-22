@@ -159,4 +159,25 @@ object BufferTest extends SimpleTestSuite {
     buffer.remove(2)
     assertEquals(states.get, Seq(2, 3))
   }
+
+  test("isLast") {
+    val buffer = Buffer[Int](1, 2, 3, 4, 5)
+
+    val elems = mutable.ArrayBuffer.empty[Boolean]
+    buffer.isLast(0).attach(elems += _)
+
+    assertEquals(elems, Seq(false))
+
+    buffer += 0
+    assertEquals(elems, Seq(false, true))
+
+    buffer += 0
+    assertEquals(elems, Seq(false, true))
+
+    buffer -= 0
+    assertEquals(elems, Seq(false, true))
+
+    buffer -= 0
+    assertEquals(elems, Seq(false, true, false))
+  }
 }

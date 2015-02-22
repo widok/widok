@@ -440,10 +440,10 @@ trait PollBuffer[T]
   }
 
   def isHead(element: T): ReadChannel[Boolean] =
-    headOption.map(_ == Some(element))
+    headOption.values.is(Some(element))
 
   def isLast(element: T): ReadChannel[Boolean] =
-    lastOption.map(_ == Some(element))
+    lastOption.values.is(Some(element))
 
   def distinct: ReadBuffer[T] = {
     val result = Buffer[T]()
