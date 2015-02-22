@@ -203,6 +203,21 @@ package object Bootstrap {
     def active(active: ReadChannel[Boolean]) = cssState(active, "active")
   }
 
+  case class NavigationBar(contents: View*) extends Widget[NavigationBar] {
+    val chPosition: Var[(NavigationBar.Position, Boolean)] =
+      Var((NavigationBar.Position.Top, true))
+    val rendered = HTML.Navigation(contents: _*).css(
+      chPosition.map { case (position, fixed) =>
+        Seq("navbar", "navbar-default", position.cssTag(fixed))
+      }
+    ).attribute("role", "navigation").rendered
+
+    def position(position: NavigationBar.Position, fixed: Boolean = true) = {
+      chPosition := ((position, fixed))
+      this
+    }
+  }
+
   object NavigationBar {
     trait Position {
       def cssTag(fixed: Boolean): String
@@ -223,11 +238,6 @@ package object Bootstrap {
         }
       }
     }
-
-    def apply(position: NavigationBar.Position = NavigationBar.Position.Top, fixed: Boolean = true)(contents: View*) =
-      HTML.Navigation(contents: _*)
-        .css("navbar", "navbar-default", position.cssTag(fixed))
-        .attribute("role", "navigation")
 
     def Toggle() =
       HTML.Button(

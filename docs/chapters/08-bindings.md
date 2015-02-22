@@ -137,7 +137,7 @@ Navigation.renderTabs(Seq(tab1, tab2), currentTab)
 Example for the ``NavigationBar`` widget:
 
 ```scala
-NavigationBar()(
+NavigationBar(
   Container(
     NavigationBar.Header(
       NavigationBar.Toggle()
