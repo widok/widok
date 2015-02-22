@@ -2,10 +2,6 @@ package org.widok
 
 import org.scalajs.dom
 
-object Document {
-  val body = Node(dom.document.body)
-}
-
 trait BasePage {
   val document = Document
 
