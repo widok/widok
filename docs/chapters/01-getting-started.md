@@ -19,7 +19,7 @@ logLevel := Level.Warn
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.0")
 ```
 
-- ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala, which allows for more flexibility. The chapter (Build process)[#Build-process] explains some possibilities in the web context.
+- ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala, which allows for more flexibility. The chapter [Build process](#Build-process) explains some possibilities in the web context.
 
 ```scala
 import sbt._
