@@ -542,4 +542,25 @@ object ChannelTest extends SimpleTestSuite {
 
     assertEquals(states, mutable.ArrayBuffer(Some(42)))
   }
+
+  test("Channel()") {
+    val rd = Channel[Int]()
+    val wr = Channel[Int]()
+
+    val ch = Channel(rd, wr)
+
+    var states = mutable.ArrayBuffer.empty[Int]
+    ch.attach(states += _)
+
+    var wrStates = mutable.ArrayBuffer.empty[Int]
+    wr.attach(wrStates += _)
+
+    rd := 1
+    assertEquals(states, mutable.ArrayBuffer(1))
+    assertEquals(wrStates, mutable.ArrayBuffer())
+
+    ch := 2
+    assertEquals(states, mutable.ArrayBuffer(1, 2))
+    assertEquals(wrStates, mutable.ArrayBuffer(2))
+  }
 }
