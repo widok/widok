@@ -29,6 +29,7 @@ object DeltaBufSet {
 
 trait DeltaBufSet[T]
   extends reactive.stream.Size
+  with reactive.stream.Map[DeltaBufSet, T]
   with reactive.stream.Filter[DeltaBufSet, T, T]
 {
   import BufSet.Delta
@@ -45,6 +46,13 @@ trait DeltaBufSet[T]
 
     count
   }
+
+  def map[C](f: T => C): DeltaBufSet[C] =
+    DeltaBufSet[C](changes.map {
+      case Delta.Insert(v) => Delta.Insert(f(v))
+      case Delta.Remove(v) => Delta.Remove(f(v))
+      case Delta.Clear() => Delta.Clear()
+    })
 
   def filter(f: T => Boolean): DeltaBufSet[T] =
     DeltaBufSet[T](changes.partialMap {
