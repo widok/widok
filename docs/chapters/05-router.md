@@ -1,7 +1,7 @@
 # Router
-When dealing with applications that consist of more than one page, a routing system becomes inevitable.
+When developing applications that consist of more than one page, a routing system becomes inevitable.
 
-The router observes the URL's fragment identifier. For example in ``application.html#/page`` the part after the hash symbol ``/page`` denotes the fragment identifier. A router is initialised with a set of routes which defines all addressable pages. A fallback route may also be specified.
+The router observes the fragment identifier of the browser URL. For example, in ``application.html#/page`` the part after the hash mark denotes the fragment identifier, that is ``/page``. The router is initialised with a set of known routes. A fallback route may also be specified.
 
 ## Interface
 The router may be used as follows:
@@ -22,24 +22,24 @@ object Main extends Application {
 }
 ```
 
-``routes`` denotes the list of enabled routes. It should also contain the ``notFound`` route. Otherwise, this route could not be loaded using ``#/404``.
+``routes`` denotes the set of enabled routes. It should also contain the ``notFound`` route. Otherwise, the page could not be displayed when ``#/404`` is loaded.
 
 ## Routes
-To construct a new route, pass the path and the page object to ``Route()``. Page routes may be overloaded with different paths as above with ``test`` and ``test2``.
+To construct a new route, pass the path and its reference to ``Route()``. Pages may be overloaded with different paths as above with ``test`` and ``test2``.
 
-A part of a path is the contents separated by a slash. For instance, the ``test`` route above has two parts: ``test`` and ``:param``. A part beginning with a colon is a placeholder. It extracts the respective value from the URL's fragment and binds it to the placeholder name. Note that a placeholder always refers to the whole part.
+A path consists of *parts* which are separated by slashes. For instance, the ``test`` route above has two parts: ``test`` and ``:param``. A part beginning with a colon is a *placeholder*. Its purpose is to match the respective value in the fragment identifier and to bind it to the placeholder name. Note that a placeholder always refers to the whole part.
 
-A route is said *instantiated* when it gets called:
+A route can be *instantiated* by calling it, setting all of its placeholders:
 
 ```scala
 // Zero parameters
-val instMain: InstantiatedRoute = Main.main()
+val route: InstantiatedRoute = Main.main()
 
 // One parameter
-val instTest: InstantiatedRoute = Main.test("param", "value")
+val route = Main.test("param", "value")
 
 // Multiple parameters
-val instTest2: InstantiatedRoute =
+val route: InstantiatedRoute =
 	Main.test2(
 		Map(
 			"param" -> "value",
@@ -47,8 +47,8 @@ val instTest2: InstantiatedRoute =
 		)
 	)
 
-// Change the current page to /test/value
-instTest.go()
+// Redirect to `route`
+route.go()
 ```
 
 To query the instantiated parameters, access the ``args`` field in the first parameter passed to ``ready()``.
@@ -81,7 +81,10 @@ object Routes {
   val routes = Set(main, ..., notFound)
 }
 
-object Main extends RoutingApplication(Routes.routes, Routes.notFound)
+object Main extends RoutingApplication(
+  Routes.routes
+, Routes.notFound
+)
 ```
 
 This is to be preferred when no further logic should be executed in the entry point prior to setting up the router.

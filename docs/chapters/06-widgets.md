@@ -1,130 +1,150 @@
 # Widgets
-A widget represents an element to be displayed by the browser. Instances of widgets can be nested while enforcing type-safety. Custom widgets can be defined. The idea here is to compose a widget of smaller, existing ones.
+A widget is a type-safe abstraction for an element displayed by the browser. The entire page layout is described using widgets. Thus, widget instantiations can be nested. Furthermore, custom widgets can be defined for better code reuse. A custom widget is usually composed of other widgets, changing their attributes like CSS tags.
+
+Instead of accessing DOM elements using ``getElementById()``, a widget doesn't have an ID by default. Instead, it maintains a reference to the DOM element. This way, widgets that may have the same ID cannot collide and no ill-defined type-casts may occur.
+
+Methods on a widget return the instance of the widget. This allows to arbitrarily nest widgets and change their attributes, without storing a reference to the widget in a local variable.
 
 ## HTML
-Widok provides widgets for many HTML elements. The bindings have a more intuitive naming than their HTML counterparts. The module they reside in is ``org.widok.bindings.HTML``. Although it is possible to import the whole contents, it is advisable to address the widgets using a qualified access. Usually, a project needs to define its own widgets which most likely will shadow widgets from the HTML bindings. Instead, the custom widgets could be imported into the namespace. These custom widgets in turn will depend on the HTML widgets and only extend them with CSS tags for instance.
+Widok provides widgets for many HTML elements. The bindings have a more intuitive naming than their HTML counterparts, although aliases were defined, too. The module the HTML widgets reside in is ``org.widok.bindings.HTML``. If your project doesn't define any conflicting types, it is safe to import the whole contents into the namespace.
 
-|   Tag   |       Widget      |          Notes           |
-|---------|-------------------|--------------------------|
-| h1      | Heading.Level1    |                          |
-| h2      | Heading.Level2    |                          |
-| h3      | Heading.Level3    |                          |
-| h4      | Heading.Level4    |                          |
-| h5      | Heading.Level5    |                          |
-| h6      | Heading.Level6    |                          |
-| p       | Paragraph         |                          |
-| b       | Text.Bold         |                          |
-| small   | Text.Small        |                          |
-| span    | Raw               | sets ``innerHTML``       |
-| img     | Image             |                          |
-| br      | LineBreak         |                          |
-| button  | Button            |                          |
-| section | Section           |                          |
-| header  | Header            |                          |
-| footer  | Footer            |                          |
-| nav     | Navigation        |                          |
-| a       | Anchor            |                          |
-| form    | Form              |                          |
-| label   | Label             |                          |
-| input   | Input.Text        | sets ``type="text"``     |
-| input   | Input.Checkbox    | sets ``type="checkbox"`` |
-| select  | Input.Select      |                          |
-| ul      | List.Unordered    |                          |
-| ol      | List.Ordered      |                          |
-| li      | List.Item         |                          |
-| div     | Container.Generic |                          |
-| span    | Container.Inline  |                          |
+|  **Alias**   |        **Widget**       |               **Notes**                |
+|----------|---------------------|------------------------------------|
+| section  | Section             |                                    |
+| header   | Header              |                                    |
+| footer   | Footer              |                                    |
+| nav      | Navigation          |                                    |
+| h1       | Heading.Level1      |                                    |
+| h2       | Heading.Level2      |                                    |
+| h3       | Heading.Level3      |                                    |
+| h4       | Heading.Level4      |                                    |
+| h5       | Heading.Level5      |                                    |
+| h6       | Heading.Level6      |                                    |
+| p        | Paragraph           |                                    |
+| b        | Text.Bold           |                                    |
+| strong   | Text.Bold           |                                    |
+| i        | Text.Italic         |                                    |
+| small    | Text.Small          |                                    |
+| br       | LineBreak           |                                    |
+| hr       | HorizontalLine      |                                    |
+| div      | Container.Generic   |                                    |
+| span     | Container.Inline    |                                    |
+| raw      | Raw                 | ``span`` with ``innerHTML``        |
+| form     | Form                |                                    |
+| button   | Button              |                                    |
+| label    | Label               |                                    |
+| a        | Anchor              |                                    |
+| img      | Image               |                                    |
+| checkbox | Input.Checkbox      | ``input`` with ``type="checkbox"`` |
+| file     | Input.File          | ``input`` with ``type="file"``     |
+| select   | Input.Select        | ``input`` with ``type="select"``   |
+| text     | Input.Text          | ``input`` with ``type="text"``     |
+| password | Input.Password      | ``input`` with ``type="password"`` |
+| option   | Input.Select.Option |                                    |
+| ul       | List.Unordered      |                                    |
+| ol       | List.Ordered        |                                    |
+| li       | List.Item           |                                    |
+| table    | Table               |                                    |
+| thead    | Table.Head          |                                    |
+| th       | Table.HeadColumn    |                                    |
+| tbody    | Table.Body          |                                    |
+| tr       | Table.Row           |                                    |
+| td       | Table.Column        |                                    |
+| cursor   | Cursor              |                                    |
 
-### Usage
-A widget is always an instance of ``Widget`` and can be used like a function:
+### Aliases
+By importing ``org.widok.html._`` you can use regular HTML tags instead of the more verbose notations.
+
+## Usage
+A widget inherits from the type ``Widget``. Widgets are implemented as ``case class``es and can therefore be used like regular function calls. The simplest widget is ``Raw()`` which allows to render HTML markup:
 
 ```scala
-val widget = HTML.Raw("<b><i>Text</i></b>")
+val widget = Raw("<b><i>Text</i></b>")
+```
 
-// This is equivalent to:
-val widget2 = Text.Bold(
+This is equivalent to:
+
+```scala
+val widget = Text.Bold(
   Text.Italic("Text")
 )
 ```
 
-Most widgets either expect parameters or children. However, there are also widgets which expect both:
+Most widgets take children. If this is the case, child widgets are passed per convention with the constructor. Widget parameters are set using chainable method calls:
 
 ```scala
-Anchor("http://en.wikipedia.org/")(
-    Text.Bold("Wikipedia"))
+Anchor(
+  Text.Bold("Wikipedia")
+).url("http://en.wikipedia.org/")
+ .title("en.wikipedia.org")
 ```
 
-> *Hint:* Use the code completion of your IDE to figure out which widgets are available and which parameters to pass.
-
-## Creating custom widgets
-Widgets should be designed to be restrictive. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. For custom widgets, create a class hierarchy which closely resembles the intended nesting of the elements. This will turn out to be helpful because you implicitly establish type-safety for CSS components. When widgets are changed, this will catch usage errors during compile-time.
+## Writing custom widgets
+Widgets should be designed with type-safety in mind. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. Therefore, create a class hierarchy which closely resembles the intended nesting of the elements when creating custom widgets. This will allow to catch usage errors during compile-time.
 
 A custom widget may be defined as follows:
 
 ```scala
-def Panel(contents: Widget*) =
-    HTML.Container.Generic(
-      HTML.Container.Generic(
-        contents: _*
-      ).css("panel-body")
-    ).css("panel", "panel-default")
+case class Panel(contents: View*) extends Widget[Panel] {
+  val rendered = DOM.createElement("div", contents)
+  css("panel")
+  css("panel-default")
+}
 ```
 
 This corresponds to:
 
 ```html
 <div class="panel panel-default">
-    <div class="panel-body">
-        ... contents of the widget's children ...
-    </div>
+	... rendered children ...
 </div>
 ```
 
+If a custom widget doesn't need to be used as a type, it is sufficient to define it as a function:
+
+```scala
+def Panel(contents: View*) = Container.Generic(contents: _*)
+  .css("panel")
+  .css("panel-default")
+```
+
 ## Binding to events
-Each widget provides useful functions to better interact with the DOM. Instead of setting IDs on elements and requesting elements using ``getElementById()``, we are constantly working with objects which is less error-prone.
+A widget provides functionality to interact with the DOM. Methods with the prefix ``on*()`` exist for all events and take a callback.
 
-To bind to the click event to a button, write:
+To listen to the ``click`` and ``dblclick`` events of a button, write:
 
 ```scala
-import org.scalajs.dom.MouseEvent
-
-...
-
-Button(Glyphicon.Book)("Show timestamp")
-    .bindMouse(Event.Mouse.Click, (e: MouseEvent) => println(e.timeStamp))
+Button("Click")
+  .onClick(e => println("Click: " + e.timeStamp))
+  .onDoubleClick(e => println("Double click: " + e.timeStamp))
 ```
 
-Note that methods on a widget return the instance of the widget. This allows to arbitrarily nest widgets and change their attributes, without storing a reference to the widget in a local variable.
-
-The above example does not seem all too different from attaching a callback like in JavaScript. This is also what happens implicitly. In fact, the second argument of ``bindMouse()`` expects a *Channel*, a concept we will introduce in the next chapter. A channel produces data which is passed on to its subscribers. In the above example, a Scala implicit turns the lambda function into a channel. But similarly, we could have written:
+All DOM events are published as channels. A channel produces data which is passed on to its subscribers. The above is a shortcut for:
 
 ```scala
-val click = Channel[MouseEvent]()
-click.attach(e => println(e.timeStamp))
-...
-
-Button(Glyphicon.Book)("Show timestamp")
-    .bindMouse(Event.Mouse.Click, click)
+val btn = Button("Click")
+btn.click.attach(...)
+btn.doubleClick.attach(...)
 ```
 
-The advantage may not be obvious on first sight, but a channel can have multiple subscribers. This is important in web applications where data gets propagated to various layers of the application. For example, consider a shopping cart. Items get modified in the product listing. At the same time the header needs to get updated with the newly calculated price.
+This allows for an event to have multiple subscribers. This is important in web applications where data gets propagated to various layers of the application. For example, consider a shopping cart where the user updates the quantity of a certain product. At the same time the header needs to get updated with the newly calculated price. Making the DOM events available as streams widens the range of possibilities.
 
-Now that ``click`` is a stream of events, we could decide to take into account only the first event:
+As ``click`` is a stream of events, we could decide to take into account only the first event:
 
 ```scala
-click.head.attach(e => println(e.timeStamp))
+btn.click.head.attach(e => println(e.timeStamp))
 ```
 
 Another prominent use case of channels are dynamic changes of widgets, such as the visibility:
 
 ```scala
 HTML.Container.Generic("Button clicked")
-    .show(click.head.map(_ => false))
+  .show(btn.click.head.map(_ => false))
 ```
 
-``show()`` expects a boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, we hide the widget as soon as we click the button.
+``show()`` expects a Boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, we hide the widget as soon as we click the button.
 
-The chapter [Data propagation](#data-propagation) deals with channels in detail.
+Data propagation mechanisms are explained in more detail in the [next chapter](#reactive-programming).
 
 ## Composed widgets
 Widok provides a couple of composed widgets without external rendering dependencies. They are defined in the package ``org.widok.widgets``:
@@ -139,8 +159,12 @@ Widok defines a couple of implicits to make your code more concise. For example,
 def view() = HTML.Paragraph("Litwo! Ojczyzno moja!")
 ```
 
-Another implicit is evaluated here, which converts the string into a widget. There also implicits for most reactive data structures.
+Instead of:
 
-## Aliases
-By importing ``import org.widok.html._`` you can use regular HTML tags instead of the more verbose notations.
+
+```scala
+def view() = Inline(HTML.Paragraph("Litwo! Ojczyzno moja!"))
+```
+
+Another implicit is evaluated here, which converts the string into a widget. There are also implicits to render buffers and channels.
 

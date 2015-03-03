@@ -477,9 +477,9 @@ When associating a channel to multiple widgets, the contents amongst them is syn
 
 ```scala
 val ch = Var("Hello world")
-def contents() = Seq(
-  Input.Text().bind(ch, live = true),
-  Input.Text().bind(ch)
+def view() = Inline(
+  Input.Text().bind(ch),
+  Input.Text().bindEnter(ch)
 )
 ```
 
