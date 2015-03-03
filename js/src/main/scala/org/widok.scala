@@ -95,6 +95,7 @@ package object widok {
 
     val div = bindings.HTML.Container.Generic
     val span = bindings.HTML.Container.Inline
+    val raw = bindings.HTML.Raw
 
     val form = bindings.HTML.Form
     val button = bindings.HTML.Button
