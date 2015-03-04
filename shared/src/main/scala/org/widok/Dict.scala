@@ -216,6 +216,7 @@ trait PollDict[A, B]
   def filter$(f: ((A, B)) => Boolean): ReadDict[A, B] =
     Dict(mapping.filter(f).toMap)
 
+  def find$(f: ((A, B)) => Boolean): Option[(A, B)] = mapping.find(f)
   def exists$(f: ((A, B)) => Boolean): Boolean = mapping.exists(f)
   def forall$(f: ((A, B)) => Boolean): Boolean = mapping.forall(f)
 

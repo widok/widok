@@ -19,6 +19,15 @@ trait Key[A, B] {
   /** Returns all values */
   def values$: Iterable[B]
 
+  /** @return Row for which `f` returns true */
+  def find$(f: ((A, B)) => Boolean): Option[(A, B)]
+
+  /** Row exists where `f` returns true */
+  def exists$(f: ((A, B)) => Boolean): Boolean
+
+  /** For all rows `f` returns true */
+  def forall$(f: ((A, B)) => Boolean): Boolean
+
   /** Converts dictionary to map **/
   def toMap: Map[A, B]
 
