@@ -41,10 +41,10 @@ trait DeltaDict[A, B]
   import Dict.Delta
   val changes: ReadChannel[Delta[A, B]]
 
-  def map[C](f: B => C): DeltaDict[A, C] =
+  def map[C](f: (A, B) => C): DeltaDict[A, C] =
     DeltaDict[A, C](changes.map {
-      case Delta.Insert(k, v) => Delta.Insert(k, f(v))
-      case Delta.Update(k, v) => Delta.Update(k, f(v))
+      case Delta.Insert(k, v) => Delta.Insert(k, f(k, v))
+      case Delta.Update(k, v) => Delta.Update(k, f(k, v))
       case Delta.Remove(k) => Delta.Remove(k)
       case Delta.Clear() => Delta.Clear()
     })
