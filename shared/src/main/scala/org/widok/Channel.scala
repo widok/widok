@@ -182,13 +182,11 @@ trait ReadChannel[T]
   def drop(count: Int): ReadChannel[T] = {
     assert(count > 0)
     var cnt = count
-    forkUni { value =>
+    forkUniState(value =>
       if (cnt > 0) { cnt -= 1; Result.Next() }
-
-      // TODO Create a new result type which continues processing
-      // the stream without calling this callback.
       else Result.Next(value)
-    }
+    , None
+    )
   }
 
   def head: ReadChannel[T] = forkUni(value => Result.Done(value))

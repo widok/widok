@@ -150,7 +150,24 @@ object ChannelTest extends SimpleTestSuite {
     assertEquals(items2, Seq(1))
   }
 
-  test("skip()") {
+  test("take()") {
+    val ch  = Var(42)
+    val dch = ch.take(2)
+
+    val arr  = mutable.ArrayBuffer.empty[Int]
+    val arr2 = mutable.ArrayBuffer.empty[Int]
+
+    dch.attach(arr  += _)
+    dch.attach(arr2 += _)
+
+    ch := 23
+    ch := 3
+
+    assertEquals(arr,  mutable.ArrayBuffer(42, 23))
+    assertEquals(arr2, mutable.ArrayBuffer(42, 23))
+  }
+
+  test("drop()") {
     val ch = Channel[Int]()
 
     var sum = 0
@@ -162,6 +179,19 @@ object ChannelTest extends SimpleTestSuite {
     ch := 4
 
     assertEquals(sum, 3 + 4)
+  }
+
+  test("drop()") {
+    val ch = Var(42)
+    val dch = ch.drop(1)
+
+    val arr = mutable.ArrayBuffer.empty[Int]
+    dch.attach(arr += _)
+    dch.attach(arr += _)
+
+    ch := 5
+
+    assertEquals(arr, mutable.ArrayBuffer(5, 5))
   }
 
   /*test("toOpt()") {
