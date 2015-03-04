@@ -69,13 +69,6 @@ As soon as the user inserts a value for ``m`` as well as ``b``, ``mAndB`` will p
 
 How channels work in detail is explained in the following sections. This example should only give an intuition of the fundamental concepts and how data dependencies are expressed.
 
-## Data propagation
-**TODO:** Outdated
-
-Channels model continuous values as streams. These streams can be observed. Internally, no copies of the produced values are created. If desired, the current value can be explicitly cached, though. It is possible to operate on channels with higher-order functions such as ``map()`` and ``filter()``. Every time a new value is produced, it is propagated down the observer chain.
-
-Aggregates are channel containers. They allow to deal with large lists efficiently. If an item gets added, removed or updated, this is reflected directly by a change in the DOM, only operating on the actual nodes.
-
 ## Implementation
 This section explains how reactive data structures are implemented in Widok. The design decisions will be beneficial for you to better understand the API and to design your own reactive data structures.
 
@@ -176,7 +169,7 @@ Widok currently implements four reactive data structures:
 - **Sets:**  reactive ``Set[T]``
 
 ## Channels
-A channel is a multiplexer for typed messages of immutable values that it receives. Values sent to the channel get propagated to the observers that have been attached to the channel — in the same order as they were added.
+A channel models continuous values as a stream. It is a multiplexer for typed messages consisting of immutable values that it receives. Messages sent to the channel get propagated to the observers that have been attached to the channel — in the same order as they were added. It is possible to operate on channels with higher-order functions such as ``map()`` and ``filter()``. These methods may be chained, such that every produced values is propagated down the observer chain.
 
 Widok differentiates between two top-level channel types:
 
@@ -197,8 +190,8 @@ Partial channels model optional values:
 
 > **Note:** ``Opt[T]`` is merely a convenience type and ``Var[Option[T]]`` could be used, too.
 
-### Examples
-Here is a simple example for a channel that receives integers and prints these on the console:
+### Operations
+Here is a simple example for a channel that receives integers. We register an observer which prints all values on the console:
 
 ```scala
 val ch = Channel[Int]()  // initialise
@@ -208,22 +201,48 @@ ch := 42                 // produce value
 
 > **Note:** The ``:=`` operator is a shortcut for the method ``produce``.
 
-Channels define useful operations to express data dependencies:
+The return values of operations are channels, therefore chaining is possible. Channels can be used to express data dependencies:
 
 ```scala
 val ch = Channel[Int]()
 ch.filter(_ > 3)
   .map(_ + 1)
   .attach(println)
-ch := 42 // 43 printed
-ch := 1  // nothing printed
+ch := 42  // 43 printed
+ch := 1   // nothing printed
 ```
 
-As the return values are channels themselves, chaining is possible.
+Use the method ``distinct`` to produce a value if it is the first or different from the previous one. A use case is to limit time-consuming operations such as performing HTTP requests upon user inputs:
+
+```scala
+ch.distinct.attach { query =>
+    // perform HTTP request
+}
+```
 
 Operations are FP methods such as ``map()``, ``filter()``or ``take()``. It must be noted that they have different semantics than their non-reactive counterparts. For brevity, only certain combinators are covered by the manual. For the rest, please refer to the [ScalaDoc documentation](http://widok.github.io/api/v0.2/index.html#org.widok.Channel).
 
-An optional channel is constructed as follows:
+### State channels
+For better performance, ``Channel`` does not cache the produced values. Some operations cannot be implemented without access to the current value, though. Therefore, *state channels* such as ``Var`` or ``Opt`` were introduced. The following example visualises the different behaviours:
+
+```scala
+val ch = Var(42)
+ch.attach(println)  // prints 42
+
+val ch2 = Channel[Int]()
+ch2 := 42  // Value is lost as ch2 does not have any observers
+ch2.attach(println)
+```
+
+``update()`` is an operation that requires that the produced values are persisted. ``update()`` takes a function which modifies the current value:
+
+```scala
+val ch = Var(2)
+ch.attach(println)
+ch.update(_ + 1)  // produces 3
+```
+
+A partially-defined channel (``Opt``) is constructed as follows:
 
 ```scala
 val x = Opt[Int]()
@@ -236,133 +255,83 @@ Alternatively, a default value may be passed:
 val x = Opt(42)
 ```
 
-To subscribe to the channel, use the method ``attach(f)``:
+A state channel provides all the methods a channel does. ``Var`` and ``Opt`` can be obtained from any existing channel using the method ``cache``:
 
 ```scala
-x.attach(println)
+val chOpt = ch.cache      // Opt[Int]
+val chVar = ch.cache(42)  // Var[Int]
 ```
 
-A higher-order operation only calls the passed function when the channel is listened to:
+``chOpt`` is undefined as long as no value was produced on ``ch``. ``chVar`` will be initialised with 42 and the value is overridden with the first produced value on ``ch``.
+
+``biMap()`` allows to implement a bi-directional map, i.e. a stream with back-propagation:
 
 ```scala
-val ch = Var(42)
-val f: Int => Int = _ + 1
-val mapped = ch.map(f) // Does not call f
-mapped.attach(println) // f(42)
-mapped.attach(println) // f(42)
-val mapped2 = mapped.map(f) // Does not call f
-mapped.attach(println) // f(f(42))
+val map   = Map(1 -> "one", 2 -> "two", 3 -> "three")
+val id    = Var(2)
+val idMap = id.biMap(
+  (id: Int)     => map(id)
+, (str: String) => map.find(_._2 == str).get._1)
+id   .attach(x => println("id   : " + x))
+idMap.attach(x => println("idMap: " + x))
+idMap := "three"
 ```
 
-This reduces the memory usage and complexity of the channel implementation as no caching is performed. On the other hand, you may want to perform on-site caching of the results of ``f``, especially if the function is side-effecting.
+The output is:
 
-**TODO:** Update
+```
+id   : 2
+idMap: two
+id   : 3
+idMap: three
+```
 
-The value that the state channel was instantiated with gets propagated upon attaching to the channel. A common use case are user interfaces. Usually, channels are set up before the widgets. The channels are then bound to the widgets. This renders the initial value directly in the DOM. Otherwise, it would be necessary to send the initial value to the channel manually as soon as the widget was rendered.
-
-The following example visualises the difference in behaviour:
+``biMap()`` can be used to implement a lens as a channel. The following example defines a lens for the field ``b``. It has a back channel that composes a new object with the changed field value.
 
 ```scala
-val ch = Var(42)
-ch.attach(println) // prints 42
-
-val ch2 = Channel[Int]()
-ch2 := 42 // lost as ch2 does not have any observers
-ch2.attach(println)
+case class Test(a: Int, b: Int)
+val test = Var(Test(1, 2))
+val lens = test.biMap(_.b, (x: Int) => test.get.copy(b = x))
+test.attach(println)
+lens := 42  // produces Test(1, 42)
 ```
 
-The argument is evaluated lazily and can also point to a mutable variable:
+A ``LazyVar`` evaluates its argument lazily. In the following example, it points to a mutable variable:
 
 ```scala
 var counter = 0
-val ch = Var(counter)
-ch.attach(value => {counter += 1; println(value)}) // prints 0
-ch.attach(value => {counter += 1; println(value)}) // prints 1
+val ch = LazyVar(counter)
+ch.attach(value => {counter += 1; println(value)})  // prints 0
+ch.attach(value => {counter += 1; println(value)})  // prints 1
 ```
 
-The following example illustrates a conceptual issue that arises with the use of chaining:
+### Call semantics
+Functions passed to higher-order operations are evaluated on-demand:
+
+```scala
+val ch = Var(42).map(i => { println(i); i + 1 })
+ch.attach(_ => ())  // prints 42
+ch.attach(_ => ())  // prints 42
+```
+
+The value of a state channel gets propagated to a child when it requests the value (``flush()``). In the example, ``Var`` delays the propagation of the initial value 42 until the first ``attach()`` call. ``attach()`` goes up the channel chain and triggers the flush on each channel. In other words, ``map(f)`` merely registers an observer, but doesn't call ``f`` right away. ``f`` is called each time when any of its direct or indirect children use ``attach()``.
+
+This reduces the memory usage and complexity of the channel implementation as no caching needs to be performed. On the other hand, you may want to perform on-site caching of the results of ``f``, especially if the function is side-effecting.
+
+The current value of a state channel may be read at any time using ``.get`` (if available) or ``flush()``.
+
+There are operations that maintain state for all observers. For example, ``skip(n)`` counts the number of produced values^[``n`` must be greater than 0.]. As soon as ``n`` is exceeded, all subsequent values are passed on. The initial ``attach()`` calls ignore the first value (42), but deal with all values after that:
 
 ```scala
 val ch = Var(42)
-val ch2 = ch.map(_ + 1)
-ch2.attach(...) // produces 43?
-ch2.attach(...) // produces 43?
+val dch = ch.drop(1)
+dch.attach(println)
+dch.attach(println)
+ch := 23  // produces 23 twice
 ```
-
-The question is whether initially produced values get propagated along the chain of operations.
-
-### Child channels
-**TODO:** Section outdated
-
-In order to make all operations work properly on state channels, the notion of *child channels* was introduced. The previously given example is therefore well-defined. A child channel delays the propagation of the initial value until an observer is attached.
-
-In order to figure out whether an operation supports this behaviour, it is sufficient to investigate its return type. The child channel behaviour only makes sense on operations that do not need more than one produced value to propagate it. A counterexample is ``skip()`` which conceptually must skip at least one element; the initial value will therefore never be propagated:
-
-```scala
-val ch = Var(42)
-ch.skip(1) // returns Channel
-  .attach(...)
-```
-
-> **Note:** Higher-order functions must not have any side-effects when used in operations on state channels.
->
-> ```scala
-> val ch = Var(42)
-> ch.map(println).attach(_ => ())
-> ```
->
-> The example does not behave as expected and prints 42 two times instead of only once. This design decision was made consciously as to keep the implementation of operations more simple.
-
-### Cached channels
-**TODO:** Section outdated
-
-For better performance, channels do not cache the produced values. Some operations cannot be implemented without access to the current value, though. Therefore, *cached channels* were introduced.
-
-For example, ``update()`` is an operation that would not work without caching. It takes a function which modifies the current value:
-
-```scala
-val ch = CachedChannel[Test]()
-ch.attach(println)
-ch := 2
-ch.update(_ + 1) // produces 3
-```
-
-``value()`` is another helpful operation. It creates a channel lens. If a channel is made up of a ``case class``, you could obviously use ``.map(_.field)`` to obtain a channel for a field. However, as with lenses in functional programming, a back channel is desired which composes a new value with this field changed. This also works with nested values as in the following example:
-
-```scala
-case class Base(a: Int)
-case class Test(a: String, b: Base)
-
-val ch = CachedChannel[Test]()
-val lens = ch.value[Int](_ >> 'b >> 'a)
-
-ch.attach(println)
-
-ch := Test("hello world", Base(1))
-lens := 2 // produces Test("hello world", Base(2)) on ch
-```
-
-In order to get a cached version of an existing channel, use the method ``cache``:
-
-```scala
-val cache = ch.cache
-ch := 1
-cache.update(_ + 1) // produces 2 on ``ch``
-```
-
-Use the method ``unique`` to produce a value if it is the first or different from the previous one. A use case is sending HTTP requests upon user input:
-
-```scala
-val ch = cache.unique
-ch.attach { query =>
-    // perform HTTP request
-}
-```
-
-> **Note:** As a ``CachedChannel`` inherits from ``Channel``, all channel operations are available as well.
 
 ## Buffers
-Buffers are reactive lists:
+Buffers are reactive lists. State changes such as row additions or removals are encoded as delta objects. This allows to reflect these changes directly in the DOM, without having to re-render the entire list.
 
 ```scala
 val buf = Buffer(1, 2, 3)
@@ -395,32 +364,32 @@ ul().bind(todos) { case tr @ Ref(t) =>
 
 > **TODO:** The following is outdated
 
-Aggregates allow to efficiently deal with lists of changing values. An aggregate is implemented as a list of channels.
+Buffers allow to efficiently deal with lists of changing values. An buffer is implemented as a list of channels.
 
-You may be wondering what is the purpose of having ``Aggregate[T]`` while ``Channel[Seq[T]]`` could be used. If you need to operate on a subsets, it is hard to do so with the latter approach. What's more, it is also a costly operation. If, however, the elements of your list are constant, you should use the channel approach. Widgets provide ``bind()`` for both variants.
+You may be wondering what is the purpose of having ``Buffer[T]`` while ``Channel[Seq[T]]`` could be used. If you need to operate on a subsets, it is hard to do so with the latter approach. What's more, it is also a costly operation. If, however, the elements of your list are constant, you should use the channel approach. Widgets provide ``bind()`` for both variants.
 
 ```scala
-val agg = Aggregate[Int]()
-val ch = agg.append() // adds a new row; returns Channel
+val buf = Buffer[Int]()
+val ch = buf.append() // adds a new row; returns Channel
 ch := 42              // sets row value to 42
 ```
 
-As with channels, an added row is lost if no observer was added beforehand. In practice, attaching a self-written observers is not as common as for channels. Widok already provides important operations and aggregates are most useful in connection with widgets. The general recommendation is to never use ``attach()`` to keep the code clean. Observers can get messy, especially if back-propagation is involved. If an observer becomes necessary, in almost every case this indicates that an operation should be implemented instead. Refer to the test cases for more information on writing observers for aggregates.
+As with channels, an added row is lost if no observer was added beforehand. In practice, attaching a self-written observers is not as common as for channels. Widok already provides important operations and buffers are most useful in connection with widgets. The general recommendation is to never use ``attach()`` to keep the code clean. Observers can get messy, especially if back-propagation is involved. If an observer becomes necessary, in almost every case this indicates that an operation should be implemented instead. Refer to the test cases for more information on writing observers for buffers.
 
-To observe the size of an aggregate, use ``size`` which returns a ``Channel[Int]``:
+To observe the size of a buffer, use ``size`` which returns a ``Channel[Int]``:
 ```scala
-agg.size.attach(println)
+buf.size.attach(println)
 ```
 
-As aggregates are just containers for channels, it is possible to obtain sub-lists and propagate changes back:
+As buffers are just containers for channels, it is possible to obtain sub-lists and propagate changes back:
 
 ```scala
-val agg = Aggregate[Int]()
-val filter = agg.filter(_ % 2 == 0)
+val buf = Buffer[Int]()
+val filter = buf.filter(_ % 2 == 0)
 
-agg.append(3)  // not propagated
-agg.append(4)  // propagated
-agg.append(5)  // not propagated
+buf.append(3)  // not propagated
+buf.append(4)  // propagated
+buf.append(5)  // not propagated
 
 filter.clear() // back-propagates the deletion to agg
                // agg will only contain 3 and 5.
@@ -431,7 +400,7 @@ filter.clear() // back-propagates the deletion to agg
 Similarly to channels, there is a cached counterpart which stores the most recent value for each row.
 
 ```scala
-val agg = Aggregate[Int]()
+val agg = Buffer[Int]()
 val cached = agg.cache
 ```
 
@@ -471,6 +440,10 @@ The proper functioning of each operation is backed by [test cases](https://githu
 Channels are a memory-efficient model and may be bound to widgets. The widget renders the received values on-the-fly. However, the lack of state restricts the possibilities. It may be desired to obtain the current value of a channel, change it or perform more elaborate operations that inherently require caching. This was taken into consideration and explicit caching can be performed.
 
 ### Binding to Widgets
+> **TODO:** The following is outdated
+
+A common use case are user interfaces. Usually, channels are set up before the widgets. The channels are then bound to the widgets. This renders the initial value directly in the DOM. Otherwise, it would be necessary to send the initial value to the channel manually as soon as the widget was rendered.
+
 A channel can be connected with one or more widgets. Most widgets provide two-way binding. To bind a channel to a widget, use the method ``bind()`` or its specialisations ``bindRaw()``, ``bindWidget()`` etc.
 
 When associating a channel to multiple widgets, the contents amongst them is synchronised automatically:
@@ -518,19 +491,18 @@ def contents() = Heading.Level1("Hello ", name)
 
 Another implicit is provided for ``Channel[Widget]``. You can use ``map()`` on a channel to create a widget stream. These are rendered automatically. If the widget type is always the same and it provides a ``bind()`` method, this is to be preferred instead. ``bind()`` does not recreate the widget itself and is therefore more efficient.
 
-### Widgets
 All list-like widgets (such as tables) provide the method ``bind()``:
 
 ```scala
-List.Unordered().bind(agg) { ch =>
+List.Unordered().bind(buf) { ch =>
   List.Item(ch)
 }
 ```
 
-Aggregates implement many operations which interact nicely with widgets: ``isEmpty`` could be used to hide widgets if an aggregate is empty:
+Buffers implement many operations which interact nicely with widgets: ``isEmpty`` could be used to hide widgets if an aggregate is empty:
 
 ```scala
-val agg = Aggregate[Int]()
+val agg = Buffer[Int]()
 
 val widget = HTML.Container.Inline("The list is empty.")
   .show(agg.isEmpty)
