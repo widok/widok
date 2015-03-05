@@ -24,7 +24,7 @@ This translates to:
 Button(Glyphicon.AlignLeft())
 ```
 
-Bootstrap widgets expect a list of arguments which denote child widgets. The configuration can be controlled by usual method calls on the widget. If a widget conceptually doesn't have any children, then its arguments are used for the configuration instead.
+Bootstrap widgets expect a list of arguments which denotes child widgets. The configuration can be controlled by usual method calls on the widget. If a widget conceptually doesn't have any children, then its arguments are used for the configuration instead.
 
 ### External stylesheet
 For the bindings to work without sbt-web, add the latest Bootstrap stylesheet to the ``head`` tag of your ``application.html`` file. You can either keep a local copy of the stylesheet or use a CDN:
@@ -39,7 +39,7 @@ bootstrap/3.3.2/css/bootstrap.min.css">
 Please keep in mind that the pre-built stylesheet comes with certain restrictions, like the font path being hard-coded.
 
 ### Label
-Every widget is equipped with a method ``label(value: Style)`` that allows to attach a Bootstrap label like ``label-info`` to it:
+Every widget is equipped with a method ``label(value: Style)`` that allows attaching a Bootstrap label like ``label-info`` to it:
 
 ```scala
 span("Text").label(Label.Info)
@@ -163,12 +163,14 @@ NavigationBar(
 )
 ```
 
-As probably more than one page is going to use the same header, you should create a trait for it. You may also want to write a trait ``CustomPage`` which only requires you to define the page title and body for every page.
+As probably more than one page is going to use the same header, you should create a trait for it. For example, you could define ``CustomPage`` with the header. Then, it only requires you to define the page title and body for every page.
 
 ### Alert
 Example:
 
-``Alert("No occurrences").style(Style.Danger)``
+```scala
+Alert("No occurrences").style(Style.Danger)
+```
 
 ### Panel
 Example:
@@ -185,10 +187,10 @@ Example:
 
 ```scala
 Pagination(
-  Pagination.Item(a("«")).disabled(true),
-  Pagination.Item(a("1")).active(true),
-  Pagination.Item(a("2")),
-  Pagination.Item(a("»"))
+  Pagination.Item(a("«")).disabled(true)
+, Pagination.Item(a("1")).active(true)
+, Pagination.Item(a("2"))
+, Pagination.Item(a("»"))
 )
 ```
 
@@ -289,7 +291,7 @@ Typeahead(Input.Text(), matches, select)
 ```
 
 ## Font-Awesome
-The Font-Awesome bindings include all icons in camel-case notation. For convenient usage, rename it when you import the object:
+The Font-Awesome bindings include all icons in camel-case notation. For convenience, rename the object when you import it:
 
 ```scala
 import org.widok.bindings.{FontAwesome => fa}

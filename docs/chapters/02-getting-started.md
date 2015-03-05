@@ -7,11 +7,9 @@ To develop web applications with Widok the only dependency you will need is [sbt
 You may also want to use an IDE for development. Widok is well-supported by [IntelliJ IDEA](https://www.jetbrains.com/idea/) with the [Scala plugin](https://github.com/JetBrains/intellij-scala). The use of an IDE is recommended as the interfaces Widok provides are fully typed, which lets you do tab completion.
 
 ## Project structure
-Create a directory for your project.
+Create a directory for your project. Within your project folder, create a sub-directory ``project`` with the two files ``plugins.sbt`` and ``Build.scala``:
 
-Within your project folder, create a sub-directory ``project`` with the two files ``plugins.sbt`` and ``Build.scala``:
-
-- ``plugins.sbt`` specifies sbt plug-ins, including Scala.js
+- ``plugins.sbt`` specifies sbt plug-ins, notably Scala.js
 
 ```scala
 logLevel := Level.Warn
@@ -19,7 +17,7 @@ logLevel := Level.Warn
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.0")
 ```
 
-- ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala, which allows for more flexibility. The chapter [Build process](#Build-process) explains some possibilities in the web context.
+- ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala code, which allows for more flexibility. The chapter ['Build process'](#build-process) explains some of the possibilities in the web context.
 
 ```scala
 import sbt._
@@ -32,9 +30,9 @@ object Build extends sbt.Build {
   val buildVersion = "0.1-SNAPSHOT"
   val buildScalaVersion = "2.11.5"
   val buildScalaOptions = Seq(
-    "-unchecked", "-deprecation",
-    "-encoding", "utf8",
-    "-Xelide-below", annotation.elidable.ALL.toString
+    "-unchecked", "-deprecation"
+  , "-encoding", "utf8"
+  , "-Xelide-below", annotation.elidable.ALL.toString
   )
 
   lazy val main = Project(id = "example", base = file("."))
@@ -42,12 +40,12 @@ object Build extends sbt.Build {
     .settings(
       libraryDependencies ++= Seq(
         "io.github.widok" %%% "widok" % "0.2.0"
-      ),
-      organization := buildOrganisation,
-      version := buildVersion,
-      scalaVersion := buildScalaVersion,
-      scalacOptions := buildScalaOptions,
-      persistLauncher := true
+      )
+    , organization := buildOrganisation
+    , version := buildVersion
+    , scalaVersion := buildScalaVersion
+    , scalacOptions := buildScalaOptions
+    , persistLauncher := true
     )
 }
 ```
@@ -55,7 +53,7 @@ object Build extends sbt.Build {
 Your source code goes underneath ``src/main/scala/example/``.
 
 ## Code
-Create a source file ``Main.scala`` with the following contents:
+Create a source file named ``Main.scala`` with the following contents:
 
 ```scala
 package example
@@ -75,7 +73,7 @@ object Main extends PageApplication {
 }
 ```
 
-Finally, you need to create an HTML file ``application.html`` in the root directory. It includes the compiled JavaScript sources:
+Finally, you need to create an HTML file ``application.html`` in the root directory. It references the compiled JavaScript sources:
 
 ```html
 <!DOCTYPE html>
@@ -85,8 +83,15 @@ Finally, you need to create an HTML file ``application.html`` in the root direct
     <title>Widok example</title>
   </head>
   <body id="page">
-    <script type="text/javascript" src="./target/scala-2.11/example-fastopt.js"></script>
-    <script type="text/javascript" src="./target/scala-2.11/example-launcher.js"></script>
+    <script
+      type="text/javascript"
+      src="./target/scala-2.11/example-fastopt.js"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="./target/scala-2.11/example-launcher.js"
+    ></script>
   </body>
 </html>
 ```
@@ -105,7 +110,5 @@ Now you can open ``application.html`` in your browser. The page should show a he
 <p>This is your first application.</p>
 ```
 
-This parts gets dynamically inserted into the ``<body>`` of your HTML file.
-
-When you open up the browser's web console, it will show the message you specified in ``ready()``.
+Upon page load this gets dynamically inserted into the node with the ID ``page``. When you open up the browser's web console, it will show the message you specified in ``ready()``.
 

@@ -4,7 +4,7 @@ author:
 - name: Tim Nieradzik
   affiliation: University of Bremen
   email: tim@kognit.io
-date: February 2015
+date: March 2015
 lang: british
-abstract: Widok is a reactive web framework for Scala.js. It enables you to develop interactive web applications entirely in Scala by transpiling the code to JavaScript. Abstractions such as *views*, *channels* or *aggregates* allow for concise and reliable code. Widok ships native bindings for popular CSS frameworks like Bootstrap and Font-Awesome which let you iterate faster.
+abstract: Widok is a reactive web framework for the JVM and Scala.js. It enables you to develop interactive client-server applications entirely in Scala. The client code is transpiled to JavaScript, while sharing the same interfaces on the server. Abstractions such as *widgets* and reactive data structures allow for concise and reliable code. Widok ships native bindings for popular CSS frameworks which let you iterate faster.
 ...

@@ -1,9 +1,9 @@
 # Widgets
-A widget is a type-safe abstraction for an element displayed by the browser. The entire page layout is described using widgets. Thus, widget instantiations can be nested. Furthermore, custom widgets can be defined for better code reuse. A custom widget is usually composed of other widgets, changing their attributes like CSS tags.
+A widget is a type-safe abstraction for an element displayed by the browser. The entire page layout is described using widgets. Thus, widget instantiations can be nested. Furthermore, custom widgets can be defined for better code reuse. A custom widget is usually composed of other widgets, changing their attributes such as CSS tags.
 
-Instead of accessing DOM elements using ``getElementById()``, a widget doesn't have an ID by default. Instead, it maintains a reference to the DOM element. This way, widgets that may have the same ID cannot collide and no ill-defined type-casts may occur.
+Instead of accessing DOM elements using ``getElementById()``, a widget doesn't have any ID by default. Instead, it maintains a reference to the DOM element. This way, widgets that may have the same ID cannot collide and no ill-defined type-casts may occur.
 
-Methods on a widget return the instance of the widget. This allows to arbitrarily nest widgets and change their attributes, without storing a reference to the widget in a local variable.
+Mutation methods on a widget return the instance. This allows to arbitrarily nest widgets and change their attributes by chaining method calls, without the need to store the widget in a local variable.
 
 ## HTML
 Widok provides widgets for many HTML elements. The bindings have a more intuitive naming than their HTML counterparts, although aliases were defined, too. The module the HTML widgets reside in is ``org.widok.bindings.HTML``. If your project doesn't define any conflicting types, it is safe to import the whole contents into the namespace.
@@ -80,7 +80,7 @@ Anchor(
 ```
 
 ## Writing custom widgets
-Widgets should be designed with type-safety in mind. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. Therefore, create a class hierarchy which closely resembles the intended nesting of the elements when creating custom widgets. This will allow to catch usage errors during compile-time.
+Widgets should be designed with type-safety in mind. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. When creating custom widgets, think of a class hierarchy which closely resembles the intended nesting. This will allow to catch usage errors during compile-time.
 
 A custom widget may be defined as follows:
 
@@ -111,7 +111,7 @@ def Panel(contents: View*) = Container.Generic(contents: _*)
 ## Binding to events
 A widget provides functionality to interact with the DOM. Methods with the prefix ``on*()`` exist for all events and take a callback.
 
-To listen to the ``click`` and ``dblclick`` events of a button, write:
+To listen to JavaScript's ``onclick`` and ``ondblclick`` events of a button, write:
 
 ```scala
 Button("Click")
@@ -127,9 +127,7 @@ btn.click.attach(...)
 btn.doubleClick.attach(...)
 ```
 
-This allows for an event to have multiple subscribers. This is important in web applications where data gets propagated to various layers of the application. For example, consider a shopping cart where the user updates the quantity of a certain product. At the same time the header needs to get updated with the newly calculated price. Making the DOM events available as streams widens the range of possibilities.
-
-As ``click`` is a stream of events, we could decide to take into account only the first event:
+This allows for an event to have multiple subscribers. This is important in web applications where data gets propagated to various layers of the application. For example, consider a shopping cart where the user updates the quantity of a certain product. At the same time the header needs to get updated with the newly calculated price. Making the DOM events available as streams widens the range of possibilities. As ``click`` is a stream of events, we could decide to take into account only the first event:
 
 ```scala
 btn.click.head.attach(e => println(e.timeStamp))
@@ -142,9 +140,9 @@ HTML.Container.Generic("Button clicked")
   .show(btn.click.head.map(_ => false))
 ```
 
-``show()`` expects a Boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, we hide the widget as soon as we click the button.
+``show()`` expects a Boolean channel. Depending on the values that are sent to the channel a widget is shown or not. Here, the widget is hidden as soon as we click the button.
 
-Data propagation mechanisms are explained in more detail in the [next chapter](#reactive-programming).
+Data propagation mechanisms are explained in more detail in the next chapter ['Reactive programming'](#reactive-programming).
 
 ## Composed widgets
 Widok provides a couple of composed widgets without external rendering dependencies. They are defined in the package ``org.widok.widgets``:

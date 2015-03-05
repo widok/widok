@@ -8,17 +8,17 @@ The router may be used as follows:
 
 ```scala
 object Main extends Application {
-    val main = Route("/", pages.Main)
-    val test = Route("/test/:param", pages.Test)
-    val test2 = Route("/test/:param/:param2", pages.Test)
-    val notFound = Route("/404", pages.NotFound)
+  val main = Route("/", pages.Main)
+  val test = Route("/test/:param", pages.Test)
+  val test2 = Route("/test/:param/:param2", pages.Test)
+  val notFound = Route("/404", pages.NotFound)
 
-    val routes = Set(main, test, notFound)
+  val routes = Set(main, test, notFound)
 
-    def main() {
-        val router = Router(enabled, fallback = Some(notFound))
-        router.listen()
-    }
+  def main() {
+    val router = Router(enabled, fallback = Some(notFound))
+    router.listen()
+  }
 }
 ```
 
@@ -40,12 +40,12 @@ val route = Main.test("param", "value")
 
 // Multiple parameters
 val route: InstantiatedRoute =
-	Main.test2(
-		Map(
-			"param" -> "value",
-			"param2" -> "value2"
-		)
-	)
+  Main.test2(
+    Map(
+      "param" -> "value",
+      "param2" -> "value2"
+    )
+  )
 
 // Redirect to `route`
 route.go()
@@ -66,8 +66,8 @@ case class Test() extends Page {
 }
 ```
 
-### Motivation
-Due to the simple design the router could be efficiently implemented. The routes allow better reasoning than it would be possible if they supported regular expressions. When the router is constructed, it sorts all routes by their length and checks whether there are no conflicts. Also, the restriction that each parameter must be named makes code more readable when referring to parameters of an instantiated route. If validation of parameters is desired, this must be done in ``ready()``. The advantages of the simple design outweigh its limitations.
+### Design decisions
+Due to its limitations, the router could be efficiently implemented. Matching string-only parts in routes allows for better reasoning than regular expressions. When the router is constructed, it sorts all routes by their length and checks whether there are any conflicts. Also, the restriction that each parameter must be named makes code more readable when referring to parameters of an instantiated route. If validation of parameters is desired, this must be done in ``ready()``.
 
 ## Application provider
 As the router defines usually the entry point of an application, Widok provides an application provider that enforces better separation:
