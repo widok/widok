@@ -138,7 +138,10 @@ $fa-font-path: "../fonts/";
 Then, add to your ``plugins.sbt``:
 
 ```scala
-resolvers += Resolver.url("GitHub repository", url("http://shaggyyeti.github.io/releases"))(Resolver.ivyStylePatterns)
+resolvers += Resolver.url(
+  "GitHub repository"
+, url("http://shaggyyeti.github.io/releases")
+)(Resolver.ivyStylePatterns)
 
 addSbtPlugin("default" % "sbt-sass" % "0.1.9")
 ```
@@ -192,7 +195,10 @@ Such projects are called *cross projects* in Scala.js. You can find more informa
 import org.scalajs.sbtplugin.cross.CrossProject
 
 object Build extends sbt.Build {
-  lazy val crossProject = CrossProject("server", "client", file("."), CrossType.Full)
+  lazy val crossProject =
+    CrossProject(
+      "server", "client", file("."), CrossType.Full
+    )
     .settings(
       /* Shared settings */
     )
