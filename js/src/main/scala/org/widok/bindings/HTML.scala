@@ -157,6 +157,16 @@ object HTML {
       rendered.setAttribute("type", "checkbox")
     }
 
+    case class Radio() extends Widget.Input.Checkbox[Radio] {
+      val rendered = DOM.createElement("input")
+        .asInstanceOf[dom.html.Input]
+      rendered.setAttribute("type", "radio")
+    }
+
+    case class Number() extends Textual[Number] {
+      rendered.setAttribute("type", "number")
+    }
+
     case class File() extends Widget[File] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[dom.html.Input]

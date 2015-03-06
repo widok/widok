@@ -35,11 +35,13 @@ Widok provides widgets for many HTML elements. The bindings have a more intuitiv
 | label    | Label               |                                    |
 | a        | Anchor              |                                    |
 | img      | Image               |                                    |
+| radio    | Input.Radio         | ``input`` with ``type="radio"``    |
 | checkbox | Input.Checkbox      | ``input`` with ``type="checkbox"`` |
 | file     | Input.File          | ``input`` with ``type="file"``     |
 | select   | Input.Select        | ``input`` with ``type="select"``   |
 | text     | Input.Text          | ``input`` with ``type="text"``     |
 | password | Input.Password      | ``input`` with ``type="password"`` |
+| number   | Input.Number        | ``input`` with ``type="number"``   |
 | option   | Input.Select.Option |                                    |
 | ul       | List.Unordered      |                                    |
 | ol       | List.Ordered        |                                    |

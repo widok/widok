@@ -103,11 +103,13 @@ package object widok {
     val a = bindings.HTML.Anchor
     val img = bindings.HTML.Image
 
+    val radio = bindings.HTML.Input.Radio
     val checkbox = bindings.HTML.Input.Checkbox
     val file = bindings.HTML.Input.File
     val select = bindings.HTML.Input.Select
     val text = bindings.HTML.Input.Text
     val password = bindings.HTML.Input.Password
+    val number = bindings.HTML.Input.Number
     val option = bindings.HTML.Input.Select.Option
 
     val ul = bindings.HTML.List.Unordered
