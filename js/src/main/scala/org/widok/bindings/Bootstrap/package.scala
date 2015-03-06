@@ -490,6 +490,26 @@ package object Bootstrap {
     }
   }
 
+  case class ProgressBar(contents: View*) extends Widget[ProgressBar] {
+    val pb = HTML.Container.Generic(
+      contents: _*
+    ).css("progress-bar")
+     .attribute("role", "progressbar")
+
+    val rendered = DOM.createElement("div", Seq(pb))
+    css("progress")
+
+    def style(value: ReadChannel[Style]) = {
+      pb.css(value.map(x => Seq("progress-bar", "progress-bar-" + x.cssSuffix)))
+      this
+    }
+
+    def progress(percentage: ReadChannel[Int]) = {
+      pb.width(percentage.map(Length.Percentage(_).asInstanceOf[Length]))
+      this
+    }
+  }
+
   case class Media(contents: View*) extends Widget[Media] {
     val rendered = DOM.createElement("div", contents)
     css("media")

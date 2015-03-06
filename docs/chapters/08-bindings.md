@@ -172,6 +172,16 @@ Example:
 Alert("No occurrences").style(Style.Danger)
 ```
 
+### Progress bar
+Example:
+
+```scala
+val percentage = Var(10)
+ProgressBar("Caption")
+  .style(percentage.map(p => if (p < 50) Style.Warning else Style.Success))
+  .progress(percentage)
+```
+
 ### Panel
 Example:
 
