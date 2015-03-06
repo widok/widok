@@ -1,12 +1,26 @@
 # Getting Started
 This chapter will guide you through creating your first Widok project.
 
-## Installation
+## Prerequisites
 To develop web applications with Widok the only dependency you will need is [sbt](http://www.scala-sbt.org/). Once installed, it will automatically fetch Scala.js and all libraries Widok depends on.
 
 You may also want to use an IDE for development. Widok is well-supported by [IntelliJ IDEA](https://www.jetbrains.com/idea/) with the [Scala plugin](https://github.com/JetBrains/intellij-scala). The use of an IDE is recommended as the interfaces Widok provides are fully typed, which lets you do tab completion.
 
 ## Project structure
+Your project will have the following structure:
+
+```
+├── application.html
+├── project
+│   ├── Build.scala
+│   ├── plugins.sbt
+├── src
+│   └── main
+│       └── scala
+│           └── example
+│               └── Application.scala
+```
+
 Create a directory for your project. Within your project folder, create a sub-directory ``project`` with the two files ``plugins.sbt`` and ``Build.scala``:
 
 - ``plugins.sbt`` specifies sbt plug-ins, notably Scala.js
