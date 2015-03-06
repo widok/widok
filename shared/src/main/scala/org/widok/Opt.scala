@@ -27,6 +27,7 @@ object Opt {
  */
 trait Opt[T]
   extends PartialChannel[T]
+  with reactive.poll.PartialChannel
   with reactive.mutate.PartialChannel[T]
 {
   private var cached: Option[T] = None
@@ -40,6 +41,10 @@ trait Opt[T]
 
   def isEmpty$: Boolean = cached.isEmpty
   def nonEmpty$: Boolean = cached.nonEmpty
+
+  def isDefined$: Boolean = cached.isDefined
+  def undefined$: Boolean = cached.nonEmpty
+
   def contains$(value: T): Boolean = cached.contains(value)
 
   def isDefined: ReadChannel[Boolean] = defined
