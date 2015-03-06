@@ -237,10 +237,19 @@ case class Inline(contents: Widget[_]*) extends View {
   }
 }
 
+trait Length
+object Length {
+  case class Pixel(value: Double) extends Length { override def toString = s"${value}px" }
+  case class Element(value: Double) extends Length { override def toString = s"${value}em" }
+  case class Percentage(value: Double) extends Length { override def toString = s"${value}%" }
+}
+
 case class CSSStyle(style: dom.css.StyleDeclaration) {
   lazy val display: Opt[String] = DOMChannel.variable(style.display = _)
   lazy val visibility: Opt[String] = DOMChannel.variable(style.visibility = _)
   lazy val cursor: Opt[HTML.Cursor] = DOMChannel.variable(v => style.cursor = v.toString)
+  lazy val height: Opt[Length] = DOMChannel.variable(v => style.height = v.toString)
+  lazy val width: Opt[Length] = DOMChannel.variable(v => style.width = v.toString)
 }
 
 trait Node extends View {
@@ -386,6 +395,18 @@ trait Widget[T] extends Node { self: T =>
   def cursor(cursor: HTML.Cursor): T = { style.cursor := cursor; self }
   def cursor(cursor: ReadChannel[HTML.Cursor]): T = {
     style.cursor.subscribe(cursor)
+    self
+  }
+
+  def height(height: Length): T = { style.height := height; self }
+  def height(height: ReadChannel[Length]): T = {
+    style.height.subscribe(height)
+    self
+  }
+
+  def width(width: Length): T = { style.width := width; self }
+  def width(width: ReadChannel[Length]): T = {
+    style.width.subscribe(width)
     self
   }
 
