@@ -3,6 +3,19 @@ The chapter ['Getting Started'](#getting-started) proposed a simple sbt configur
 
 For more information on the build process, please refer to the [Scala.js documentation](http://www.scala-js.org/doc/sbt/run.html).
 
+## JDK
+The [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) leads to slightly shorter compilation times than [OpenJDK](http://openjdk.java.net/).
+
+With the default configuration, sbt tends to allocate a lot of memory, so that you may run into out-of-memory situations. This can be mitigated by limiting the heap size with the ``JAVA_OPTS`` environment variable:
+
+```bash
+export JAVA_OPTS="$JAVA_OPTS \
+        -XX:InitialHeapSize=128m \
+        -XX:MaxHeapSize=512m \
+        -XX:+CMSClassUnloadingEnabled"
+export SBT_OPTS="$JAVA_OPTS"
+```
+
 ## Development releases
 Code optimisations are time-consuming and usually negligible during development. To compile the project without optimisations, use the ``fastOptJS`` task:
 
@@ -213,4 +226,12 @@ object Build extends sbt.Build {
 ```
 
 You will also need to move your current ``src/`` folder to ``js/``. The JVM project goes underneath ``jvm/src/main/scala/`` and the shared source files underneath ``shared/src/main/scala/``.
+
+## Colours
+Colours can be activated in sbt and Scala by setting two environment variables:
+
+```bash
+export JAVA_OPTS="$JAVA_OPTS -Dscala.color"
+export SBT_OPTS="$JAVA_OPTS"
+```
 
