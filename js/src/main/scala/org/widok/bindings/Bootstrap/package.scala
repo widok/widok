@@ -504,7 +504,7 @@ package object Bootstrap {
       this
     }
 
-    def progress(percentage: ReadChannel[Int]) = {
+    def progress(percentage: ReadChannel[Double]) = {
       pb.width(percentage.map(Length.Percentage(_).asInstanceOf[Length]))
       this
     }

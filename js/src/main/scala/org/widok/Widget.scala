@@ -241,7 +241,7 @@ trait Length
 object Length {
   case class Pixel(value: Double) extends Length { override def toString = s"${value}px" }
   case class Element(value: Double) extends Length { override def toString = s"${value}em" }
-  case class Percentage(value: Double) extends Length { override def toString = s"${value}%" }
+  case class Percentage(value: Double) extends Length { override def toString = s"${value * 100}%" }
 }
 
 case class CSSStyle(style: dom.css.StyleDeclaration) {
