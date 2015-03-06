@@ -10,7 +10,7 @@ import com.typesafe.sbt.web.Import._
 
 object Build extends sbt.Build {
   val buildOrganisation = "io.github.widok"
-  val buildScalaVersion = "2.11.5"
+  val buildScalaVersion = "2.11.6"
   val buildScalaOptions = Seq(
     "-unchecked", "-deprecation",
     "-encoding", "utf8"

@@ -42,7 +42,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 object Build extends sbt.Build {
   val buildOrganisation = "example"
   val buildVersion = "0.1-SNAPSHOT"
-  val buildScalaVersion = "2.11.5"
+  val buildScalaVersion = "2.11.6"
   val buildScalaOptions = Seq(
     "-unchecked", "-deprecation"
   , "-encoding", "utf8"
