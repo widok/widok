@@ -127,6 +127,7 @@ trait WriteBufSet[T]
 trait PollBufSet[T]
   extends reactive.poll.Count[T]
   with reactive.poll.Empty
+  with reactive.poll.BufSet[T]
 {
   import BufSet.Delta
 
@@ -138,6 +139,7 @@ trait PollBufSet[T]
   def nonEmpty$: Boolean = elements.nonEmpty
   def contains$(value: T): Boolean = elements.contains(value)
 
+  def toSet$: Set[T] = elements.toSet
   def toSeq: ReadChannel[Seq[T]] = changes.map(_ => elements.toSeq)
 }
 
