@@ -167,6 +167,14 @@ object HTML {
       rendered.setAttribute("type", "number")
     }
 
+    case class Textarea() extends Widget.Input.Text[Textarea] {
+      val rendered = DOM.createElement("textarea")
+        .asInstanceOf[dom.html.Input]
+
+      def cols(value: Int) = attribute("cols", value.toString)
+      def rows(value: Int) = attribute("rows", value.toString)
+    }
+
     case class File() extends Widget[File] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[dom.html.Input]

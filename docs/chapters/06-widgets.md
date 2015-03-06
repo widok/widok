@@ -40,6 +40,7 @@ Widok provides widgets for many HTML elements. The bindings have a more intuitiv
 | file     | Input.File          | ``input`` with ``type="file"``     |
 | select   | Input.Select        | ``input`` with ``type="select"``   |
 | text     | Input.Text          | ``input`` with ``type="text"``     |
+| textarea | Input.Textarea      |                                    |
 | password | Input.Password      | ``input`` with ``type="password"`` |
 | number   | Input.Number        | ``input`` with ``type="number"``   |
 | option   | Input.Select.Option |                                    |
