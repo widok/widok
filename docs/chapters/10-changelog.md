@@ -43,11 +43,22 @@ Some work also went into the widget subsystem:
 
 Newly added widgets are:
 
-- HTML: File inputs
-- HTML: Password fields
-- HTML: Select boxes
+- Bootstrap: Modal dialogue
+- Bootstrap: Typeahead field
+- Bootstrap: Form validation
+- Bootstrap: Table
+- Bootstrap: Pagination
+- Bootstrap: Panel
+- Bootstrap: Button group and toolbar
+- Bootstrap: Breadcrumb
+- Bootstrap: Media object
+- HTML: File input
+- HTML: Password field
+- HTML: Select box
+- HTML: Radio button
+- HTML: HTML5 number input field
 - Widget container ``Inline()`` (can be used when a ``span()`` would introduce undesired design glitches)
-- Image placeholders
+- Image placeholder
 - Lorem ipsum
 
 Code generators were introduced for higher reliability of the bindings. [sbt-web](https://github.com/sbt/sbt-web) is used internally to obtain external web dependencies. As part of the build process, Scala files are then created. Auto-generated bindings are provided for:
@@ -60,6 +71,6 @@ Code generators were introduced for higher reliability of the bindings. [sbt-web
 - The method ``destroy()`` can be overridden to react on page changes, for example for manual resource management
 
 ### Trivia
-- The API changes significantly shrinked TodoMVC's file size from 3396 bytes (92 lines) to 3068 bytes (89 lines).
+- The API changes significantly shrinked TodoMVC's file size from 3396 bytes (92 lines) to 3059 bytes (89 lines).
 - Widok can be used to develop desktop applications with [NW.js](https://github.com/nwjs/nw.js/) as shown by [poliglot-ui](http://github.com/poliglot/poliglot-ui)
 
