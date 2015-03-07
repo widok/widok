@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
-import org.typelevel.sbt.Developer
-import org.typelevel.sbt.TypelevelPlugin._
+import xerial.sbt.Sonatype.SonatypeKeys._
+import xerial.sbt.Sonatype.sonatypeSettings
 import org.scalajs.sbtplugin._
 import org.scalajs.sbtplugin.cross.CrossProject
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
@@ -12,7 +12,8 @@ object Build extends sbt.Build {
   val buildOrganisation = "io.github.widok"
   val buildScalaVersion = "2.11.6"
   val buildScalaOptions = Seq(
-    "-unchecked", "-deprecation",
+    "-unchecked",
+    "-deprecation",
     "-encoding", "utf8"
   )
 
@@ -116,15 +117,29 @@ object Build extends sbt.Build {
 
   lazy val widok = crossProject.in(file("."))
     .enablePlugins(SbtWeb)
-    .settings(typelevelDefaultSettings: _*)
+    .settings(sonatypeSettings: _*)
     .settings(
       name := "widok",
+      version := "0.2.0-SNAPSHOT",
 
-      TypelevelKeys.signArtifacts := true,
-      TypelevelKeys.githubDevs += Developer("Tim Nieradzik", "tindzk"),
-      TypelevelKeys.githubProject := ("widok", "widok"),
-      homepage := Some(url("http://widok.github.io/")),
-      licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
+      pomExtra :=
+        <url>http://widok.github.io/</url>
+        <licenses>
+          <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.html</url>
+          </license>
+        </licenses>
+        <scm>
+          <url>git://github.com/widok/widok.git</url>
+        </scm>
+        <developers>
+          <developer>
+            <id>tindzk</id>
+            <name>Tim Nieradzik</name>
+            <url>http://github.com/tindzk/</url>
+          </developer>
+        </developers>,
 
       testFrameworks += new TestFramework("minitest.runner.Framework"),
 
