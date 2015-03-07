@@ -1,5 +1,7 @@
 package org.widok.bindings
 
+import org.scalajs.dom
+
 import org.widok._
 
 /**
@@ -115,16 +117,30 @@ package object Bootstrap {
     }
   }
 
-  case class Button(contents: View*) extends Widget[Button] {
-    val rendered = DOM.createElement("button", contents)
+  trait ButtonBase[T] extends Widget[T] { self: T =>
+    def element: dom.html.Element
+
+    val rendered = element
     css("btn", "btn-default")
 
     def size(value: Size) = css(s"btn-${value.cssSuffix}")
-    def style(value: Style) =
+    def style(value: Style) = {
       cssState(false, "btn-default")
-        .css(s"btn-${value.cssSuffix}")
+      css(s"btn-${value.cssSuffix}")
+    }
     def block(state: Boolean) = cssState(state, "btn-block")
     def link(state: Boolean) = cssState(state, "btn-link")
+  }
+
+  case class Button(contents: View*) extends ButtonBase[Button] {
+    def element = DOM.createElement("button", contents)
+  }
+
+  case class AnchorButton(contents: View*)
+    extends ButtonBase[AnchorButton]
+    with HTML.AnchorBase[AnchorButton]
+  {
+    def element = DOM.createElement("a", contents)
   }
 
   trait Size { val cssSuffix: String }

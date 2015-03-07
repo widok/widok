@@ -227,6 +227,25 @@ Grid.Row(
 )
 ```
 
+### Button
+Example:
+
+```scala
+Button(Glyphicon.User())
+  .size(Size.ExtraSmall)
+  .onClick(_ => println("Clicked"))
+  .title("Button title")
+```
+
+``AnchorButton`` provides the functionality of ``Button`` and ``HTML.Anchor``:
+
+```scala
+Button(Glyphicon.User())
+  .size(Size.ExtraSmall)
+  .url("http://google.com/")
+  .title("Button title")
+```
+
 ### Modal
 It is most convenient to use the ``ModalBuilder`` to create modals.  On the same page you can define several modals. For example:
 

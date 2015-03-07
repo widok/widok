@@ -96,13 +96,15 @@ object HTML {
     val rendered = DOM.createElement("nav", contents)
   }
 
-  case class Anchor(contents: View*) extends Widget[Anchor] {
-    val rendered = DOM.createElement("a", contents)
-
+  trait AnchorBase[T] extends Widget[T] { self: T =>
     def url(value: String) = {
       rendered.setAttribute("href", value)
-      this
+      self
     }
+  }
+
+  case class Anchor(contents: View*) extends AnchorBase[Anchor] {
+    val rendered = DOM.createElement("a", contents)
   }
 
   case class Form(contents: View*) extends Widget[Form] {

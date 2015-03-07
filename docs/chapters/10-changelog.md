@@ -1,7 +1,17 @@
 # Changelog
 The changelog lists all major changes between releases. For more details, please see the [Git changelog](https://github.com/widok/widok/commits/master).
 
-## Version 0.2
+## Version 0.2.1
+### Widgets
+- Allow the use of ``Buffer.map()`` in ``tbody``
+
+### Event propagation
+- Fix Opt.undefined$
+
+### Bindings
+- Bootstrap: Implemented AnchorButton
+
+## Version 0.2.0
 ### General work
 - Relicensed as Apache v2.0
 - Ported to Scala 2.11.5
