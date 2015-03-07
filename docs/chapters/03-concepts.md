@@ -183,7 +183,7 @@ object App extends PageApplication {
 
   , button("Change my name")
       .onClick(_ => name := "tux")
-      .show(name.unequal("tux"))
+      .show(name.isNot("tux"))
 
   , button("Log out")
       .onClick(_ => name := "")
