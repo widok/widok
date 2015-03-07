@@ -43,7 +43,7 @@ trait Opt[T]
   def nonEmpty$: Boolean = cached.nonEmpty
 
   def isDefined$: Boolean = cached.isDefined
-  def undefined$: Boolean = cached.nonEmpty
+  def undefined$: Boolean = cached.isEmpty
 
   def contains$(value: T): Boolean = cached.contains(value)
 
