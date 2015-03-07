@@ -367,7 +367,7 @@ package object Bootstrap {
         .css("panel-footer")
   }
 
-  case class Pagination(contents: Pagination.Item*) extends Widget.List[Pagination, Pagination.Item] {
+  case class Pagination(contents: Pagination.Item*) extends Widget.List[Pagination] {
     val rendered =
       HTML.Navigation(
         HTML.List.Unordered(
@@ -386,7 +386,7 @@ package object Bootstrap {
     }
   }
 
-  case class ListGroup(contents: Widget.List.Item[_]*) extends Widget.List[ListGroup, ListGroup.Item] {
+  case class ListGroup(contents: Widget.List.Item[_]*) extends Widget.List[ListGroup] {
     val rendered = HTML.Container.Generic(contents: _*)
       .css("list-group")
       .rendered
@@ -434,7 +434,7 @@ package object Bootstrap {
   }
 
   object Grid {
-    case class Row(contents: Column*) extends Widget.List[Row, Column] {
+    case class Row(contents: Column*) extends Widget.List[Row] {
       val rendered = DOM.createElement("div", contents)
       css("row")
     }
@@ -542,7 +542,7 @@ package object Bootstrap {
         .css("media-heading")
   }
 
-  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb, Bootstrap.Item] {
+  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb] {
     val rendered = DOM.createElement("ol", contents)
     css("breadcrumb")
   }
@@ -562,7 +562,7 @@ package object Bootstrap {
       HTML.Container.Generic(table)
         .css("table-responsive")
 
-    case class Row(contents: View*) extends HTML.Table.RowBase[Row] {
+    case class Row(contents: View*) extends Widget.List.Item[Row] {
       val rendered = DOM.createElement("tr", contents)
 
       def active(state: Boolean) = cssState(state, "active")

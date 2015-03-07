@@ -14,7 +14,7 @@ object Widget {
     }
   }
 
-  trait List[V, ListItem <: Widget[_]] extends Widget[V] { self: V =>
+  trait List[V] extends Widget[V] { self: V =>
 
   }
 
