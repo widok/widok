@@ -122,9 +122,6 @@ object HTML {
 
   object Input {
     trait Textual[T] extends Widget.Input.Text[T] { self: T =>
-      val rendered = DOM.createElement("input")
-        .asInstanceOf[dom.html.Input]
-
       def autofocus(value: Boolean) = {
         rendered.setAttribute("autofocus", "")
         self
@@ -137,6 +134,8 @@ object HTML {
     }
 
     trait TextBase[T] extends Textual[T] { self: T =>
+      val rendered = DOM.createElement("input")
+        .asInstanceOf[dom.html.Input]
       rendered.setAttribute("type", "text")
 
       def autocomplete(value: Boolean) = {
@@ -148,6 +147,8 @@ object HTML {
     case class Text() extends TextBase[Text]
 
     trait PasswordBase[T] extends Textual[T] { self: T =>
+      val rendered = DOM.createElement("input")
+        .asInstanceOf[dom.html.Input]
       rendered.setAttribute("type", "password")
     }
 
@@ -165,11 +166,15 @@ object HTML {
       rendered.setAttribute("type", "radio")
     }
 
-    case class Number() extends Textual[Number] {
+    trait NumberBase[T] extends Textual[T] { self: T =>
+      val rendered = DOM.createElement("input")
+        .asInstanceOf[dom.html.Input]
       rendered.setAttribute("type", "number")
     }
 
-    case class Textarea() extends Widget.Input.Text[Textarea] {
+    case class Number() extends NumberBase[Number]
+
+    trait TextareaBase[T] extends Textual[T] { self: T =>
       val rendered = DOM.createElement("textarea")
         .asInstanceOf[dom.html.Input]
 
@@ -177,7 +182,9 @@ object HTML {
       def rows(value: Int) = attribute("rows", value.toString)
     }
 
-    case class File() extends Widget[File] {
+    case class Textarea() extends TextareaBase[Textarea]
+
+    case class File() extends Textual[File] {
       val rendered = DOM.createElement("input")
         .asInstanceOf[dom.html.Input]
 
