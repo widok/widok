@@ -9,6 +9,7 @@ The changelog lists all major changes between releases. For more details, please
 ### Event propagation
 - Fix ``Opt.undefined$``
 - Fix ``Dict.size``
+- Generate fine-grained delta objects in ``Dict.toBuffer``
 
 ### Bindings
 - Bootstrap: Implement AnchorButton

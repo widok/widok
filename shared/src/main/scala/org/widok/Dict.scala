@@ -226,8 +226,11 @@ trait PollDict[A, B]
   def toBuffer: ReadBuffer[(A, B)] = {
     val buf = Buffer[(A, B)]()
 
-    changes.attach { case _ =>
-      buf.set(mapping.toSeq)
+    changes.attach {
+      case Delta.Insert(k, v) => buf += (k, v)
+      case Delta.Update(k, v) => buf.replace(buf.get.find(_._1 == k).get, (k, v))
+      case Delta.Remove(k) => buf -= buf.get.find(_._1 == k).get
+      case Delta.Clear() => buf.clear()
     }
 
     buf

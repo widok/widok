@@ -73,4 +73,16 @@ object DictTest extends SimpleTestSuite {
     assertEquals(map.values, Seq("a", "c"))
   }
   */
+
+  test("toBuffer") {
+    val dict   = Dict(Map(1 -> "one", 2 -> "two", 3 -> "three"))
+    val buffer = dict.toBuffer
+    assertEquals(buffer.get.sorted, Seq((1, "one"), (2, "two"), (3, "three")))
+
+    dict -= 2
+    assertEquals(buffer.get.sorted, Seq((1, "one"), (3, "three")))
+
+    dict.update(1, "forty-two")
+    assertEquals(buffer.get.sorted, Seq((1, "forty-two"), (3, "three")))
+  }
 }

@@ -136,7 +136,7 @@ object BufferTest extends SimpleTestSuite {
     assertEquals(states, mutable.ArrayBuffer(2, 3))
   }
 
-  test("toBuffer") {
+  test("buffer") {
     val buffer = Buffer(1, 2, 3)
 
     val states = buffer.find(_ > 1).buffer
@@ -146,7 +146,7 @@ object BufferTest extends SimpleTestSuite {
     assertEquals(states.get, Seq(2, 3))
   }
 
-  test("toBuffer") {
+  test("buffer") {
     val buffer = Buffer[Int]()
     val states = buffer.find(_ > 1).buffer
 
