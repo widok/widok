@@ -12,6 +12,9 @@ The changelog lists all major changes between releases. For more details, please
 - Bootstrap: Implemented AnchorButton
 - Bootstrap: Fix positioning of Typeahead wrt. scrolling
 
+### Routing
+- Support percent-encoded arguments
+
 ## Version 0.2.0
 ### General work
 - Relicensed as Apache v2.0

@@ -111,19 +111,16 @@ case class Router(unorderedRoutes: Set[Route],
    * Parses the paths.
    */
   def dispatchPath(nextPath: String, prevPath: Option[String] = None) {
-    val nextQuery = Router.parseQuery(nextPath)
-    val prevQuery = prevPath.flatMap(Router.parseQuery)
-
-    (prevQuery, nextQuery) match {
-      case (None, Some(next)) => dispatchQuery(next)
-      case (Some(prev), Some(next)) if prev != next => dispatchQuery(next)
+    (prevPath, nextPath) match {
+      case (None, next) => dispatchQuery(next)
+      case (Some(prev), next) if prev != next => dispatchQuery(next)
       case _ => log("[router] No action as query did not change")
     }
   }
 
   def dispatchQuery(query: String) {
     log(s"[router] Dispatching query $query")
-    val queryParts = query.split('/')
+    val queryParts = Router.queryParts(query)
 
     currentPage.toOption.foreach(_.destroy())
     currentPage.clear()
@@ -149,6 +146,13 @@ case class Router(unorderedRoutes: Set[Route],
 }
 
 object Router {
-  def decode(query: String) = URIUtils.decodeURIComponent(query)
-  def parseQuery(uri: String) = Helpers.after(uri, '#').map(decode)
+  def decode(query: String): String = URIUtils.decodeURIComponent(query)
+
+  def queryParts(uri: String): Seq[String] =
+    Helpers.after(uri, '#')
+      .flatMap {
+        case x if x.isEmpty => None
+        case x => Some(x.split('/').toSeq.map(decode))
+      }
+      .getOrElse(Seq.empty)
 }
