@@ -20,15 +20,15 @@ case class Route(path: String, page: () => Page) extends Ordered[Route] {
       }
     }
 
-  def apply(args: Map[String, String] = Map.empty) =
+  /** Instantiates route with multiple arguments */
+  def apply(args: Map[String, String] = Map.empty): InstantiatedRoute =
     InstantiatedRoute(this, args)
 
-  // Provide a convenience function as most of the time only one argument
-  // must be passed.
-  def apply(param: String, arg: String) =
+  /** Instantiates route with only one argument */
+  def apply(param: String, arg: String): InstantiatedRoute =
     InstantiatedRoute(this, Map(param -> arg))
 
-  def matches(queryParts: Seq[String]) =
+  def matches(queryParts: Seq[String]): Boolean =
     if (routeParts.length != queryParts.length) false
     else routeParts.zip(queryParts).forall{
       case (rt, qry) if rt == qry => true
@@ -36,7 +36,7 @@ case class Route(path: String, page: () => Page) extends Ordered[Route] {
       case _ => false
     }
 
-  def parseArguments(queryParts: Seq[String]) =
+  def parseArguments(queryParts: Seq[String]): Map[String, String] =
     routeParts.zip(queryParts).foldLeft(Map.empty[String, String]) { (acc, cur) =>
       val (key, value) = cur
       if (key.startsWith(":")) acc + (key.substring(1) -> value)
@@ -46,19 +46,19 @@ case class Route(path: String, page: () => Page) extends Ordered[Route] {
 
 // TODO Find better name
 case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty) {
-  def query() = {
+  def query(): String = {
     val result = args.foldLeft(route.path) { (acc, cur) =>
       val (key, value) = cur
       val replace = s":$key"
       assume(acc.contains(replace), s"Route contains named parameter '$key'")
-      acc.replace(replace, value)
+      acc.replace(replace, Router.encodePart(value))
     }
 
     assume(!result.contains(":"), "All parameters were set")
     result
   }
 
-  def uri() = "#" + query()
+  def uri(): String = "#" + query()
 
   /**
    * Dispatches a route by changing the current hash. If the hash did not
@@ -66,10 +66,9 @@ case class InstantiatedRoute(route: Route, args: Map[String, String] = Map.empty
    * being triggered. Therefore, render the page manually.
    */
   def go() {
-    val current = Router.decode(dom.window.location.hash) // TODO Is the decode() call necessary?
     val target = uri()
 
-    if (current == target) log("[router] Hash not changed")
+    if (dom.window.location.hash == target) log("[router] Hash not changed")
     else {
       log("[router] Location changed; changing browser hash")
       dom.window.location.hash = target
@@ -107,15 +106,11 @@ case class Router(unorderedRoutes: Set[Route],
   }
 
   /**
-   * Only dispatch if the path actually changed.
-   * Parses the paths.
+   * Dispatches route if path changed
    */
   def dispatchPath(nextPath: String, prevPath: Option[String] = None) {
-    (prevPath, nextPath) match {
-      case (None, next) => dispatchQuery(next)
-      case (Some(prev), next) if prev != next => dispatchQuery(next)
-      case _ => log("[router] No action as query did not change")
-    }
+    if (!prevPath.contains(nextPath)) dispatchQuery(nextPath)
+    else log("[router] No action as query did not change")
   }
 
   def dispatchQuery(query: String) {
@@ -146,13 +141,14 @@ case class Router(unorderedRoutes: Set[Route],
 }
 
 object Router {
-  def decode(query: String): String = URIUtils.decodeURIComponent(query)
+  def decodePart(argument: String): String = URIUtils.decodeURIComponent(argument)
+  def encodePart(argument: String): String = URIUtils.encodeURIComponent(argument)
 
   def queryParts(uri: String): Seq[String] =
     Helpers.after(uri, '#')
       .flatMap {
         case x if x.isEmpty => None
-        case x => Some(x.split('/').toSeq.map(decode))
+        case x => Some(x.split('/').toSeq.map(decodePart))
       }
       .getOrElse(Seq.empty)
 }

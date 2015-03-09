@@ -24,6 +24,11 @@ object RouterTest extends SimpleTestSuite {
     assertEquals(route7.compare(route6), 1)
   }
 
+  test("query()") {
+    val route = Route("/:a/:b", null)
+    assertEquals(route(Map("a" -> "/", "b" -> "ß")).uri(), "#/%2F/%C3%9F")
+  }
+
   test("queryParts()") {
     val url = "http://localhost:8080/#/a/http%3A%2F%2Flocalhost%3A8080%2F%23%2Fa"
     assertEquals(Router.queryParts(url), Seq("", "a", "http://localhost:8080/#/a"))
