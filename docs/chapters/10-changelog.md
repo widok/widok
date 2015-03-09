@@ -6,7 +6,8 @@ The changelog lists all major changes between releases. For more details, please
 - Allow the use of ``Buffer.map()`` in ``tbody``
 
 ### Event propagation
-- Fix Opt.undefined$
+- Fix ``Opt.undefined$``
+- Fix ``Dict.size``
 
 ### Bindings
 - Bootstrap: Implemented AnchorButton

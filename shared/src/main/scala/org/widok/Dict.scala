@@ -65,6 +65,7 @@ trait DeltaDict[A, B]
       case Delta.Update(k, _) =>
       case Delta.Remove(k) => count.update(_ - 1)
       case Delta.Clear() if count.get != 0 => count := 0
+      case Delta.Clear() =>
     }
 
     count

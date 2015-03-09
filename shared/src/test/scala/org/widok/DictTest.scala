@@ -28,6 +28,17 @@ object DictTest extends SimpleTestSuite {
     assertEquals(size, 4)
   }
 
+  test("nonEmpty") {
+    val dict = Dict[Int, Int]()
+
+    var ne = Option.empty[Boolean]
+    dict.nonEmpty.attach(x => ne = Some(x))
+    assertEquals(ne, Some(false))
+
+    dict.clear()
+    assertEquals(ne, Some(false))
+  }
+
   test("forall()") {
     val buf = Buffer(1, 2, 3)
     val map = buf.mapTo(_ => -1).buffer
