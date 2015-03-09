@@ -108,11 +108,19 @@ package object Bootstrap {
       css("form-control")
     }
 
+    case class Textarea() extends HTML.Input.TextareaBase[Textarea] with Input[Textarea] {
+      css("form-control")
+    }
+
     case class Password() extends HTML.Input.PasswordBase[Password] with Input[Password] {
       css("form-control")
     }
 
     case class Select() extends HTML.Input.SelectBase[Select] with Input[Select] {
+      css("form-control")
+    }
+
+    case class Number() extends HTML.Input.NumberBase[Number] with Input[Number] {
       css("form-control")
     }
   }
@@ -167,6 +175,26 @@ package object Bootstrap {
       css("btn-toolbar")
       attribute("role", "toolbar")
     }
+  }
+
+  object Checkbox {
+    def apply(cb: HTML.Input.Checkbox, caption: View) =
+      HTML.Container.Generic(
+        HTML.Label(cb, caption)
+      ).css("checkbox")
+
+    def Inline(cb: HTML.Input.Checkbox, caption: View) =
+      HTML.Label(cb, caption).css("checkbox-inline")
+  }
+
+  object Radio {
+    def apply(radio: HTML.Input.Radio, caption: View) =
+      HTML.Container.Generic(
+        HTML.Label(radio, caption)
+      ).css("radio")
+
+    def Inline(radio: HTML.Input.Radio, caption: View) =
+      HTML.Label(radio, caption).css("radio-inline")
   }
 
   def Footer(contents: View*) =
@@ -308,20 +336,6 @@ package object Bootstrap {
     def Navigation(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("nav", "navbar-nav")
-  }
-
-  // TODO Find a better solution.
-  case class Checkbox(contents: View*) extends Widget[Checkbox] {
-    val checkbox = HTML.Input.Checkbox()
-
-    val rendered =
-      HTML.Container.Generic(
-        ControlLabel(
-          checkbox,
-          HTML.Container.Inline(contents: _*)
-        )
-      ).css("checkbox")
-        .rendered
   }
 
   case class Alert(contents: View*) extends Widget[Alert] {

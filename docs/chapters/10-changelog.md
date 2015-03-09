@@ -4,13 +4,18 @@ The changelog lists all major changes between releases. For more details, please
 ## Version 0.2.1
 ### Widgets
 - Allow the use of ``Buffer.map()`` in ``tbody``
+- Provide ``autofocus()`` and ``placeholder()`` on Textarea
 
 ### Event propagation
 - Fix ``Opt.undefined$``
 - Fix ``Dict.size``
 
 ### Bindings
-- Bootstrap: Implemented AnchorButton
+- Bootstrap: Implement AnchorButton
+- Bootstrap: Implement Number
+- Bootstrap: Implement Textarea
+- Bootstrap: Implement Radio
+- Bootstrap: Add argument to Checkbox
 - Bootstrap: Fix positioning of Typeahead wrt. scrolling
 
 ### Routing

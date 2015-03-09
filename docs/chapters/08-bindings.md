@@ -106,12 +106,15 @@ Other widgets related to forms are:
 - ``InputGroup()``
 - ``InputGroup.Addon()``
 - ``Input.Text()``
+- ``Input.Textarea()``
 - ``Input.Password()``
 - ``Input.Select()``
+- ``Input.Number()``
 - ``Button()``
 - ``Button.Group()``
 - ``Button.Toolbar()``
 - ``Checkbox()``
+- ``Radio()``
 
 ### Layout
 Layout-related widgets are:
@@ -244,6 +247,17 @@ Button(Glyphicon.User())
   .size(Size.ExtraSmall)
   .url("http://google.com/")
   .title("Button title")
+```
+
+### Checkbox
+Example:
+
+```scala
+val checked = Var(true)
+Checkbox(
+  checkbox().bind(checked)
+, "Remember me"
+)
 ```
 
 ### Modal
