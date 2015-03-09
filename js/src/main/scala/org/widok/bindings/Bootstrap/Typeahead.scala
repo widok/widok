@@ -37,11 +37,10 @@ case class Typeahead[A](
 
   shown.attach {
     case true =>
-      val coords = DOM.clientCoordinates(ipt.rendered)
+      val coords = ipt.relativeCoordinates
       list.rendered.style.top = (coords.top + coords.height) + "px"
       list.rendered.style.left = s"${coords.left}px"
       list.rendered.style.display = "block"
-      list.rendered.style.position = "fixed"
     case false =>
       list.rendered.style.display = "none"
   }

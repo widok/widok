@@ -10,6 +10,7 @@ The changelog lists all major changes between releases. For more details, please
 
 ### Bindings
 - Bootstrap: Implemented AnchorButton
+- Bootstrap: Fix positioning of Typeahead wrt. scrolling
 
 ## Version 0.2.0
 ### General work

@@ -440,4 +440,12 @@ trait Widget[T] extends Node { self: T =>
     value.attach(enabled(_))
     self
   }
+
+  /** Coordinates relative to the padding box of offsetParent */
+  def relativeCoordinates =
+    Coordinates(
+      width = rendered.offsetWidth,
+      height = rendered.offsetHeight,
+      top = rendered.offsetTop,
+      left = rendered.offsetLeft)
 }
