@@ -5,6 +5,7 @@ The changelog lists all major changes between releases. For more details, please
 ### Widgets
 - Allow the use of ``Buffer.map()`` in ``tbody``
 - Provide ``autofocus()`` and ``placeholder()`` on Textarea
+- Widget: Add ``+=`` and ``-=``
 
 ### Event propagation
 - Fix ``Opt.undefined$``

@@ -448,4 +448,17 @@ trait Widget[T] extends Node { self: T =>
       height = rendered.offsetHeight,
       top = rendered.offsetTop,
       left = rendered.offsetLeft)
+
+  /** Adds child widget */
+  def append(widget: Widget[_]) {
+    rendered.appendChild(widget.rendered)
+  }
+
+  /** Removes child widget */
+  def remove(widget: Widget[_]) {
+    rendered.removeChild(widget.rendered)
+  }
+
+  def +=(widget: Widget[_]) = append(widget)
+  def -=(widget: Widget[_]) = remove(widget)
 }
