@@ -38,6 +38,15 @@ bootstrap/3.3.2/css/bootstrap.min.css">
 
 Please keep in mind that the pre-built stylesheet comes with certain restrictions, like the font path being hard-coded.
 
+### Image
+Example:
+
+```scala
+Image("http://lorempixel.com/400/200/")
+  .responsive(true)
+  .shape(Shape.Circle)
+```
+
 ### Label
 Every widget is equipped with a method ``label(value: Style)`` that allows attaching a Bootstrap label like ``label-info`` to it:
 
@@ -47,10 +56,10 @@ span("Text").label(Label.Info)
 
 ``TextContainer(styles: Style*)`` generates a container with a list of styles.
 
-### Glyphicons
+### Glyphicon
 Glyphicons are simple function calls, for example: ``Glyphicon.User()``. All Bootstrap glyphicons are supported, although the naming was changed to camel-case.
 
-### Forms
+### Form
 Forms can be validated on-the-fly. For each field a custom validator may be written. ``validator.errors()`` will render the textual error. Instead of showing the error underneath a field, this call can be placed anywhere, for instance to centralise all errors. ``validate()`` is defined on every widget and sets the ``has-error`` CSS tag if a field is invalid. The initial validation is triggered when the user presses the submit button. ``validator.check()`` will perform the first validation and return ``true`` if all fields are valid. If at least one input field was invalid, the submit button is kept disabled as long as the input stays wrong.
 
 ```scala

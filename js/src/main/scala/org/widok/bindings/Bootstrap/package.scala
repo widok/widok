@@ -572,6 +572,21 @@ package object Bootstrap {
         .css("media-heading")
   }
 
+  sealed trait Shape { val cssTag: String }
+  object Shape {
+    case object Rounded   extends Shape { val cssTag = "img-rounded"   }
+    case object Circle    extends Shape { val cssTag = "img-circle"    }
+    case object Thumbnail extends Shape { val cssTag = "img-thumbnail" }
+  }
+
+  case class Image(source: String) extends Widget[Image] {
+    val rendered = DOM.createElement("img")
+    rendered.setAttribute("src", source)
+
+    def responsive(state: Boolean) = cssState(state, "img-responsive")
+    def shape(value: Shape) = css(value.cssTag)
+  }
+
   case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb] {
     val rendered = DOM.createElement("ol", contents)
     css("breadcrumb")
