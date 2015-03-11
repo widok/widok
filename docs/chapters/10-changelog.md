@@ -8,9 +8,10 @@ The changelog lists all major changes between releases. For more details, please
 - Widget: Add ``+=`` and ``-=``
 
 ### Event propagation
-- Fix ``Opt.undefined$``
-- Fix ``Dict.size``
-- Generate fine-grained delta objects in ``Dict.toBuffer``
+- Opt: Fix ``undefined$``
+- Dict: Fix ``size``
+- Dict: Generate fine-grained delta objects in ``toBuffer``
+- Dict: Add ``sortBy()``
 
 ### Bindings
 - Bootstrap: Implement AnchorButton

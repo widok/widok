@@ -223,6 +223,12 @@ trait PollDict[A, B]
 
   def toMap: Map[A, B] = mapping.toMap
 
+  def sortBy[C](f: (A, B) => C)(implicit ordering: Ordering[C]): ReadBuffer[(A, B)] = {
+    val buf = Buffer[(A, B)]()
+    changes.attach(_ => buf.set(mapping.toSeq.sortBy(f.tupled)))
+    buf
+  }
+
   def toBuffer: ReadBuffer[(A, B)] = {
     val buf = Buffer[(A, B)]()
 
