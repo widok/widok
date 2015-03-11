@@ -8,33 +8,27 @@ import org.widok._
  * Native widgets for Bootstrap 3 components
  */
 package object Bootstrap {
-  object TextContainer {
-    trait Style { val cssTag: String }
-    object Style {
-      case object Small extends Style { val cssTag = "small" }
-      case object Mark extends Style { val cssTag = "mark" }
-      case object Left extends Style { val cssTag = "text-left" }
-      case object Right extends Style { val cssTag = "text-right" }
-      case object Center extends Style { val cssTag = "text-center" }
-      case object Justify extends Style { val cssTag = "text-justify" }
-      case object NoWrap extends Style { val cssTag = "text-nowrap" }
-      case object Lowercase extends Style { val cssTag = "text-lowercase" }
-      case object Uppercase extends Style { val cssTag = "text-uppercase" }
-      case object Capitalise extends Style { val cssTag = "text-capitalize" }
-      case object Muted extends Style { val cssTag = "text-muted" }
-      case object Primary extends Style { val cssTag = "text-primary" }
-      case object Success extends Style { val cssTag = "text-success" }
-      case object Info extends Style { val cssTag = "text-info" }
-      case object Warning extends Style { val cssTag = "text-warning" }
-      case object Danger extends Style { val cssTag = "text-danger" }
-    }
-
-    def apply(styles: Style*)(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css(styles.map(_.cssTag): _*)
+  sealed trait TextStyle { val cssTag: String }
+  object TextStyle {
+    case object Small extends TextStyle { val cssTag = "small" }
+    case object Mark extends TextStyle { val cssTag = "mark" }
+    case object Left extends TextStyle { val cssTag = "text-left" }
+    case object Right extends TextStyle { val cssTag = "text-right" }
+    case object Center extends TextStyle { val cssTag = "text-center" }
+    case object Justify extends TextStyle { val cssTag = "text-justify" }
+    case object NoWrap extends TextStyle { val cssTag = "text-nowrap" }
+    case object Lowercase extends TextStyle { val cssTag = "text-lowercase" }
+    case object Uppercase extends TextStyle { val cssTag = "text-uppercase" }
+    case object Capitalise extends TextStyle { val cssTag = "text-capitalize" }
+    case object Muted extends TextStyle { val cssTag = "text-muted" }
+    case object Primary extends TextStyle { val cssTag = "text-primary" }
+    case object Success extends TextStyle { val cssTag = "text-success" }
+    case object Info extends TextStyle { val cssTag = "text-info" }
+    case object Warning extends TextStyle { val cssTag = "text-warning" }
+    case object Danger extends TextStyle { val cssTag = "text-danger" }
   }
 
-  trait Role { val value: String }
+  sealed trait Role { val value: String }
   object Role {
     case object Search extends Role { val value = "search" }
   }
@@ -66,7 +60,7 @@ package object Bootstrap {
     HTML.Label(contents: _*)
       .css("control-label")
 
-  trait Style { val cssSuffix: String }
+  sealed trait Style { val cssSuffix: String }
   object Style {
     /** Not supported by tables and alerts. */
     case object Default extends Style { val cssSuffix = "default" }
@@ -87,8 +81,9 @@ package object Bootstrap {
     def style(value: Style) = css(s"label-${value.cssSuffix}")
   }
 
-  implicit class WidgetWithLabel[T](widget: Widget[T]) {
+  implicit class WidgetWithStyle[T](widget: Widget[T]) {
     def label(value: Style) = widget.css("label", s"label-${value.cssSuffix}")
+    def textStyle(value: TextStyle) = widget.css(value.cssTag)
   }
 
   // TODO Improve design.
@@ -151,7 +146,7 @@ package object Bootstrap {
     def element = DOM.createElement("a", contents)
   }
 
-  trait Size { val cssSuffix: String }
+  sealed trait Size { val cssSuffix: String }
   object Size {
     case object ExtraSmall extends Size { val cssSuffix = "xs" }
     case object Small extends Size { val cssSuffix = "sm" }
@@ -263,7 +258,7 @@ package object Bootstrap {
   }
 
   object NavigationBar {
-    trait Position {
+    sealed trait Position {
       def cssTag(fixed: Boolean): String
     }
 

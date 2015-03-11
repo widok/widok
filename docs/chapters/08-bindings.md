@@ -54,7 +54,14 @@ Every widget is equipped with a method ``label(value: Style)`` that allows attac
 span("Text").label(Label.Info)
 ```
 
-``TextContainer(styles: Style*)`` generates a container with a list of styles.
+### Text style
+``textStyle()`` is available on every widget:
+
+```scala
+span("Text")
+  .textStyle(TextStyle.Small)
+  .textStyle(TextStyle.Danger)
+```
 
 ### Glyphicon
 Glyphicons are simple function calls, for example: ``Glyphicon.User()``. All Bootstrap glyphicons are supported, although the naming was changed to camel-case.

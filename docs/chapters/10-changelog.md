@@ -20,6 +20,7 @@ The changelog lists all major changes between releases. For more details, please
 - Bootstrap: Add argument to Checkbox
 - Bootstrap: Fix positioning of Typeahead wrt. scrolling
 - Bootstrap: Backport upstream changes to fix scrolling behaviour in modals
+- Bootstrap: Remove ``TextContainer``, use ``textStyle()`` instead
 
 ### Routing
 - Support percent-encoded arguments
