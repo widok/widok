@@ -4,41 +4,48 @@ import org.scalajs.dom
 
 import org.widok._
 
-case class ModalBuilder(contents: Modal.ContentElement*) extends Widget[ModalBuilder] {
-  val shown = Var(false)
+case class ModalBuilder(contents: Modal.ContentElement*)
+  extends Widget[ModalBuilder]
+  with Disposable
+{
+  val shown  = Var(false)
   val height = Opt[Length]()
 
-  def open() = { shown := true; this }
+  def open()    = { shown := true ; this }
   def dismiss() = { shown := false; this }
 
-  val rendered = Modal(
-    Modal.Backdrop().height(height)
-  , Modal.Dialog(
+  val backdrop = Modal.Backdrop()
+
+  // TODO Backported to v3.3.2
+  // From https://github.com/twbs/bootstrap/commit/f5beebe726aa8c1810015d8c62931f4559b49664
+  backdrop.rendered.style.bottom = "0"
+  backdrop.rendered.style.position = "fixed"
+
+  val modal = Modal(
+    Modal.Dialog(
       Modal.Content(contents: _*)
     )
   ).fade(true)
-    .cssState(shown, "in")
-    .rendered
+   .cssState(shown, "in")
+
+  val rendered = modal.rendered
 
   /* .show(shown) wouldn't work here because Bootstrap uses
    * `style.display = none` in its stylesheet.
    */
+  modal.style.display << shown.map(if (_) "block" else "none")
 
-  val resize = (e: dom.Event) => {
-    val h = dom.document.body.scrollHeight
-    height := Length.Pixel(h)
-  }
-
-  shown.attach(
+  val ch = shown.tail.distinct.attach(
     if (_) {
+      dom.document.body.appendChild(backdrop.rendered)
       Document.body.className += "modal-open"
-      style.display := "block"
-      dom.window.addEventListener("resize", resize)
-      resize(null) /* Set initial height */
     } else {
+      dom.document.body.removeChild(backdrop.rendered)
       Document.body.className -= "modal-open"
-      style.display := "none"
-      dom.window.removeEventListener("resize", resize)
     }
   )
+
+  def dispose() {
+    ch.dispose()
+  }
 }

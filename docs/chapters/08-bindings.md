@@ -2,7 +2,7 @@
 This chapter deals with third-party CSS frameworks for which Widok provides typed bindings.
 
 ## Bootstrap
-Bootstrap is a "framework for developing responsive, mobile first projects on the web." See the [project page](http://getbootstrap.com/) for more information.
+Bootstrap is a "framework for developing responsive, mobile first projects on the web." See the [project page](http://getbootstrap.com/) for more information. The bindings require Bootstrap v3.3.2.
 
 To use the bindings, it may be desirable to import its entire namespace:
 

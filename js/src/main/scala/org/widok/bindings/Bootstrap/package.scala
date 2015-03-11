@@ -488,7 +488,7 @@ package object Bootstrap {
 
   object Modal {
     def Backdrop() =
-      HTML.Container.Generic().css("modal-backdrop", "fade", "in")
+      HTML.Container.Generic().css("modal-backdrop", "in")
 
     def Close(dismiss: () => Any) =
       HTML.Button(HTML.Container.Inline("×"))
