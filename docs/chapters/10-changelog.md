@@ -2,6 +2,9 @@
 The changelog lists all major changes between releases. For more details, please see the [Git changelog](https://github.com/widok/widok/commits/master).
 
 ## Version 0.2.1
+### General work
+- Ported to Scala.js v0.6.2
+
 ### Widgets
 - Allow the use of ``Buffer.map()`` in ``tbody``
 - Provide ``autofocus()`` and ``placeholder()`` on Textarea

@@ -162,7 +162,7 @@ object Build extends sbt.Build {
     )
     .jvmSettings(
       libraryDependencies ++= Seq(
-        "org.monifu" %% "minitest" % "0.11" % "test"
+        "org.monifu" %% "minitest" % "0.12" % "test"
       )
     )
 
