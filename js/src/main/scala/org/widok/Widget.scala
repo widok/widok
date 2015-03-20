@@ -459,6 +459,9 @@ trait Widget[T] extends Node { self: T =>
     rendered.removeChild(widget.rendered)
   }
 
-  def +=(widget: Widget[_]) = append(widget)
-  def -=(widget: Widget[_]) = remove(widget)
+  // TODO Overloading the two operators leads to a regression in the JavaScript
+  // test cases.
+
+  // def +=(widget: Widget[_]) = append(widget)
+  // def -=(widget: Widget[_]) = remove(widget)
 }
