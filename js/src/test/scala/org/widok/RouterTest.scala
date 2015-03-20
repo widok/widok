@@ -34,7 +34,7 @@ object RouterTest extends SimpleTestSuite {
     assertEquals(Router.queryParts(url), Seq("", "a", "http://localhost:8080/#/a"))
 
     val url2 = "http://localhost:8080/#/"
-    assertEquals(Router.queryParts(url2), Seq(""))
+    assertEquals(Router.queryParts(url2), Seq())
 
     val url3 = "http://localhost:8080/#"
     assertEquals(Router.queryParts(url3), Seq())
