@@ -271,6 +271,9 @@ trait Node extends View {
   lazy val contextMenu = DOMChannel.mouseEvent(rendered.oncontextmenu = _)
 
   lazy val paste = DOMChannel.dragEvent(rendered.onpaste = _)
+  lazy val dragStart = DOMChannel.dragEvent(rendered.ondragstart = _)
+  lazy val dragOver = DOMChannel.dragEvent(rendered.ondragover = _)
+  lazy val dragEnd = DOMChannel.dragEvent(rendered.ondragend = _)
 
   lazy val keyUp = DOMChannel.keyboardEvent(rendered.onkeyup = _)
   lazy val keyDown = DOMChannel.keyboardEvent(rendered.onkeydown = _)
@@ -331,6 +334,11 @@ trait Widget[T] extends Node { self: T =>
   def onMouseDown(f: dom.MouseEvent => Unit) = { mouseDown.attach(f); self }
   def onMouseMove(f: dom.MouseEvent => Unit) = { mouseMove.attach(f); self }
   def onContextMenu(f: dom.MouseEvent => Unit) = { contextMenu.attach(f); self }
+
+  def onPaste(f: dom.DragEvent => Unit) = { paste.attach(f); self }
+  def onDragStart(f: dom.DragEvent => Unit) = { dragStart.attach(f); self }
+  def onDragOver(f: dom.DragEvent => Unit) = { dragOver.attach(f); self }
+  def onDragEnd(f: dom.DragEvent => Unit) = { dragEnd.attach(f); self }
 
   def onKeyUp(f: dom.KeyboardEvent => Unit) = { keyUp.attach(f); self }
   def onKeyDown(f: dom.KeyboardEvent => Unit) = { keyDown.attach(f); self }
