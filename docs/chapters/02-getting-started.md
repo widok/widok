@@ -53,7 +53,7 @@ object Build extends sbt.Build {
     .enablePlugins(ScalaJSPlugin)
     .settings(
       libraryDependencies ++= Seq(
-        "io.github.widok" %%% "widok" % "0.2.0"
+        "io.github.widok" %%% "widok" % "0.2.1"
       )
     , organization := buildOrganisation
     , version := buildVersion
