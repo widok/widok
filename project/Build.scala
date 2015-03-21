@@ -158,7 +158,10 @@ object Build extends sbt.Build {
         "org.monifu" %%% "minitest" % "0.11" % "test",
         "org.webjars" % "font-awesome" % "4.3.0-1",
         "org.webjars" % "bootstrap" % "3.3.2"
-      )
+      ),
+
+      /* Use io.js for faster compilation of test cases */
+      scalaJSStage in Global := FastOptStage
     )
     .jvmSettings(
       libraryDependencies ++= Seq(

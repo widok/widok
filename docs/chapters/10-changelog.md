@@ -4,6 +4,7 @@ The changelog lists all major changes between releases. For more details, please
 ## Version 0.2.1
 ### General work
 - Ported to Scala.js v0.6.2
+- Use io.js for running the test cases
 
 ### Widgets
 - Allow the use of ``Buffer.map()`` in ``tbody``

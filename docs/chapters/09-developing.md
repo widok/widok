@@ -1,6 +1,9 @@
 # Developing
 If you would like to participate or try out development releases, please read this chapter.
 
+## Prerequisites
+io.js must be installed.
+
 ## API
 Widok is still in its early stages and the API may be subject to changes. Any recommendations for improvements are welcome.
 
@@ -10,6 +13,7 @@ To work on the development version of Widok, run the following commands:
 ```bash
 $ git clone git@github.com:widok/widok.git
 $ cd widok
+$ npm install source-map-support
 $ sbt publish-local
 ```
 
