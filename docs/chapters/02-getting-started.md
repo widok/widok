@@ -18,7 +18,7 @@ Your project will have the following structure:
 │   └── main
 │       └── scala
 │           └── example
-│               └── Application.scala
+│               └── Main.scala
 ```
 
 Create a directory for your project. Within your project folder, create a sub-directory ``project`` with the two files ``plugins.sbt`` and ``Build.scala``:
