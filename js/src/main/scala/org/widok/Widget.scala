@@ -273,9 +273,9 @@ trait Node extends View {
   lazy val paste = DOMChannel.dragEvent(rendered.onpaste = _)
   lazy val drag = DOMChannel.dragEvent(rendered.ondrag = _)
   lazy val dragStart = DOMChannel.dragEvent(rendered.ondragstart = _)
-  lazy val dragOver = DOMChannel.dragEvent(rendered.ondragover = _)
   lazy val dragEnd = DOMChannel.dragEvent(rendered.ondragend = _)
   lazy val dragEnter = DOMChannel.dragEvent(rendered.ondragenter = _)
+  lazy val dragOver = DOMChannel.dragEvent(rendered.ondragover = _)
   lazy val dragLeave = DOMChannel.dragEvent(rendered.ondragleave = _)
   lazy val drop = DOMChannel.dragEvent(rendered.ondrop = _)
 
@@ -342,9 +342,9 @@ trait Widget[T] extends Node { self: T =>
   def onPaste(f: dom.DragEvent => Unit) = { paste.attach(f); self }
   def onDrag(f: dom.DragEvent => Unit) = { drag.attach(f); self }
   def onDragStart(f: dom.DragEvent => Unit) = { dragStart.attach(f); self }
-  def onDragOver(f: dom.DragEvent => Unit) = { dragOver.attach(f); self }
   def onDragEnd(f: dom.DragEvent => Unit) = { dragEnd.attach(f); self }
   def onDragEnter(f: dom.DragEvent => Unit) = { dragEnter.attach(f); self }
+  def onDragOver(f: dom.DragEvent => Unit) = { dragOver.attach(f); self }
   def onDragLeave(f: dom.DragEvent => Unit) = { dragLeave.attach(f); self }
   def onDrop(f: dom.DragEvent => Unit) = { drop.attach(f); self }
 
