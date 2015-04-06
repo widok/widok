@@ -162,24 +162,6 @@ object Widget {
       value.attach(rendered.innerHTML = _)
       self
     }
-
-    def widget[T <: Widget[_]](value: ReadChannel[T]) = {
-      value.attach { cur =>
-        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
-        rendered.appendChild(cur.rendered)
-      }
-
-      self
-    }
-
-    def optWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) = {
-      value.attach { cur =>
-        if (rendered.firstChild != null) rendered.removeChild(rendered.firstChild)
-        if (cur.isDefined) rendered.appendChild(cur.get.rendered)
-      }
-
-      self
-    }
   }
 }
 
@@ -234,6 +216,37 @@ trait View {
 case class Inline(contents: Widget[_]*) extends View {
   def render(parent: dom.Node, offset: dom.Node) {
     contents.foreach(_.render(parent, parent.lastChild))
+  }
+}
+
+case class PlaceholderWidget[T <: Widget[_]](value: ReadChannel[T]) extends View {
+  def render(parent: dom.Node, offset: dom.Node) {
+    var node = DOM.createElement(null)
+    DOM.insertAfter(parent, offset, node)
+
+    value.attach { cur =>
+      parent.replaceChild(cur.rendered, node)
+      node = cur.rendered
+    }
+  }
+}
+
+case class PlaceholderOptWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) extends View {
+  def render(parent: dom.Node, offset: dom.Node) {
+    var node = DOM.createElement(null)
+    DOM.insertAfter(parent, offset, node)
+
+    value.attach { (t: Option[Widget[_]]) =>
+      t match {
+        case Some(widget) =>
+          parent.replaceChild(widget.rendered, node)
+          node = widget.rendered
+        case None =>
+          val empty = DOM.createElement(null)
+          parent.replaceChild(empty, node)
+          node = empty
+      }
+    }
   }
 }
 

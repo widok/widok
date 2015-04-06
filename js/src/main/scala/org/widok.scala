@@ -41,11 +41,11 @@ package object widok {
     HTML.Container.Inline = HTML.Container.Inline().subscribe(value.map(_.toString))
 
   implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]):
-    HTML.Container.Inline = HTML.Container.Inline().widget(value)
+    PlaceholderWidget[T] = PlaceholderWidget(value)
 
   implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]]
-    (value: ReadChannel[T]): HTML.Container.Inline =
-      HTML.Container.Inline().optWidget(value)
+    (value: ReadChannel[T]): PlaceholderOptWidget[T] =
+      PlaceholderOptWidget(value)
 
   implicit def WidgetBufferToWidget[T <: Widget[_]](agg: DeltaBuffer[T]):
     /* TODO Why do we have to cast? */
