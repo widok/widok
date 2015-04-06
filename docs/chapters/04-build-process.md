@@ -203,13 +203,13 @@ Scala.js provides a simple infrastructure to having separate sub-projects for Ja
 Such projects are called *cross-projects* in Scala.js. You can find more information in the [official documentation](http://www.scala-js.org/doc/sbt/cross-building.html).
 
 ```scala
-import org.scalajs.sbtplugin.cross.CrossProject
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+import sbt.Keys._
+import sbt._
 
 object Build extends sbt.Build {
-  lazy val crossProject =
-    CrossProject(
-      "server", "client", file("."), CrossType.Full
-    )
+  lazy val myCrossProject =
+    crossProject.in(file("."))
     .settings(
       /* Shared settings */
     )
@@ -220,8 +220,8 @@ object Build extends sbt.Build {
       /* JVM settings */
     )
 
-  lazy val js = crossProject.js
-  lazy val jvm = crossProject.jvm
+  lazy val js = myCrossProject.js
+  lazy val jvm = myCrossProject.jvm
 }
 ```
 
