@@ -231,6 +231,16 @@ ch.distinct.attach { query =>
 }
 ```
 
+Considering that you want to observe multiple channels of the same type and merge the produced values, you can use the ``|`` operator^[It is an alias for the method ``merge()``]:
+
+```scala
+val a = Channel[String]()
+val b = Channel[String]()
+val c = Channel[String]()
+
+val merged: ReadChannel[String] = a | b | c
+```
+
 It must be noted that streaming operations have different semantics than their non-reactive counterparts. For brevity, only certain combinators are covered by the manual. For the rest, please refer to the ScalaDoc documentation.
 
 ### State channels
