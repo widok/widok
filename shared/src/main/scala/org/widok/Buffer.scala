@@ -494,6 +494,9 @@ trait PollBuffer[T]
       case None => Buffer()
     })
 
+  def flatMapSeq[U](f: T => Seq[U]): ReadBuffer[U] =
+    flatMap(value => Buffer.from(f(value)))
+
   /* Has some conceptual issues, but some ideas may be ported to flatten()
      for better performance.
 

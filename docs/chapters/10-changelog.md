@@ -11,12 +11,14 @@ The changelog lists all major changes between releases. For more details, please
 - Provide ``autofocus()`` and ``placeholder()`` on Textarea
 - Widget: Add ``+=`` and ``-=``
 - Widget: Support drag events
+- Widget: Don't wrap ``ReadChannel[Widget[_]]`` in spans
 
 ### Event propagation
 - Opt: Fix ``undefined$``
 - Dict: Fix ``size``
 - Dict: Generate fine-grained delta objects in ``toBuffer``
 - Dict: Add ``sortBy()``
+- Buffer: Add ``flatMapSeq()`` (in consistency with Channel)
 
 ### Bindings
 - Bootstrap: Implement AnchorButton
