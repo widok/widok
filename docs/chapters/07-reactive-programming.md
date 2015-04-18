@@ -341,6 +341,22 @@ dch.attach(println)
 ch := 23  // produces 23 twice
 ```
 
+### Cycles
+Certain propagation flows may lead to cycles:
+
+```scala
+val todo = Channel[String]()
+todo.attach { t =>
+    println(t)
+    todo := ""
+}
+todo := "42"
+```
+
+Setting ``todo`` will result in an infinite loop. Such flows are detected and will lead to a run-time exception. Otherwise, the application would block indefinitely which makes debugging more difficult.
+
+If a cycle as in the above example is expected, use the combinator ``filterCycles`` to make it explicit. This will ignore value propagations caused by a cycle.
+
 ## Buffers
 Buffers are reactive lists. State changes such as row additions, updates or removals are encoded as delta objects. This allows to reflect these changes directly in the DOM, without having to re-render the entire list. ``Buffer[T]`` is therefore more efficient than ``Channel[Seq[T]]`` when dealing with list changes.
 
