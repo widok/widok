@@ -371,6 +371,8 @@ trait Widget[T] extends Node { self: T =>
 
   def onChange(f: dom.Event => Unit) = { change.attach(f); self }
 
+  def focus(): T = { rendered.focus(); this }
+
   def id(value: String): T = { nodeId := value; self }
 
   def id(value: ReadChannel[String]): T = { nodeId.subscribe(value); self }

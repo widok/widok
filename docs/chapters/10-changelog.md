@@ -12,6 +12,7 @@ The changelog lists all major changes between releases. For more details, please
 - Widget: Add ``+=`` and ``-=``
 - Widget: Support drag events
 - Widget: Don't wrap ``ReadChannel[Widget[_]]`` in spans
+- Widget: Add ``focus()``
 
 ### Event propagation
 - Opt: Fix ``undefined$``
