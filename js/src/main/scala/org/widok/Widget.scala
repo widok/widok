@@ -24,7 +24,7 @@ object Widget {
 
       /** Produce current value after every key press. */
       lazy val value = PtrVar[String](
-        keyUp | paste, rendered.value, rendered.value = _)
+        keyUp | paste | blur, rendered.value, rendered.value = _)
 
       /** Produce current value after enter was pressed. */
       lazy val enterValue = PtrVar[String](
@@ -301,6 +301,7 @@ trait Node extends View {
   lazy val touchEnd = DOMChannel.touchEvent(rendered, "ontouchend")
 
   lazy val change = DOMChannel.event(rendered.onchange = _)
+  lazy val blur = DOMChannel.event(rendered.onblur = _)
 
   lazy val nodeId: Opt[String] = DOMChannel.variable(rendered.id = _)
 
