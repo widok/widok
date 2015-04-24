@@ -24,7 +24,7 @@ object Widget {
 
       /** Produce current value after every key press. */
       lazy val value = PtrVar[String](
-        keyUp | paste | blur, rendered.value, rendered.value = _)
+        keyUp | paste | blur | change, rendered.value, rendered.value = _)
 
       /** Produce current value after enter was pressed. */
       lazy val enterValue = PtrVar[String](
