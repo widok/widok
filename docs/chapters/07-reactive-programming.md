@@ -489,9 +489,9 @@ val buf = Buffer[Int]()
 
 def view() = Inline(
   span("The list is empty.")
-    .show(agg.isEmpty)
+    .show(buf.isEmpty)
 , span("The list is not empty.")
-    .show(agg.nonEmpty)
+    .show(buf.nonEmpty)
 , button().onClick(_ => buf += 42)
 , button().onClick(_ => buf.clear())
 )
