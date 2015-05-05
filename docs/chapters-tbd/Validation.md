@@ -50,10 +50,13 @@ case class TestPage() extends Page {
       // show span when passwords differs
       span("Passwords must match").show(validator.errors.value(samePasswords).isDefined),
 
-      // only enabled when form is valid
-      button("Register").enabled(validator.valid)
+      // only enabled when form is valid.
+      // call validate so that validation is triggered for any non-dirty fields
+      button("Register").enabled(validator.valid).onClick(_ => if (validator.validate()) signup())
     )
   )
+  
+  def signup() = {}
 
   override def ready(route: InstantiatedRoute): Unit = {}
 }

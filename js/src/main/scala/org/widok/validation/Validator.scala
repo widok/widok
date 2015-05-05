@@ -19,9 +19,10 @@ case class Validator(validationSources: Tuple2[ReadStateChannel[_], Seq[FieldVal
     validations.insertOrUpdate(ch, fv.flatMap(_.validateValue(input)))
   }
 
-  def validate() = {
+  def validate() : Boolean = {
     validationSources.filterNot(s => validations.keys$.contains(s._1)).foreach {
       case (ch, fv) => validateValue(ch, fv, ch.get)
     }
+    valid.get
   }
 }
