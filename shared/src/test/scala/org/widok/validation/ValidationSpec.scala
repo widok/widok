@@ -5,7 +5,7 @@ import minitest._
 object FieldValidationSpec extends SimpleTestSuite {
 
   class TestFieldValidation(result: Boolean) extends FieldValidation[String]() {
-    override protected def validate(value: String): Boolean = result
+    override protected def validate(value: String): Either[Boolean, Option[String]] = Left(result)
   }
 
   test("should default to 'validation failed' error message") {
@@ -17,13 +17,24 @@ object FieldValidationSpec extends SimpleTestSuite {
   }
 
   class CustomMessageValidator(params: Map[String, Any], message: String) extends FieldValidation[String](params, message) {
-    override protected def validate(value: String): Boolean = false
+    override protected def validate(value: String): Either[Boolean, Option[String]] = Left(false)
   }
 
   test("should interpolate error message") {
     val v = new CustomMessageValidator(Map("paramA" -> "valueA", "paramB" -> "valueB"), "custom message, p1: #{paramA}, p2: #{paramB}")
 
     assertEquals(v.validateValue("value"), Some("custom message, p1: valueA, p2: valueB"))
+  }
+
+  test("should be able to affect validation message") {
+
+    case class ImpossibleValidation() extends FieldValidation[String]() {
+      override protected def validate(value: String): Either[Boolean, Option[String]] = if (value.isEmpty) Left(false) else Right(Some("Must not have length"))
+    }
+
+    assertEquals(ImpossibleValidation().validateValue(""), Some("validation failed"))
+    assertEquals(ImpossibleValidation().validateValue("some text"), Some("Must not have length"))
+
   }
 
 }
@@ -33,7 +44,7 @@ object ValidationsSpec extends SimpleTestSuite {
 
   test("TextFieldValidation childs should throw exception when wrong type input") {
     class TestValidation() extends TextFieldValidation() {
-      override protected def validate(value: String): Boolean = true
+      override protected def validate(value: String): Either[Boolean, Option[String]] = Left(true)
     }
     intercept[IllegalArgumentException] {
       new TestValidation().validateValue(100)
@@ -94,6 +105,16 @@ object ValidationsSpec extends SimpleTestSuite {
     assert(SameValidation().validateValue("", "").isEmpty)
     assert(SameValidation().validateValue("ok", "").isDefined)
     assert(SameValidation().validateValue("ok", "nok").isDefined)
+  }
+
+  test("TrueValidation should validate that a boolean value is true") {
+    assert(TrueValidation().validateValue(true).isEmpty)
+    assert(TrueValidation().validateValue(false).isDefined)
+  }
+
+  test("FalseValidation should validate that a boolean value is false") {
+    assert(FalseValidation().validateValue(false).isEmpty)
+    assert(FalseValidation().validateValue(true).isDefined)
   }
 
 }

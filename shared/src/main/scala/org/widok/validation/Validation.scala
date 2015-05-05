@@ -1,17 +1,29 @@
 package org.widok.validation
 
-abstract class FieldValidation[T](val params: Map[String, Any] = Map.empty, message: String = "validation failed") {
+abstract class FieldValidation[T](params: Map[String, Any] = Map.empty, message: String = "validation failed") {
 
-  protected def validate(value: T): Boolean
+  /**
+   * Implement this method in subclasses to validate a value.
+   *
+   * @param value The value to be validated
+   * @return Either a boolean indicating if validation is successful or an Optional string with a
+   *         validation error message. If a boolean (false) is returned an error message will be constructed using the
+   *         formatMessage method.
+   */
+  protected def validate(value: T): Either[Boolean, Option[String]]
 
   def validateValue(value: Any): Option[String] = {
     val typedValue: T = value.asInstanceOf[T]
-    if (validate(typedValue)) None else Some(formatMessage(typedValue))
+
+    validate(typedValue) match {
+      case Left(result) => if (result) None else Some(formatMessage(message, params, typedValue))
+      case Right(validationMsg) => validationMsg
+    }
   }
 
-  def formatMessage(value: T) = {
+  def formatMessage(msg: String, params: Map[String, Any], value: T) = {
     val paramsWithValue = params + ("value" -> value)
-    (message /: paramsWithValue) { (res, entry) => res.replaceAll("#\\{%s\\}".format(entry._1), entry._2.toString.replace( """\""", """\\""")) }
+    (msg /: paramsWithValue) { (res, entry) => res.replaceAll("#\\{%s\\}".format(entry._1), entry._2.toString.replace( """\""", """\\""")) }
   }
 }
 
@@ -33,7 +45,7 @@ object Validations {
    */
   case class MinValidation(min: Int, message: Option[String] = None)
     extends TextFieldValidation(Map("min" -> min), message.getOrElse("Value must be at least #{min}")) {
-    override def validate(value: String): Boolean = if (value.forall(_.isDigit)) value.toInt >= min else false
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(if (value.forall(_.isDigit)) value.toInt >= min else false)
   }
 
   /**
@@ -44,7 +56,7 @@ object Validations {
    */
   case class MaxValidation(max: Int, message: Option[String] = None)
     extends TextFieldValidation(Map("max" -> max), message.getOrElse("Value must be at most #{min}")) {
-    override def validate(value: String): Boolean = if (value.forall(_.isDigit)) value.toInt <= max else false
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(if (value.forall(_.isDigit)) value.toInt <= max else false)
   }
 
   /**
@@ -54,7 +66,7 @@ object Validations {
    */
   case class RequiredValidation(message: Option[String] = None)
     extends FieldValidation[String](Map.empty, message.getOrElse("Required value")) {
-    override def validate(value: String): Boolean = !value.toString.isEmpty
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(!value.toString.isEmpty)
   }
 
   /**
@@ -65,9 +77,7 @@ object Validations {
    */
   case class PatternValidation(pattern: String, message: Option[String] = None)
     extends TextFieldValidation(Map("pattern" -> pattern), message.getOrElse("Value must match pattern #{pattern}")) {
-    override def validate(value: String): Boolean = {
-      value.matches(pattern)
-    }
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(value.matches(pattern))
   }
 
   /**
@@ -78,9 +88,7 @@ object Validations {
    */
   case class MinLengthValidation(minLength: Int, message: Option[String] = None)
     extends TextFieldValidation(Map("minLength" -> minLength), message.getOrElse("Value must have at least #{minLength} characters")) {
-    override def validate(value: String): Boolean = {
-      value.length >= minLength
-    }
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(value.length >= minLength)
   }
 
   /**
@@ -91,9 +99,7 @@ object Validations {
    */
   case class MaxLengthValidation(maxLength: Int, message: Option[String] = None)
     extends TextFieldValidation(Map("maxLength" -> maxLength), message.getOrElse("Value must have at most #{maxLength} characters")) {
-    override def validate(value: String): Boolean = {
-      value.length <= maxLength
-    }
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(value.length <= maxLength)
   }
 
   /**
@@ -103,20 +109,34 @@ object Validations {
    */
   case class EmailValidation(message: Option[String] = None)
     extends TextFieldValidation(Map.empty, message.getOrElse("Must be a valid email-adress")) {
-    override def validate(value: String): Boolean = {
-      value.isEmpty || value.matches( """(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}""")
-    }
+    override def validate(value: String): Either[Boolean, Option[String]] = Left(value.isEmpty || value.matches( """(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}"""))
   }
 
   /**
    * Validates that two tupled strings are equal.
    *
-   * @param message Error message. Variables: #{value} the validated input,
+   * @param message Error message. Variables: #{value} the validated input
    */
   case class SameValidation(message: Option[String] = Some("Fields must be equal"))
     extends FieldValidation[Tuple2[String, String]](Map.empty, message.getOrElse("Must be a valid email-adress")) {
-    override def validate(value: Tuple2[String, String]): Boolean = {
-      value._1 == value._2
-    }
+    override def validate(value: Tuple2[String, String]): Either[Boolean, Option[String]] = Left(value._1 == value._2)
+  }
+
+  /**
+   * Validates that a boolean value is true
+   *
+   * @param message Variables: #{value} the validated input
+   */
+  case class TrueValidation(message: Option[String] = None) extends FieldValidation[Boolean](message = message.getOrElse("Must be true")) {
+    override protected def validate(value: Boolean): Either[Boolean, Option[String]] = Left(value)
+  }
+
+  /**
+   * Validates that a boolean value is false
+   *
+   * @param message Variables: #{value} the validated input
+   */
+  case class FalseValidation(message: Option[String] = None) extends FieldValidation[Boolean](message = message.getOrElse("Must be false")) {
+    override protected def validate(value: Boolean): Either[Boolean, Option[String]] = Left(!value)
   }
 }

@@ -10,18 +10,18 @@ case class Validator(validationSources: Tuple2[ReadStateChannel[_], Seq[FieldVal
   val errors = validations.filter(_.nonEmpty).buffer
 
   validationSources.foreach {
-    case (ch, fv) =>
+    case (channel, fieldValidators) =>
       // don't validate initial values (tail) and only validate when the value is actually updated (distinct)
-      ch.distinct.tail.attach(input => validateValue(ch, fv, input))
+      channel.distinct.tail.attach(input => validateValue(channel, fieldValidators, input))
   }
 
-  private def validateValue(ch: ReadStateChannel[_], fv: Seq[FieldValidation[_]], input: Any) = {
-    validations.insertOrUpdate(ch, fv.flatMap(_.validateValue(input)))
+  private def validateValue(channel: ReadStateChannel[_], fieldValidators: Seq[FieldValidation[_]], input: Any) = {
+    validations.insertOrUpdate(channel, fieldValidators.flatMap(_.validateValue(input)))
   }
 
   def validate() : Boolean = {
     validationSources.filterNot(s => validations.keys$.contains(s._1)).foreach {
-      case (ch, fv) => validateValue(ch, fv, ch.get)
+      case (channel, fieldValidators) => validateValue(channel, fieldValidators, channel.get)
     }
     valid.get
   }
