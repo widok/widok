@@ -1,27 +1,28 @@
 package org.widok.validation
 
-import org.widok.{Dict, ReadStateChannel}
+import org.widok.{Dict, ReadChannel}
 
-case class Validator(validationSources: Tuple2[ReadStateChannel[_], Seq[FieldValidation[_]]]*) {
+case class Validator(validationSources: Tuple2[ReadChannel[_], Seq[FieldValidation[_]]]*) {
 
-  val validations = Dict[ReadStateChannel[_], Seq[String]]()
+  val validations = Dict[ReadChannel[_], Seq[String]]()
 
   val valid = validations.forall(_.isEmpty).cache(true)
   val errors = validations.filter(_.nonEmpty).buffer
 
   validationSources.foreach {
-    case (channel, fieldValidators) =>
+    case (ch, fv) =>
       // don't validate initial values (tail) and only validate when the value is actually updated (distinct)
-      channel.distinct.tail.attach(input => validateValue(channel, fieldValidators, input))
+      ch.distinct.tail.attach(input => validateValue(ch, fv, input))
   }
 
-  private def validateValue(channel: ReadStateChannel[_], fieldValidators: Seq[FieldValidation[_]], input: Any) = {
-    validations.insertOrUpdate(channel, fieldValidators.flatMap(_.validateValue(input)))
+  private def validateValue(ch: ReadChannel[_], fv: Seq[FieldValidation[_]], input: Any) = {
+    validations.insertOrUpdate(ch, fv.flatMap(_.validateValue(input)))
   }
 
   def validate() : Boolean = {
+    // flush and validate and values that haven't been updated (aren't dirty) yet
     validationSources.filterNot(s => validations.keys$.contains(s._1)).foreach {
-      case (channel, fieldValidators) => validateValue(channel, fieldValidators, channel.get)
+      case (ch, fv) => ch.flush(validateValue(ch, fv, _))
     }
     valid.get
   }
