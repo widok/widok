@@ -2,12 +2,15 @@ package org.widok.validation
 
 import org.widok.{Dict, ReadChannel}
 
-case class Validator(validationSources: Tuple2[ReadChannel[_], Seq[FieldValidation[_]]]*) {
+case class Validator(validationSources: Tuple2[ReadChannel[_], Seq[Validation[_]]]*) {
 
   val validations = Dict[ReadChannel[_], Seq[String]]()
 
   val valid = validations.forall(_.isEmpty).cache(true)
   val errors = validations.filter(_.nonEmpty).buffer
+
+  def invalid(ch: ReadChannel[_]) = errors.value(ch).isDefined
+  def valid(ch: ReadChannel[_]) = errors.value(ch).isEmpty
 
   validationSources.foreach {
     case (ch, fv) =>
@@ -15,7 +18,7 @@ case class Validator(validationSources: Tuple2[ReadChannel[_], Seq[FieldValidati
       ch.distinct.tail.attach(input => validateValue(ch, fv, input))
   }
 
-  private def validateValue(ch: ReadChannel[_], fv: Seq[FieldValidation[_]], input: Any) = {
+  private def validateValue(ch: ReadChannel[_], fv: Seq[Validation[_]], input: Any) {
     validations.insertOrUpdate(ch, fv.flatMap(_.validateValue(input)))
   }
 

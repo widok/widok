@@ -2,21 +2,21 @@ package org.widok.validation
 
 import minitest._
 
-object FieldValidationSpec extends SimpleTestSuite {
+object ValidationSpec extends SimpleTestSuite {
 
-  class TestFieldValidation(result: Boolean) extends FieldValidation[String]() {
+  class TestValidation(result: Boolean) extends Validation[String]() {
     override protected def validate(value: String): Either[Boolean, Option[String]] = Left(result)
   }
 
   test("should default to 'validation failed' error message") {
-    assertEquals(new TestFieldValidation(false).validateValue("value"), Some("validation failed"))
+    assertEquals(new TestValidation(false).validateValue("value"), Some("validation failed"))
   }
 
   test("should return None when validation pass") {
-    assertEquals(new TestFieldValidation(true).validateValue("value"), None)
+    assertEquals(new TestValidation(true).validateValue("value"), None)
   }
 
-  class CustomMessageValidator(params: Map[String, Any], message: String) extends FieldValidation[String](params, message) {
+  class CustomMessageValidator(params: Map[String, Any], message: String) extends Validation[String](params, message) {
     override protected def validate(value: String): Either[Boolean, Option[String]] = Left(false)
   }
 
@@ -28,7 +28,7 @@ object FieldValidationSpec extends SimpleTestSuite {
 
   test("should be able to affect validation message") {
 
-    case class ImpossibleValidation() extends FieldValidation[String]() {
+    case class ImpossibleValidation() extends Validation[String]() {
       override protected def validate(value: String): Either[Boolean, Option[String]] = if (value.isEmpty) Left(false) else Right(Some("Must not have length"))
     }
 
@@ -42,8 +42,8 @@ object FieldValidationSpec extends SimpleTestSuite {
 object ValidationsSpec extends SimpleTestSuite {
   import org.widok.validation.Validations._
 
-  test("TextFieldValidation childs should throw exception when wrong type input") {
-    class TestValidation() extends TextFieldValidation() {
+  test("TextValidation childs should throw exception when wrong type input") {
+    class TestValidation() extends TextValidation() {
       override protected def validate(value: String): Either[Boolean, Option[String]] = Left(true)
     }
     intercept[IllegalArgumentException] {

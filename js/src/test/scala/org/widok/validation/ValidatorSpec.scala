@@ -58,5 +58,19 @@ object ValidatorSpec extends SimpleTestSuite {
     validator.validate()
     assertEquals(validator.errors.value$(ch), Seq("Value must have at least 5 characters", "Value must match pattern .{5, 6}"))
   }
+
+  test("should return validation state") {
+    new DefaultFixture {
+      val invalid1 = validator.invalid(ch1).cache(true)
+      val valid1 = validator.valid(ch1).cache(true)
+      val invalid2 = validator.invalid(ch2).cache(true)
+      val valid2 = validator.valid(ch2).cache(true)
+      validator.validate()
+      assert(!invalid1.get)
+      assert(invalid2.get)
+      assert(valid1.get)
+      assert(!valid2.get)
+    }
+  }
 }
 
