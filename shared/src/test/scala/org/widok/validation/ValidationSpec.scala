@@ -92,7 +92,7 @@ object ValidationsSpec extends SimpleTestSuite {
     assert(MaxLengthValidation(5).validateValue("1234").isEmpty)
   }
 
-  test("EmailValidation should validate email adresses") {
+  test("EmailValidation should validate e-mail adresses") {
     assert(EmailValidation().validateValue("").isEmpty)
     assert(EmailValidation().validateValue("some text").isDefined)
     assert(EmailValidation().validateValue("name@mail.com").isEmpty)

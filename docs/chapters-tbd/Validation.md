@@ -1,6 +1,34 @@
-# Validation
+# Validator
 
-Form validation can be done by initializing a Validator with a number of Tuple2[ReadStateChannel[_], Seq[FieldValidation[_]]].
+Generic client-side dynamic form field validation can be managed by the Validator class. It is constructed with a number
+of tupled (ReadChannels, Seq(Validations)). When data is read from a channel it is validated against all associated
+Validations.
+
+## Validation channels
+
+The Validator exposes the following channels that can be used in widgets to add validation in a reactive way:
+
+validations:
+    Dict that is holding the validation results for any channel that has received updates. This channel can also be
+    used for dirty field-check (all fields present in this Dict are dirty).
+
+errors:
+    Filtered version of 'validations' that only includes failing Validation's.
+    
+valid:
+    Boolean channel that indicates if all fields in this Validator are valid.
+    
+valid(channel)
+    Boolean channel that indicates the validation status of 'ch' 
+
+invalid(channel)
+    Boolean channel that indicates the validation status of 'ch' 
+
+combinedErrors(channels*)
+    Buffer[String] with the combined validation errors for the given 'channels' 
+
+
+Form validation example:
 
 ```scala
 
@@ -17,8 +45,6 @@ case class TestPage() extends Page {
   val password = Var("")
   val passwordVerify = Var("")
   val samePasswords = password.combine(passwordVerify).cache(("", ""))
-
-  val patternValidation = PatternValidation(".{3,6}")
 
   val validator = Validator(
     username -> Seq(RequiredValidation(), EmailValidation()),
@@ -58,3 +84,17 @@ case class TestPage() extends Page {
   override def ready(route: InstantiatedRoute): Unit = {}
 }
 ```
+
+# Validations
+
+Validations are classes derived from the Validation base class and are used to validate some input. The input can be of
+any type, but in the context of form validtion they normally validates a ReadChannel[String] channel. The Validation
+base class has one abstract member (validate) that performs the actual validation of the provided input. There are a 
+number of provided Vaidations in org.widok.validation.Validations.
+ 
+## Error messages
+
+A customized error message can be provided when initializing a Validation. This error message is interpolated using
+variables that are defined in each Validation. For example:
+
+```MinValidation(5, "Too few characters, minimum is: #{min}.. You wrote: #{value}")```

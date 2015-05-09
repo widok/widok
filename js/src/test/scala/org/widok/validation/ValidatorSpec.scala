@@ -72,5 +72,15 @@ object ValidatorSpec extends SimpleTestSuite {
       assert(!valid2.get)
     }
   }
+
+  test("should return combined errors") {
+    new DefaultFixture {
+      val c = validator.combinedErrors(ch1, ch2)
+      ch1 := ""
+      ch2 := "a"
+      validator.validate()
+      assertEquals(c.get, Seq("Required value", "Value must match pattern .{3,6}"))
+    }
+  }
 }
 

@@ -55,7 +55,7 @@ object Validations {
    * @param message Error message. Variables: #{value} the validated input, #{max} tha max value
    */
   case class MaxValidation(max: Int, message: Option[String] = None)
-    extends TextValidation(Map("max" -> max), message.getOrElse("Value must be at most #{min}")) {
+    extends TextValidation(Map("max" -> max), message.getOrElse("Value must be at most #{max}")) {
     override def validate(value: String): Either[Boolean, Option[String]] = Left(if (value.forall(_.isDigit)) value.toInt <= max else false)
   }
 
@@ -103,12 +103,12 @@ object Validations {
   }
 
   /**
-   * Validates that a value is a valid email adress.
+   * Validates that a value is a valid e-mail adress.
    *
    * @param message Error message. Variables: #{value} the validated input
    */
   case class EmailValidation(message: Option[String] = None)
-    extends TextValidation(Map.empty, message.getOrElse("Must be a valid email-adress")) {
+    extends TextValidation(Map.empty, message.getOrElse("Must be a valid e-mail adress")) {
     override def validate(value: String): Either[Boolean, Option[String]] = Left(value.isEmpty || value.matches( """(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}"""))
   }
 
