@@ -19,7 +19,7 @@ case class Validator(validationSources: Tuple2[ReadChannel[_], Seq[Validation[_]
     val result = Buffer[String]()
     var messagesByChannel = channels.map(key => key -> Seq[String]()).toMap[ReadChannel[_], Seq[String]]
 
-    channels.map(errors.value(_).values).map { channel =>
+    channels.map(errors.value(_).values).foreach { channel =>
       channel.attach { optCh =>
         messagesByChannel += (channel -> optCh.getOrElse(Seq.empty))
         result.set(messagesByChannel.values.flatten.toSet.toSeq) // set all unique errors
