@@ -459,12 +459,12 @@ package object Bootstrap {
   }
 
   object Grid {
-    case class Row(contents: Column*) extends Widget.List[Row] {
+    case class Row(contents: Widget.List.Item[_]*) extends Widget.List[Row] {
       val rendered = DOM.createElement("div", contents)
       css("row")
     }
 
-    case class Column(contents: View*) extends Widget[Column] {
+    case class Column(contents: View*) extends Widget.List.Item[Column] {
       val rendered = DOM.createElement("div", contents)
 
       def column(size: Size, level: Int) = css(s"col-${size.cssSuffix}-$level")
