@@ -11,7 +11,7 @@ import org.widok.html._
  */
 case class Typeahead[A](
   input: Input.Text
-, options: String => Seq[(A, String)]
+, options: String => Buffer[(A, String)]
 , select: A => Unit
 ) extends Widget[Typeahead[A]]
 {
@@ -57,8 +57,10 @@ case class Typeahead[A](
   private def query(input: String) {
     if (input.nonEmpty && input != value.get) {
       active.clear()
-      results.set(options(input))
-      shown := results.get.nonEmpty
+      options(input).toSeq.attach { res =>
+        results.set(res)
+        shown := res.nonEmpty
+      }
       value := input
     }
   }

@@ -342,8 +342,8 @@ Example:
 
 ```scala
 val allMatches = Map(0 -> "First", 1 -> "Second", 2 -> "Third")
-def matches(input: String): Seq[(Int, String)] =
-  allMatches.filter { case (k, v) => v.startsWith(input) }.toSeq
+def matches(input: String): Buffer[(Int, String)] =
+  Buffer.from(allMatches.filter { case (k, v) => v.startsWith(input) }.toSeq)
 def select(selection: Int) { println(s"Selection: $selection") }
 
 Typeahead(Input.Text(), matches, select)
