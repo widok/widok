@@ -305,6 +305,8 @@ trait Node extends View {
 
   lazy val nodeId: Opt[String] = DOMChannel.variable(rendered.id = _)
 
+  lazy val submit = DOMChannel.event(rendered.onsubmit = _)
+
   lazy val className = {
     val set = BufSet[String]()
     set.toSeq.attach { tags =>
@@ -369,6 +371,8 @@ trait Widget[T] extends Node { self: T =>
   def onTouchStart(f: dom.TouchEvent => Unit) = { touchStart.attach(f); self }
   def onTouchMove(f: dom.TouchEvent => Unit) = { touchMove.attach(f); self }
   def onTouchEnd(f: dom.TouchEvent => Unit) = { touchEnd.attach(f); self }
+
+  def onSubmit(f: dom.Event => Unit) = { submit.attach(f); self }
 
   def onChange(f: dom.Event => Unit) = { change.attach(f); self }
 
