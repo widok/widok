@@ -52,6 +52,7 @@ case class Typeahead[A](
   private def onSelect(id: A) {
     close()
     select(id)
+    ipt.value := ""
   }
 
   private def query(input: String) {
@@ -95,7 +96,7 @@ case class Typeahead[A](
       case KeyCode.tab | KeyCode.escape => close()
       case KeyCode.up if !e.shiftKey => // left parenthesis if e.shiftKey
         prev()
-      case KeyCode.down if !e.shiftKey => // right parenthesis if e.shiftKey
+      case KeyCode.down if !e.shiftKey => // right parenthesis if !e.shiftKey
         next()
       case _ => handleKeyUp = true
     }
