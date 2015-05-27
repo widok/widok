@@ -319,6 +319,15 @@ object HTML {
     }
   }
 
+  case class Time(contents: View*) extends Widget[Time] {
+    val rendered = DOM.createElement("time", contents)
+
+    def dateTime(value: String) = {
+      rendered.setAttribute("datetime", value)
+      this
+    }
+  }
+
   case class Table(contents: View*) extends Widget[Table] {
     val rendered = DOM.createElement("table", contents)
   }
