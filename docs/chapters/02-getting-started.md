@@ -28,7 +28,7 @@ Create a directory for your project. Within your project folder, create a sub-di
 ```scala
 logLevel := Level.Warn
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.2")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.3")
 ```
 
 - ``Build.scala`` is the build configuration of your project. The configuration itself is specified in Scala code, which allows for more flexibility. The chapter ['Build process'](#build-process) explains some of the possibilities in the web context.
