@@ -13,6 +13,9 @@ object DOM {
     elem.asInstanceOf[dom.html.Element]
   }
 
+  def createNullElement(): dom.html.Element =
+    dom.document.createComment("").asInstanceOf[dom.html.Element]
+
   def insertAfter(parent: dom.Node, reference: dom.Node, node: dom.Node) {
     if (reference == null || reference.nextSibling == null) parent.appendChild(node)
     else parent.insertBefore(node, reference.nextSibling)

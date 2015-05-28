@@ -251,7 +251,7 @@ object HTML {
     }
 
     case class Items(buf: DeltaBuffer[Widget[_]]) extends Widget.List.Item[Items] {
-      val rendered = DOM.createElement(null)
+      val rendered = DOM.createNullElement()
 
       override def render(parent: dom.Node, offset: dom.Node) {
         import Buffer.Delta
