@@ -220,12 +220,10 @@ object HTML {
     trait SelectBase[T] extends Widget.Input.Select[T] { self: T =>
       val rendered = DOM.createElement("select")
 
-      def options(options: Seq[String], selected: Int = -1) = {
-        options.zipWithIndex.foreach { case (cur, idx) =>
-          val elem = DOM.createElement("option")
-          elem.appendChild(dom.document.createTextNode(cur))
-          if (idx == selected) elem.setAttribute("selected", "")
-          rendered.appendChild(elem)
+      def options(options: Seq[HTML.Input.Select.Option], selected: Int = -1) = {
+        options.zipWithIndex.foreach { case (elem, idx) =>
+          if (idx == selected) elem.rendered.setAttribute("selected", "")
+          rendered.appendChild(elem.rendered)
         }
 
         self

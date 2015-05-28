@@ -84,6 +84,14 @@ Anchor(
 
 Use the ``+=`` and ``-=`` operators to dynamically append or remove children to/from a widget.
 
+### Forms
+#### Select boxes
+
+```scala
+val languages = Seq("English", "French", "Spanish")
+select().options(languages.map(option(_)))
+```
+
 ## Writing custom widgets
 Widgets should be designed with type-safety in mind. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. When creating custom widgets, think of a class hierarchy which closely resembles the intended nesting. This will allow to catch usage errors during compile-time.
 
