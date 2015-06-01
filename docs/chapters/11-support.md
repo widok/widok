@@ -1,3 +1,7 @@
 # Support
-The official support channels are [Gitter](https://gitter.im/widok/widok) and [GitHub issues](https://github.com/widok/widok/issues). If you have general questions, you may also send me an e-mail.
+For discussions, please refer to our [Google Group](https://groups.google.com/d/forum/widok-framework).
+
+For real-time support, you may also visit our [Gitter channel](https://gitter.im/widok/widok).
+
+Bugs should be reported in the [GitHub issue tracker](https://github.com/widok/widok/issues).
 
