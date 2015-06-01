@@ -122,15 +122,14 @@ object HTML {
 
   object Input {
     trait Textual[T] extends Widget.Input.Text[T] { self: T =>
-      def autofocus(value: Boolean) = {
-        rendered.setAttribute("autofocus", "")
-        self
-      }
+      def autofocus(value: Boolean) =
+        attribute("autofocus", "")
 
-      def placeholder(value: String) = {
-        rendered.setAttribute("placeholder", value)
-        self
-      }
+      def placeholder(value: String) =
+        attribute("placeholder", value)
+
+      def placeholder(value: ReadChannel[String]) =
+        attribute("placeholder", value)
     }
 
     trait TextBase[T] extends Textual[T] { self: T =>
