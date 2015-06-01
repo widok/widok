@@ -324,9 +324,17 @@ package object Bootstrap {
       HTML.Container.Generic(contents: _*)
         .css("navbar-form")
 
+    def Left(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("navbar-left")
+
     def Right(contents: View*) =
       HTML.Container.Generic(contents: _*)
         .css("navbar-right")
+
+    def Text(contents: View*) =
+      HTML.Container.Generic(contents: _*)
+        .css("navbar-text")
 
     def Navigation(contents: View*) =
       HTML.Container.Generic(contents: _*)
