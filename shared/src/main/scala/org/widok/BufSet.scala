@@ -15,6 +15,12 @@ object BufSet {
 
   def apply[T](): BufSet[T] = new BufSet[T] { }
 
+  def apply[T](set: Set[T]): BufSet[T] = {
+    val result = BufSet[T]()
+    result ++= set
+    result
+  }
+
   implicit def BufSetToSeq[T](buf: BufSet[T]): Seq[T] = buf.elements.toSeq
 }
 
@@ -97,7 +103,7 @@ trait WriteBufSet[T]
     changes := Delta.Insert(value)
   }
 
-  def insertAll(values: Seq[T]) {
+  def insertAll(values: Set[T]) {
     values.foreach(insert)
   }
 
@@ -105,18 +111,18 @@ trait WriteBufSet[T]
     changes := Delta.Remove(value)
   }
 
-  def removeAll(values: Seq[T]) {
+  def removeAll(values: Set[T]) {
     values.foreach(remove)
   }
 
-  def set(values: Seq[T]) {
+  def set(values: Set[T]) {
     clear()
     insertAll(values)
   }
 
   def toggle(state: Boolean, values: T*) {
-    if (state) insertAll(values)
-    else removeAll(values)
+    if (state) insertAll(values.toSet)
+    else removeAll(values.toSet)
   }
 
   def clear() {

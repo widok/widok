@@ -5,19 +5,19 @@ trait BufSet[T] {
   def insert(value: T)
 
   /** Insert `values` */
-  def insertAll(values: Seq[T])
+  def insertAll(values: Set[T])
 
   /** Removes `value` */
   def remove(value: T)
 
   /** Remove `values` */
-  def removeAll(values: Seq[T])
+  def removeAll(values: Set[T])
 
   /** Insert all elements from `values` if state true, otherwise remove */
   def toggle(state: Boolean, values: T*)
 
   /** Replace all elements with `values` */
-  def set(values: Seq[T])
+  def set(values: Set[T])
 
   /** Removes all elements */
   def clear()
@@ -29,8 +29,8 @@ trait BufSet[T] {
   def +=(value: T) = insert(value)
 
   /** @see [[insertAll]] */
-  def ++=(values: Seq[T]) = insertAll(values)
+  def ++=(values: Set[T]) = insertAll(values)
 
   /** @see [[removeAll]] */
-  def --=(values: Seq[T]) = removeAll(values)
+  def --=(values: Set[T]) = removeAll(values)
 }
