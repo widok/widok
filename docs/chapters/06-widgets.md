@@ -92,6 +92,25 @@ val languages = Seq("English", "French", "Spanish")
 select().options(languages.map(option(_)))
 ```
 
+Bi-directional binding:
+
+```scala
+val numbers = Buffer("one", "two", "three")
+val selection = Var(Option.empty[String])
+
+select().default("").bind(numbers, option, selection)
+```
+
+Disabling elements:
+
+```scala
+val enabled = Set("one", "three")
+select().default("").bind(numbers
+, (s: String) => option(s).enabled(enabled.contains(s))
+, selection
+)
+```
+
 ## Writing custom widgets
 Widgets should be designed with type-safety in mind. For example, the only children ``List.Unordered()`` accepts are instances of ``List.Item``. When creating custom widgets, think of a class hierarchy which closely resembles the intended nesting. This will allow to catch usage errors during compile-time.
 

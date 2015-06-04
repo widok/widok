@@ -65,7 +65,7 @@ object Widget {
       }
 
       def bind[T, X <: List.Item[X]](buf: DeltaBuffer[T],
-                                     f: T => String,
+                                     f: T => HTML.Input.Select.Option,
                                      selection: Channel[Option[T]]) =
       {
         import Buffer.Delta
@@ -89,7 +89,7 @@ object Widget {
 
         buf.changes.attach {
           case Delta.Insert(Position.Head(), element) =>
-            mapping += element -> HTML.Input.Select.Option(f(element))
+            mapping += element -> f(element)
 
             if (optDefault.isEmpty)
               rendered.insertBefore(
@@ -104,26 +104,26 @@ object Widget {
             selection.flush(onSelect)
 
           case Delta.Insert(Position.Last(), element) =>
-            mapping += element -> HTML.Input.Select.Option(f(element))
+            mapping += element -> f(element)
             rendered.appendChild(mapping(element).rendered)
             selection.flush(onSelect)
 
           case Delta.Insert(Position.Before(reference), element) =>
-            mapping += element -> HTML.Input.Select.Option(f(element))
+            mapping += element -> f(element)
             rendered.insertBefore(
               mapping(element).rendered,
               mapping(reference).rendered)
             selection.flush(onSelect)
 
           case Delta.Insert(Position.After(reference), element) =>
-            mapping += element -> HTML.Input.Select.Option(f(element))
+            mapping += element -> f(element)
             DOM.insertAfter(rendered,
               mapping(reference).rendered,
               mapping(element).rendered)
             selection.flush(onSelect)
 
           case Delta.Replace(reference, element) =>
-            mapping += element -> HTML.Input.Select.Option(f(element))
+            mapping += element -> f(element)
             rendered.replaceChild(
               mapping(element).rendered,
               mapping(reference).rendered)
