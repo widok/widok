@@ -387,7 +387,7 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
-  def css(tags: ReadChannel[Seq[String]]): T = {
+  def css(tags: ReadChannel[Set[String]]): T = {
     tags.attach(className.set)
     self
   }
