@@ -28,7 +28,7 @@ object Widget {
 
       /** Produce current value after enter was pressed. */
       lazy val enterValue = PtrVar[String](
-        keyUp.filter(_.keyCode == KeyCode.enter),
+        keyUp.filter(_.keyCode == KeyCode.Enter),
         rendered.value, rendered.value = _)
 
       def bind(ch: Channel[String]) = { value.bind(ch); self }
@@ -71,7 +71,7 @@ object Widget {
         import Buffer.Delta
         import Buffer.Position
 
-        def selected(): dom.html.Select = {
+        def selected(): dom.raw.HTMLOptionElement = {
           val castRendered = rendered.asInstanceOf[dom.html.Select]
           castRendered.options(castRendered.selectedIndex)
         }

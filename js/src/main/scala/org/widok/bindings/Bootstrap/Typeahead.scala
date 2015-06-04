@@ -92,16 +92,16 @@ case class Typeahead[A](
     handleKeyUp = false
 
     e.keyCode match {
-      case KeyCode.enter => onSelect(active.get._1)
-      case KeyCode.tab | KeyCode.escape => close()
-      case KeyCode.up if !e.shiftKey => // left parenthesis if e.shiftKey
+      case KeyCode.Enter => onSelect(active.get._1)
+      case KeyCode.Tab | KeyCode.Escape => close()
+      case KeyCode.Up if !e.shiftKey => // left parenthesis if e.shiftKey
         prev()
-      case KeyCode.down if !e.shiftKey => // right parenthesis if !e.shiftKey
+      case KeyCode.Down if !e.shiftKey => // right parenthesis if !e.shiftKey
         next()
       case _ => handleKeyUp = true
     }
 
-    if (!handleKeyUp && e.keyCode != KeyCode.tab) e.preventDefault()
+    if (!handleKeyUp && e.keyCode != KeyCode.Tab) e.preventDefault()
   }
 
   private def onKeyUp(e: dom.KeyboardEvent) {
