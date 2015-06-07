@@ -32,7 +32,7 @@ object Build extends sbt.Build {
     }
 
   def generateFontAwesome(sourceGen: File, webJars: File): Seq[File] = {
-    val file = sourceGen / "org" / "widok" / "bindings" / "FontAwesome" / "Icon.scala"
+    val file = sourceGen / "org" / "widok" / "bindings" / "FontAwesome" / "Icons.scala"
 
     val objects = io.Source.fromFile(webJars / "lib" / "font-awesome" / "scss" / "_icons.scss")
       .getLines()
@@ -42,15 +42,17 @@ object Build extends sbt.Build {
         val obj = objectName(icon)
 
         s"""
-         case class $obj() extends Icon { def icon = "$icon" }
-         """
+        def $obj() = new Icon { def icon = "$icon" }
+        """
       }
       .mkString("\n")
 
     IO.write(file,
       s"""
       package org.widok.bindings.FontAwesome
-      $objects
+      trait Icons {
+        $objects
+      }
       """
     )
 
@@ -73,7 +75,7 @@ object Build extends sbt.Build {
         val obj = objectName(icon)
 
         s"""
-         case class $obj() extends Glyphicon { def icon = "$prefix-$icon" }
+        def $obj() = new Glyphicon { def icon = "$prefix-$icon" }
          """
       }
       .mkString("\n")
