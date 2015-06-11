@@ -3,6 +3,8 @@ package org.widok
 import org.scalajs.dom
 
 import scala.scalajs.js.URIUtils
+import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Route(path: String, page: () => Page) extends Ordered[Route] {
   val routeParts = path.split('/')
@@ -113,27 +115,39 @@ case class Router(unorderedRoutes: Set[Route],
     else log("[router] No action as query did not change")
   }
 
-  def dispatchQuery(query: String) {
+  def dispatchQuery[A](query: String) {
     log(s"[router] Dispatching query $query")
     val queryParts = Router.queryParts(query)
 
-    currentPage.toOption.foreach(_.destroy())
-    currentPage.clear()
+    def switchPage(page: Page, route: InstantiatedRoute) {
+
+      def replaceCurrentPage() {
+        currentPage.toOption.foreach(_.destroy())
+        page.render(route)
+        currentPage := page
+      }
+
+      page match {
+        case resolvablePage: ResolvablePage[A] => resolvablePage.resolve(route.route.parseArguments(queryParts)) onComplete {
+          case Success(r) => {
+            resolvablePage.resolved := r
+            replaceCurrentPage()
+          }
+          case Failure(t) => error(s"Failed to resolve data for page: ${page.getClass.getName} (${t.getMessage}})")
+        }
+        case _ => replaceCurrentPage()
+      }
+    }
 
     matchingRoute(queryParts) match {
       case Some(route) =>
         log(s"[router] Found $route")
-        val args = route.parseArguments(queryParts)
-
-        currentPage := route.page()
-        currentPage.get.render(InstantiatedRoute(route, args))
-
+        switchPage(route.page(), InstantiatedRoute(route, route.parseArguments(queryParts)))
       case _ =>
         error("[router] Choosing fallback route")
         fallback match {
           case Some(fb) =>
-            currentPage := fb.page()
-            currentPage.get.render(InstantiatedRoute(fb))
+            switchPage(fb.page(), InstantiatedRoute(fb))
           case None => error("[router] No route found")
         }
     }
