@@ -456,6 +456,16 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
+  def hide(value: Boolean): T = {
+    style.display := (if (value) "none" else "")
+    self
+  }
+
+  def hide(value: ReadChannel[Boolean]): T = {
+    value.attach(hide(_))
+    self
+  }
+
   def visible(value: Boolean): T = {
     style.visibility := (if (value) "visible" else "hidden")
     self
@@ -463,6 +473,16 @@ trait Widget[T] extends Node { self: T =>
 
   def visible(value: ReadChannel[Boolean]): T = {
     value.attach(visible(_))
+    self
+  }
+
+  def invisible(value: Boolean): T = {
+    style.visibility := (if (value) "hidden" else "visible")
+    self
+  }
+
+  def invisible(value: ReadChannel[Boolean]): T = {
+    value.attach(invisible(_))
     self
   }
 
