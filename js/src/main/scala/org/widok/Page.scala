@@ -2,6 +2,8 @@ package org.widok
 
 import org.scalajs.dom
 
+import scala.concurrent.Future
+
 trait BasePage {
   val document = Document
 
@@ -20,14 +22,22 @@ trait BasePage {
     }
   }
 
-  def destroy() { }
+  def destroy() {}
 }
 
 trait Page extends BasePage {
-  def ready(route: InstantiatedRoute)
+  def ready(route: InstantiatedRoute) {}
 
   def render(route: InstantiatedRoute) {
     render()
     ready(route)
   }
+}
+
+trait ResolvablePage[A] extends Page {
+
+  val resolved = Opt[A]()
+
+  def resolve(args: Map[String, String]): Future[A]
+
 }
