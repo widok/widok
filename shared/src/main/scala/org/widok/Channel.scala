@@ -49,7 +49,7 @@ trait ReadChannel[T]
 
   def cache: ReadPartialChannel[T] = {
     val res = Opt[T]()
-    res << this
+    res << map(Some(_))
     res
   }
 
@@ -239,19 +239,10 @@ trait ReadChannel[T]
     buf
   }
 
-  def partialMap[U](f: PartialFunction[T, U]): ReadPartialChannel[U] = {
-    val that = this
-    val res = new Opt[U] {
-      override def flush(o: U => Unit) {
-        that.flush { t =>
-          val u = f.lift(t)
-          u.foreach(o)
-        }
-      }
+  def partialMap[U](f: PartialFunction[T, U]): ReadChannel[U] =
+    forkUni { value =>
+      Result.Next(f.lift(value).toSeq: _*)
     }
-    silentAttach(value => res.set(f.lift(value)))
-    res
-  }
 
   /** @note Caches the accumulator value. */
   def foldLeft[U](acc: U)(f: (U, T) => U): ReadChannel[U] = {
@@ -294,7 +285,9 @@ trait ReadChannel[T]
   }
 }
 
-trait WriteChannel[T] extends reactive.propagate.Channel[T] {
+trait WriteChannel[T]
+  extends reactive.propagate.Produce[T]
+{
   import Channel.Observer
 
   private[widok] val children: Array[ChildChannel[T, _]]
@@ -331,8 +324,7 @@ trait WriteChannel[T] extends reactive.propagate.Channel[T] {
   }
 
   /** Redirect stream from `other` to `this`. */
-  def subscribe(ch: ReadChannel[T]): ReadChannel[Unit] =
-    ch.attach(this := _)
+  def subscribe(ch: ReadChannel[T]): ReadChannel[Unit] = ch.attach(produce)
 
   def subscribe[U](ch: ReadChannel[T],
                    ignore: ReadChannel[U]): ReadChannel[Unit] =
@@ -343,10 +335,13 @@ trait WriteChannel[T] extends reactive.propagate.Channel[T] {
     subscribe(ch, ignore)
 }
 
-trait Channel[T] extends ReadChannel[T] with WriteChannel[T] {
+trait Channel[T]
+  extends ReadChannel[T]
+  with WriteChannel[T]
+{
   def toOpt: Opt[T] = {
     val res = Opt[T]()
-    this <<>> res
+    attach(res := Some(_))
     res
   }
 
@@ -608,13 +603,13 @@ trait ReadStateChannel[T] extends ReadChannel[T] {
 /** In Rx terms, a [[StateChannel]] can be considered a cold observable. */
 trait StateChannel[T] extends Channel[T] with ReadStateChannel[T] {
   def update(f: T => T) {
-    flush(t => this := f(t))
+    flush(t => produce(f(t)))
   }
 
   /** Maps each value change of `other` to a change of `this`. */
   def zip[U](other: ReadChannel[U]): ReadChannel[(T, U)] = {
     val res = Channel[(T, U)]()
-    other.attach(u => flush(t => res := (t, u)))
+    other.attach(u => flush(t => res.produce((t, u))))
     res
   }
 
@@ -623,8 +618,8 @@ trait StateChannel[T] extends Channel[T] with ReadStateChannel[T] {
     */
   def combine[U](other: StateChannel[U]): ReadChannel[(T, U)] = {
     val res = Channel[(T, U)]()
-    attach(t => other.flush(u => res := (t, u)))
-    other.attach(u => flush(t => res := (t, u)))
+    attach(t => other.flush(u => res.produce((t, u))))
+    other.attach(u => flush(t => res.produce((t, u))))
     res
   }
 

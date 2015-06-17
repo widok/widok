@@ -1,6 +1,9 @@
 package org.widok
 
-sealed class Var[T](private var v: T) extends StateChannel[T] with ChannelDefaultSize[T] {
+sealed class Var[T](private var v: T)
+  extends StateChannel[T]
+  with ChannelDefaultSize[T]
+{
   attach(v = _)
 
   def flush(f: T => Unit) { f(v) }

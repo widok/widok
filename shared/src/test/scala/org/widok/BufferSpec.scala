@@ -120,13 +120,13 @@ object BufferSpec extends SimpleTestSuite {
   }
 
   test("headOption") {
-    forallBuf(buffer => (buffer.headOption, buffer.head))
-    forallBuf(buffer => (buffer.headOption.values.partialMap { case Some(v) => v }, buffer.head))
+    forallBuf(buffer => (buffer.headOption.values, buffer.head))
+    forallBuf(buffer => (buffer.headOption.partialMap { case Some(v) => v }, buffer.head))
   }
 
   test("lastOption") {
-    forallBuf(buffer => (buffer.lastOption, buffer.last))
-    forallBuf(buffer => (buffer.lastOption.values.partialMap { case Some(v) => v }, buffer.last))
+    forallBuf(buffer => (buffer.lastOption.values, buffer.last))
+    forallBuf(buffer => (buffer.lastOption.partialMap { case Some(v) => v }, buffer.last))
   }
 
   test("last") {
@@ -142,6 +142,6 @@ object BufferSpec extends SimpleTestSuite {
   }
 
   test("find") {
-    forallBufSeq(buffer => (buffer.find(_ > 1).toBuffer, () => buffer.get.find(_ > 1).toSeq))
+    forallBufSeq(buffer => (buffer.find(_ > 1).values.toBuffer, () => buffer.get.find(_ > 1).toSeq))
   }
 }

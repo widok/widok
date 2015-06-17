@@ -29,7 +29,7 @@ case class Typeahead[A](
   private val list = ul(
     results.map { case cur @ (id, caption) =>
       li(a(caption).onClick(_ => onSelect(id)))
-        .cssState(active.is(cur), "active")
+        .cssState(active.is(Some(cur)), "active")
     }
   ).css("typeahead", "dropdown-menu")
 
@@ -68,22 +68,22 @@ case class Typeahead[A](
 
   private def prev() {
     if (results.get.nonEmpty) {
-      if (active.isEmpty$) active := results.get.head
+      if (active.isEmpty$) active := Some(results.get.head)
       else {
-        val before = results.beforeOption$(active.get)
-        if (before.isEmpty) active := results.get.last
-        else active := before.get
+        val before = results.beforeOption$(active.get.get)
+        if (before.isEmpty) active := Some(results.get.last)
+        else active := Some(before.get)
       }
     }
   }
 
   private def next() {
     if (results.get.nonEmpty) {
-      if (active.isEmpty$) active := results.get.head
+      if (active.isEmpty$) active := Some(results.get.head)
       else {
-        val after = results.afterOption$(active.get)
-        if (after.isEmpty) active := results.get.head
-        else active := after.get
+        val after = results.afterOption$(active.get.get)
+        if (after.isEmpty) active := Some(results.get.head)
+        else active := Some(after.get)
       }
     }
   }
@@ -92,7 +92,7 @@ case class Typeahead[A](
     handleKeyUp = false
 
     e.keyCode match {
-      case KeyCode.Enter => onSelect(active.get._1)
+      case KeyCode.Enter => onSelect(active.get.get._1)
       case KeyCode.Tab | KeyCode.Escape => close()
       case KeyCode.Up if !e.shiftKey => // left parenthesis if e.shiftKey
         prev()

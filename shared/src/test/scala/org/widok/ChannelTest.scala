@@ -55,27 +55,27 @@ object ChannelTest extends SimpleTestSuite {
 
   test("distinct()") {
     val ch = Opt[Int](0)
-    val ch2 = ch.distinct
+    val ch2 = ch.values.distinct
 
     var sum = 0
     ch2.attach(sum += _)
 
-    ch := 1
-    ch := 1
-    ch := 2
+    ch := Some(1)
+    ch := Some(1)
+    ch := Some(2)
 
     assertEquals(sum, 3)
   }
 
   test("distinct()") {
     val ch = Opt[Int](0)
-    val ch2 = ch.distinct
+    val ch2 = ch.values.distinct
 
     var sum = 0
 
-    ch := 1
-    ch := 1
-    ch := 2
+    ch := Some(1)
+    ch := Some(1)
+    ch := Some(2)
 
     ch2.attach(sum += _)
     assertEquals(sum, 2)
@@ -431,7 +431,7 @@ object ChannelTest extends SimpleTestSuite {
     ch2.attach(sum += _)
 
     map := 1
-    ch := 0
+    ch := Some(0)
 
     map := 5
     assertEquals(sum, 5)
@@ -443,11 +443,11 @@ object ChannelTest extends SimpleTestSuite {
 
     var sum = 0
 
-    ch.attach(sum += _)
+    ch.values.attach(sum += _)
     map.attach(sum += _)
 
-    ch := 0
-    ch := 0
+    ch := Some(0)
+    ch := Some(0)
 
     assertEquals(sum, 84)
   }
@@ -552,25 +552,25 @@ object ChannelTest extends SimpleTestSuite {
     val ch = Channel[Int]()
     val map = ch.partialMap { case 1 => 42 }
 
-    var states = mutable.ArrayBuffer.empty[Option[Int]]
-    map.values.attach(states += _)
+    var states = mutable.ArrayBuffer.empty[Int]
+    map.attach(states += _)
 
     ch := 2
     ch := 3
     ch := 1
     ch := 4
 
-    assertEquals(states, mutable.ArrayBuffer(None, Some(42), None))
+    assertEquals(states, mutable.ArrayBuffer(42))
   }
 
   test("partialMap()") {
     val ch = Buffer[Int](1, 2, 3).buffer
     val map = ch.changes.partialMap { case Buffer.Delta.Insert(_, 2) => 42 }
 
-    var states = mutable.ArrayBuffer.empty[Option[Int]]
-    map.values.attach(states += _)
+    var states = mutable.ArrayBuffer.empty[Int]
+    map.attach(states += _)
 
-    assertEquals(states, mutable.ArrayBuffer(Some(42)))
+    assertEquals(states, mutable.ArrayBuffer(42))
   }
 
   test("Channel()") {

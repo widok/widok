@@ -335,10 +335,10 @@ trait PollBuffer[T]
   def after(value: T): ReadChannel[T] =
     changes.map(_ => after$(value)).distinct
 
-  def beforeOption(value: T): ReadPartialChannel[T] =
+  def beforeOption(value: T): ReadChannel[T] =
     changes.partialMap(Function.unlift(_ => beforeOption$(value)))
 
-  def afterOption(value: T): ReadPartialChannel[T] =
+  def afterOption(value: T): ReadChannel[T] =
     changes.partialMap(Function.unlift(_ => afterOption$(value)))
 
   def before$(value: T): T = {
@@ -384,19 +384,19 @@ trait PollBuffer[T]
     val hd = Opt[T]()
 
     changes.attach {
-      case Delta.Insert(Position.Head(), element) => hd := element
+      case Delta.Insert(Position.Head(), element) => hd := Some(element)
       case Delta.Insert(Position.Last(), element)
-        if hd.isEmpty$ => hd := element
+        if hd.isEmpty$ => hd := Some(element)
       case Delta.Insert(Position.Before(before), element)
-        if hd.contains$(before) => hd := element
+        if hd.contains$(before) => hd := Some(element)
       case Delta.Replace(reference, element)
-        if hd.contains$(reference) => hd := element
+        if hd.contains$(reference) => hd := Some(element)
       case Delta.Remove(element)
-        if hd.contains$(element) => hd := elements.head
+        if hd.contains$(element) => hd := Some(elements.head)
       case _ =>
     }
 
-    hd
+    hd.values
   }
 
   def last: ReadChannel[T] = {
@@ -404,32 +404,32 @@ trait PollBuffer[T]
 
     changes.attach {
       case Delta.Insert(Position.Head(), element)
-        if lst.isEmpty$ => lst := element
+        if lst.isEmpty$ => lst := Some(element)
       case Delta.Insert(Position.Last(), element) =>
-        lst := element
+        lst := Some(element)
       case Delta.Insert(Position.After(after), element)
-        if lst.contains$(after) => lst := element
+        if lst.contains$(after) => lst := Some(element)
       case Delta.Replace(reference, element)
-        if lst.contains$(reference) => lst := element
+        if lst.contains$(reference) => lst := Some(element)
       case Delta.Remove(element)
-        if lst.contains$(element) => lst := elements.last
+        if lst.contains$(element) => lst := Some(elements.last)
       case _ =>
     }
 
-    lst
+    lst.values
   }
 
   def headOption: ReadPartialChannel[T] = {
     val opt = Opt[T]()
     changes.attach(_ =>
-      if (opt.toOption != get.headOption) opt.set(get.headOption))
+      if (opt.get != get.headOption) opt := get.headOption)
     opt
   }
 
   def lastOption: ReadPartialChannel[T] = {
     val opt = Opt[T]()
     changes.attach(_ =>
-      if (opt.toOption != get.lastOption) opt.set(get.lastOption))
+      if (opt.get != get.lastOption) opt := get.lastOption)
     opt
   }
 
@@ -440,10 +440,10 @@ trait PollBuffer[T]
   }
 
   def isHead(element: T): ReadChannel[Boolean] =
-    headOption.values.is(Some(element))
+    headOption.is(Some(element))
 
   def isLast(element: T): ReadChannel[Boolean] =
-    lastOption.values.is(Some(element))
+    lastOption.is(Some(element))
 
   def distinct: ReadBuffer[T] = {
     val result = Buffer[T]()
@@ -489,7 +489,7 @@ trait PollBuffer[T]
     })
 
   def flatMapCh[U](f: T => ReadPartialChannel[U]): ReadBuffer[U] =
-    flatMap(value => f(value).values.flatMapBuf {
+    flatMap(value => f(value).flatMapBuf {
       case Some(v) => Buffer(v)
       case None => Buffer()
     })

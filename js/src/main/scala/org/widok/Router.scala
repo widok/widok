@@ -119,10 +119,10 @@ case class Router(unorderedRoutes: Set[Route],
   def render(nextPage: Page, route: InstantiatedRoute) {
     nextPage.render(route).onComplete {
       case Success(r) =>
-        currentPage.toOption.foreach(_.destroy())
+        currentPage.get.foreach(_.destroy())
         PageContainer.replace(r)
         nextPage.ready(PageContainer.node)
-        currentPage := nextPage
+        currentPage := Some(nextPage)
 
       case Failure(t) => error(s"Failed to load page: $t")
     }
