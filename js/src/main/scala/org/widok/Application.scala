@@ -16,12 +16,12 @@ class RoutingApplication(enabled: Set[Route], fallback: Route) extends Applicati
   }
 }
 
-trait PageApplication extends Application with BasePage {
+trait PageApplication extends Application {
   def view(): View
   def ready()
 
   def main() {
-    render()
+    PageContainer.replace(view())
     ready()
   }
 }
