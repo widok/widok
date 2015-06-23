@@ -20,10 +20,9 @@ trait Page {
 object PageContainer {
   val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.html.Element])
 
-  node.rendered match {
-    case null =>
-      error("DOM element not found. The JavaScript files must be loaded " +
-        "at the end of the HTML document.")
+  if (node.rendered == null) {
+    error("DOM element not found. The JavaScript files must be loaded " +
+      "at the end of the HTML document.")
   }
 
   def replace(view: View) {
