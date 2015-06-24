@@ -1,37 +1,29 @@
-# Validator
-
-Generic client-side dynamic form field validation can be managed by the Validator class. It is constructed with a number
-of tupled (ReadChannels, Seq(Validations)). When data is read from a channel it is validated against all associated
-Validations.
+# Validation
+Generic client-side dynamic form field validation can be managed by the ``Validator`` class. It is constructed with a number of tuples ``(ReadChannel, Seq(validators))``. When data is read from a channel it is validated against all associated validations.
 
 ## Validation channels
+The validator exposes the following channels that can be used in widgets to add validation in a reactive way:
 
-The Validator exposes the following channels that can be used in widgets to add validation in a reactive way:
+``validations``
+    ~ ``Dict`` that is holding the validation results for any channel that has received updates. This channel can also be used for dirty field-check (all fields present in this ``Dict`` are dirty).
 
-validations:
-    Dict that is holding the validation results for any channel that has received updates. This channel can also be
-    used for dirty field-check (all fields present in this Dict are dirty).
-
-errors:
-    Filtered version of 'validations' that only includes failing Validation's.
+``errors``
+    ~ Filtered version of ``validations`` that only includes failing validations.
     
-valid:
-    Boolean channel that indicates if all fields in this Validator are valid.
+``valid``
+    ~ Boolean channel that indicates if all fields in this validator are valid.
     
-valid(channel)
-    Boolean channel that indicates the validation status of 'ch' 
+``valid(channel)``
+    ~ Boolean channel that indicates the validation status of ``channel``
 
-invalid(channel)
-    Boolean channel that indicates the validation status of 'ch' 
+``invalid(channel)``
+    ~ Boolean channel that indicates the validation status of ``channel``
 
-combinedErrors(channels*)
-    Buffer[String] with the combined validation errors for the given 'channels' 
+``combinedErrors(channels*)``
+    ~ ``Buffer[String]`` with the combined validation errors for the given ``channels``
 
-
-Form validation example:
-
+## Form validation example
 ```scala
-
 package example
 
 import org.widok._
@@ -40,7 +32,6 @@ import org.widok.validation._
 import org.widok.validation.Validations._
 
 case class TestPage() extends Page {
-
   val username = Var("")
   val password = Var("")
   val passwordVerify = Var("")
@@ -81,20 +72,15 @@ case class TestPage() extends Page {
 
   def signup() = {}
 
-  override def ready(route: InstantiatedRoute): Unit = {}
+  override def ready(route: InstantiatedRoute) {}
 }
 ```
 
 # Validations
-
-Validations are classes derived from the Validation base class and are used to validate some input. The input can be of
-any type, but in the context of form validtion they normally validates a ReadChannel[String] channel. The Validation
-base class has one abstract member (validate) that performs the actual validation of the provided input. There are a 
-number of provided Vaidations in org.widok.validation.Validations.
+Validations are classes derived from the ``Validation`` base class and are used to validate some input. The input can be of any type, but in the context of form validation they normally validates a ``ReadChannel[String]`` channel. The ``Validation`` base class has one abstract member (``validate``) that performs the actual validation of the provided input. There are a number of provided validations in ``org.widok.validation.Validations``.
  
 ## Error messages
-
-A customized error message can be provided when initializing a Validation. This error message is interpolated using
-variables that are defined in each Validation. For example:
+A customised error message can be provided when initialising a ``Validation``. This error message is interpolated using variables that are defined in each Validation. For example:
 
 ```MinValidation(5, "Too few characters, minimum is: #{min}.. You wrote: #{value}")```
+
