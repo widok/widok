@@ -70,7 +70,6 @@ epub:	clean $(EPUB)
 
 %.tex: %.md
 	pandoc -r markdown+pipe_tables+table_captions+yaml_metadata_block+escaped_line_breaks+subscript+definition_lists+compact_definition_lists \
-        --filter ./rendertree.hs \
 		--to=latex \
 		--standalone \
 		--toc \
@@ -86,7 +85,6 @@ epub:	clean $(EPUB)
 
 %.pdf: %.md
 	pandoc -r markdown+pipe_tables+table_captions+yaml_metadata_block+escaped_line_breaks+subscript+definition_lists+compact_definition_lists \
-        --filter ./rendertree.hs \
 		--standalone \
 		--toc \
 		--chapters \
