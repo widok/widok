@@ -1,6 +1,31 @@
 # Changelog
 The changelog lists all major changes between releases. For more details, please see the [Git changelog](https://github.com/widok/widok/commits/master).
 
+## Version 0.2.2
+### General work
+- Ported to Scala.js v0.6.3
+- Migrate to scalajs-dom v0.8.1
+- Set up Google Group for discussions
+
+### Channels
+- BufSet: Use ``Set[T]`` instead of ``Seq[T]``
+
+### Widgets
+- Provide ``blur`` and ``submit`` event
+- Input: Trigger value change on ``blur`` and ``change`` (required for auto-completion)
+- Input: Provide reactive counterpart for ``placeholder()``
+- Add ``Time`` widget
+- Take options instead of strings in ``Select.{options, bind}()``
+- Fix ``List.Items()`` in Safari
+- Add ``hide()`` and ``invisible()`` (negated ``show()`` and ``visible()``)
+- Add support for field validation
+
+### Bindings
+- Generate functions instead of case classes
+- Bootstrap: Allow column buffers in grid rows
+- Bootstrap: Use buffer for Typeahead options (allows updating options list asynchronously)
+- Bootstrap: Support ``navbar-left`` and ``navbar-text``
+
 ## Version 0.2.1
 ### General work
 - Ported to Scala.js v0.6.2
