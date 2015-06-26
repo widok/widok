@@ -17,7 +17,7 @@
 
 SRC = manual.md
 
-VERSION = v0.2.2
+VERSION = v0.3.0
 
 ## Location of Pandoc support files.
 PREFIX = .
