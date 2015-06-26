@@ -1,5 +1,8 @@
 package org.widok
 
+import scala.util.{Success, Failure}
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import org.scalajs.dom
 
 import scala.scalajs.js.URIUtils
@@ -113,27 +116,32 @@ case class Router(unorderedRoutes: Set[Route],
     else log("[router] No action as query did not change")
   }
 
+  def render(nextPage: Page, route: InstantiatedRoute) {
+    nextPage.render(route).onComplete {
+      case Success(r) =>
+        currentPage.toOption.foreach(_.destroy())
+        PageContainer.replace(r)
+        nextPage.ready(PageContainer.node)
+        currentPage := nextPage
+
+      case Failure(t) => error(s"Failed to load page: $t")
+    }
+  }
+
   def dispatchQuery(query: String) {
     log(s"[router] Dispatching query $query")
     val queryParts = Router.queryParts(query)
-
-    currentPage.toOption.foreach(_.destroy())
-    currentPage.clear()
 
     matchingRoute(queryParts) match {
       case Some(route) =>
         log(s"[router] Found $route")
         val args = route.parseArguments(queryParts)
-
-        currentPage := route.page()
-        currentPage.get.render(InstantiatedRoute(route, args))
+        render(route.page(), InstantiatedRoute(route, args))
 
       case _ =>
         error("[router] Choosing fallback route")
         fallback match {
-          case Some(fb) =>
-            currentPage := fb.page()
-            currentPage.get.render(InstantiatedRoute(fb))
+          case Some(fb) => render(fb.page(), InstantiatedRoute(fb))
           case None => error("[router] No route found")
         }
     }

@@ -2,32 +2,31 @@ package org.widok
 
 import org.scalajs.dom
 
-trait BasePage {
+import scala.concurrent.Future
+
+trait Page {
   val document = Document
 
-  val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.html.Element])
+  /** Returns view to be rendered */
+  def render(route: InstantiatedRoute): Future[View]
 
-  def view(): View
+  /** Called when view has been rendered */
+  def ready(node: Node) { }
 
-  def render() {
-    node.rendered match {
-      case null =>
-        sys.error("DOM element not found. The JavaScript files must be loaded " +
-          "at the end of the HTML document.")
-      case page =>
-        DOM.clear(page)
-        view().render(page, page.lastChild)
-    }
-  }
-
+  /** Called upon route change */
   def destroy() { }
 }
 
-trait Page extends BasePage {
-  def ready(route: InstantiatedRoute)
+object PageContainer {
+  val node = Node(DOM.getElement("page").orNull.asInstanceOf[dom.html.Element])
 
-  def render(route: InstantiatedRoute) {
-    render()
-    ready(route)
+  if (node.rendered == null) {
+    error("DOM element not found. The JavaScript files must be loaded " +
+      "at the end of the HTML document.")
+  }
+
+  def replace(view: View) {
+    DOM.clear(node.rendered)
+    view.render(node.rendered, node.rendered.lastChild)
   }
 }
