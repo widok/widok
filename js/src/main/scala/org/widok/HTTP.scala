@@ -4,6 +4,10 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
 import org.scalajs.dom.ext.Ajax
 
+/**
+ * Wrapper around Scala.js Ajax class to send GET,POST,PUT and DELETE
+ * request to a url
+ */
 object HTTP {
 
   def get(url: String, requestHeaders: Map[String, String] = Map.empty) =
