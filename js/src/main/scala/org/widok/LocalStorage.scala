@@ -18,11 +18,13 @@ object LocalStorage {
 
   def has(key: String): Boolean = get(key).isDefined
 
-  def removeItem(key: String): Unit = if (has(key)) storage.removeItem(key)
+  def remove(key: String): Unit =
+    if (has(key)) storage.removeItem(key) else
+    throw new Exception(s"""key ${key} doesn't exist """)
 
-  def clear = storage.clear()
+  def clear() { storage.clear() }
 
   def +=(kvp: (String, String)) = set(kvp._1, kvp._2)
 
-  def -=(key: String) = removeItem(key)
+  def -=(key: String) = remove(key)
 }
