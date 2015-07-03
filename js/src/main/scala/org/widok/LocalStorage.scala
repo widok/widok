@@ -12,12 +12,20 @@ object LocalStorage {
 
   private val storage = window.localStorage
 
-  def save(key: String, value: String = ""): Unit = storage.setItem(key, value)
+  def set(key: String, value: String = ""): Unit = storage.setItem(key, value)
 
-  def save(saveMany: SaveMany): Unit = saveMany.kvp.foreach(kvp => save(kvp._1, kvp._2))
+  def set(map: HashMap[String, String]): Unit = map.foreach(kvp => set(kvp._1, kvp._2))
 
-  def get(key: String) = storage.getItem(key)
+  def get(key: String): Option[String] = Option(storage.getItem(key))
 
-  def removeItem(key: String) = storage.removeItem(key)
+  def has(key: String): Boolean = get(key).isDefined
 
+  def removeItem(key: String): Unit = if (has(key)) storage.removeItem(key)
+
+  def clear = storage.clear()
+
+  def +=(kvp: (String, String)) = set(kvp._1, kvp._2)
+
+  def -=(key: String) = removeItem(key)
 }
+
