@@ -3,8 +3,6 @@ package org.widok
 import org.scalajs.dom._
 import scala.collection.immutable.HashMap
 
-case class SaveMany(kvp: HashMap[String, String])
-
 /**
  * wrapper around window.localStorage provides some additional methods.
  */
@@ -28,4 +26,3 @@ object LocalStorage {
 
   def -=(key: String) = removeItem(key)
 }
-
