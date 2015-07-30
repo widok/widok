@@ -168,7 +168,7 @@ object Widget {
 object DOMChannel {
   def variable[T](set: T => Unit) = {
     val opt = Opt[T]()
-    opt.attach(set)
+    opt.values.attach(set)
     opt
   }
 
@@ -378,9 +378,9 @@ trait Widget[T] extends Node { self: T =>
 
   def focus(): T = { rendered.focus(); this }
 
-  def id(value: String): T = { nodeId := value; self }
+  def id(value: String): T = { nodeId := Some(value); self }
 
-  def id(value: ReadChannel[String]): T = { nodeId.subscribe(value); self }
+  def id(value: ReadChannel[String]): T = { nodeId.subscribe(value.map(Some(_))); self }
 
   def css(cssTags: String*): T = {
     cssTags.filterNot(className.contains$).foreach(className.insert)
@@ -414,9 +414,9 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def attributeOpt(key: String, value: PartialChannel[String]): T = {
-    value.values.attach {
+    value.attach {
+      case None    => attributes.removeIfExists(key)
       case Some(v) => attributes.insertOrUpdate(key, v)
-      case None => attributes.removeIfExists(key)
     }
 
     self
@@ -428,26 +428,26 @@ trait Widget[T] extends Node { self: T =>
   def title(value: String): T = attribute("title", value)
   def title(value: ReadChannel[String]): T = attribute("title", value)
 
-  def cursor(cursor: HTML.Cursor): T = { style.cursor := cursor; self }
+  def cursor(cursor: HTML.Cursor): T = { style.cursor := Some(cursor); self }
   def cursor(cursor: ReadChannel[HTML.Cursor]): T = {
-    style.cursor.subscribe(cursor)
+    style.cursor.subscribe(cursor.map(Some(_)))
     self
   }
 
-  def height(height: Length): T = { style.height := height; self }
+  def height(height: Length): T = { style.height := Some(height); self }
   def height(height: ReadChannel[Length]): T = {
-    style.height.subscribe(height)
+    style.height.subscribe(height.map(Some(_)))
     self
   }
 
-  def width(width: Length): T = { style.width := width; self }
+  def width(width: Length): T = { style.width := Some(width); self }
   def width(width: ReadChannel[Length]): T = {
-    style.width.subscribe(width)
+    style.width.subscribe(width.map(Some(_)))
     self
   }
 
   def show(value: Boolean): T = {
-    style.display := (if (value) "" else "none")
+    style.display := Some(if (value) "" else "none")
     self
   }
 
@@ -457,7 +457,7 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def hide(value: Boolean): T = {
-    style.display := (if (value) "none" else "")
+    style.display := Some(if (value) "none" else "")
     self
   }
 
@@ -467,7 +467,7 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def visible(value: Boolean): T = {
-    style.visibility := (if (value) "visible" else "hidden")
+    style.visibility := Some(if (value) "visible" else "hidden")
     self
   }
 
@@ -477,7 +477,7 @@ trait Widget[T] extends Node { self: T =>
   }
 
   def invisible(value: Boolean): T = {
-    style.visibility := (if (value) "hidden" else "visible")
+    style.visibility := Some(if (value) "hidden" else "visible")
     self
   }
 

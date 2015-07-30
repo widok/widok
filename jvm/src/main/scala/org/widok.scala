@@ -8,4 +8,10 @@ package object widok {
     ch.attach(f)
     ch
   }
+
+  implicit class PimpedOpt[T](opt: Opt[T]) {
+    def :=(t: T) {
+      opt := Some(t)
+    }
+  }
 }

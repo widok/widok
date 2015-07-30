@@ -25,9 +25,9 @@ object ChannelSpec extends SimpleTestSuite {
   def forallChVal[T](f: (Channel[Int], Int) => (ReadChannel[T], ReadChannel[T])) {
     /* Different channel types may differ in their semantics. */
     val channels = Seq(
-      () => Var[Int](0),
-      () => Opt[Int](0),
-      () => Channel[Int]())
+      () => Var[Int](0)
+    , () => Channel[Int]()
+    )
     val elems = Seq(1, 2, 3)
 
     channels.foreach { fch =>
@@ -101,7 +101,7 @@ object ChannelSpec extends SimpleTestSuite {
   }
 
   test("Opt") {
-    forallCh(ch => (ch.toOpt, ch))
+    forallCh(ch => (ch.toOpt.values, ch))
 
     assertEqualsCh(Opt().isDefined.head, Var(false))
     assertEqualsCh(Opt(42).isDefined.head, Var(true))
@@ -109,7 +109,7 @@ object ChannelSpec extends SimpleTestSuite {
     assertEqualsCh(Opt().isDefined, Opt().nonEmpty)
     assertEqualsCh(Opt(42).isDefined, Opt(42).nonEmpty)
 
-    assertEqualsCh(Opt(42), Var(42))
-    assertEqualsCh(Opt(), Channel())
+    assertEqualsCh(Opt(42).values, Var(42))
+    assertEqualsCh(Opt().values, Channel())
   }
 }

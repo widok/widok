@@ -105,8 +105,8 @@ trait DeltaDict[A, B]
     val res = Opt[B]()
 
     changes.attach {
-      case Delta.Insert(`key`, value) => res := value
-      case Delta.Update(`key`, value) => res := value
+      case Delta.Insert(`key`, value) => res := Some(value)
+      case Delta.Update(`key`, value) => res := Some(value)
       case Delta.Remove(`key`) => res.clear()
       case Delta.Clear() if res.nonEmpty$ => res.clear()
       case _ =>

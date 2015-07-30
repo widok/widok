@@ -24,7 +24,7 @@ object BufferTest extends SimpleTestSuite {
   test("filter().lastOption") {
     val buf = Buffer[Int]()
     val filter = buf.filter(_ > 1)
-    var last = -1
+    var last = Option.empty[Int]
 
     filter.buffer.lastOption.attach(last = _)
 
@@ -32,10 +32,10 @@ object BufferTest extends SimpleTestSuite {
     buf += 2
     buf += 3
 
-    assertEquals(last, 3)
+    assertEquals(last, Some(3))
     buf.remove(buf.get(2))
 
-    assertEquals(last, 2)
+    assertEquals(last, Some(2))
   }
 
   test("size()") {
@@ -84,7 +84,7 @@ object BufferTest extends SimpleTestSuite {
 
   test("flatMapCh()") {
     val x = Buffer(1, 2, 3)
-    val ch: Opt[Int] = Opt(42)
+    val ch = Opt(42)
     val y = x.flatMapCh[Int](value =>
       if (value == 4) ch else Opt(value))
 
@@ -120,6 +120,7 @@ object BufferTest extends SimpleTestSuite {
     x ++= add
 
     val y = x.filter(_ <= 3).buffer
+    assertEquals(y.get, Seq(1, 2, 3))
     x.removeAll(y)
 
     assertEquals(x.get, add.get)
@@ -129,7 +130,7 @@ object BufferTest extends SimpleTestSuite {
     val buffer = Buffer(1, 2, 3)
 
     var states = mutable.ArrayBuffer.empty[Int]
-    buffer.find(_ > 1).attach(states += _)
+    buffer.find(_ > 1).values.attach(states += _)
     assertEquals(states, mutable.ArrayBuffer(2))
 
     buffer.remove(2)
@@ -139,7 +140,7 @@ object BufferTest extends SimpleTestSuite {
   test("buffer") {
     val buffer = Buffer(1, 2, 3)
 
-    val states = buffer.find(_ > 1).buffer
+    val states = buffer.find(_ > 1).values.buffer
     assertEquals(states.get, Seq(2))
 
     buffer.remove(2)
@@ -148,7 +149,7 @@ object BufferTest extends SimpleTestSuite {
 
   test("buffer") {
     val buffer = Buffer[Int]()
-    val states = buffer.find(_ > 1).buffer
+    val states = buffer.find(_ > 1).values.buffer
 
     buffer += 1
     buffer += 2

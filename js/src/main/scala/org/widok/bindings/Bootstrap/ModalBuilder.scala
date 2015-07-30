@@ -33,7 +33,7 @@ case class ModalBuilder(contents: Modal.ContentElement*)
   /* .show(shown) wouldn't work here because Bootstrap uses
    * `style.display = none` in its stylesheet.
    */
-  modal.style.display << shown.map(if (_) "block" else "none")
+  modal.style.display << shown.map(shown => Some(if (shown) "block" else "none"))
 
   val ch = shown.tail.distinct.attach(
     if (_) {

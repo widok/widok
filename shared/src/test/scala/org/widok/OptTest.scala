@@ -22,7 +22,7 @@ object OptTest extends SimpleTestSuite {
 
     val ch = Opt(0)
     val x = Channel[String]()
-    val y = ch.flatMap(cur => x.map(_ + cur))
+    val y = ch.values.flatMap(cur => x.map(_ + cur))
 
     y.attach(elems += _)
 
@@ -64,7 +64,7 @@ object OptTest extends SimpleTestSuite {
     val elems = mutable.ArrayBuffer.empty[Option[Int]]
 
     val ch = Opt[Int]()
-    ch.values.attach(elems += _)
+    ch.attach(elems += _)
 
     ch := 1
     ch.clear()

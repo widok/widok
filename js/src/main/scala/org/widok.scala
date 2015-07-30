@@ -68,6 +68,12 @@ package object widok {
     ch
   }
 
+  implicit class PimpedOpt[T](opt: Opt[T]) {
+    def :=(t: T) {
+      opt := Some(t)
+    }
+  }
+
   /** Short aliases for HTML tags
     * See also http://stackoverflow.com/questions/21831497/type-aliasing-a-case-class-in-scala-2-10
     */

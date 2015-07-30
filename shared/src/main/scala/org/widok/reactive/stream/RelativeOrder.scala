@@ -16,8 +16,8 @@ trait RelativeOrder[T] {
   def after(value: T): ReadChannel[T]
 
   /** @see [[before]] */
-  def beforeOption(value: T): ReadPartialChannel[T]
+  def beforeOption(value: T): ReadChannel[T]
 
   /** @see [[after]] */
-  def afterOption(value: T): ReadPartialChannel[T]
+  def afterOption(value: T): ReadChannel[T]
 }

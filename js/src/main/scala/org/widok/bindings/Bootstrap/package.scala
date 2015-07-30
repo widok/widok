@@ -645,7 +645,7 @@ package object Bootstrap {
       .foldLeft(Map.empty[ReadChannel[_], ReadChannel[Option[String]]])
     { case (acc, Validation(ch, _)) =>
       acc + (ch -> dirty.flatMap(
-        if (_) invalid.value(ch).values
+        if (_) invalid.value(ch)
         else Var(None)
       ))
     }

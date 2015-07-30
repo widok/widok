@@ -1,6 +1,6 @@
 package org.widok.reactive.propagate
 
-trait Channel[T] {
+trait Produce[T] {
   def produce(value: T)
   def :=(value: T) = produce(value)
 }

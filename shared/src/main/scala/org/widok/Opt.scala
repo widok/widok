@@ -1,112 +1,72 @@
 package org.widok
 
 trait ReadPartialChannel[T]
-  extends ReadChannel[T]
-  with ReadStateChannel[T]
+  extends ReadChannel[Option[T]]
+  with ReadStateChannel[Option[T]]
   with reactive.poll.Empty
   with reactive.poll.Count[T]
   with reactive.stream.PartialChannel[T]
+{
+  def values: ReadChannel[T] =
+    forkUni {
+      case None        => Result.Next()
+      case Some(value) => Result.Next(value)
+    }
+}
 
 trait PartialChannel[T]
-  extends StateChannel[T]
+  extends StateChannel[Option[T]]
   with ReadPartialChannel[T]
-
-object Opt {
-  def apply[T](): Opt[T] = new Opt[T] { }
-
-  def apply[T](value: T): Opt[T] = {
-    val res = Opt[T]()
-    res := value
-    res
-  }
-}
 
 /**
  * Publishes a stream of defined values. Use isEmpty() to detect when the
  * current value is cleared.
  */
-trait Opt[T]
+sealed class Opt[T](private var v: Option[T] = None)
   extends PartialChannel[T]
   with reactive.poll.PartialChannel
   with reactive.mutate.PartialChannel[T]
 {
-  private var cached: Option[T] = None
-  private val defined = LazyVar[Boolean](cached.isDefined)
+  attach(v = _)
 
-  attach { t =>
-    val prevDefined = cached.isDefined
-    cached = Some(t)
-    if (!prevDefined) defined.produce()
-  }
+  def isEmpty$: Boolean = v.isEmpty
+  def nonEmpty$: Boolean = v.nonEmpty
 
-  def isEmpty$: Boolean = cached.isEmpty
-  def nonEmpty$: Boolean = cached.nonEmpty
+  def isDefined$: Boolean = v.isDefined
+  def undefined$: Boolean = v.isEmpty
 
-  def isDefined$: Boolean = cached.isDefined
-  def undefined$: Boolean = cached.isEmpty
+  def contains$(value: T): Boolean = v.contains(value)
 
-  def contains$(value: T): Boolean = cached.contains(value)
+  def isDefined: ReadChannel[Boolean] = isNot(None)
+  def undefined: ReadChannel[Boolean] = is(None)
 
-  def isDefined: ReadChannel[Boolean] = defined
-  def undefined: ReadChannel[Boolean] = defined.map(!_)
+  def flush(f: Option[T] => Unit) { f(v) }
 
-  def flush(f: T => Unit) {
-    if (cached.isDefined) f(cached.get)
-  }
-
-  // TODO This does not work.
-  //def size: ReadChannel[Int] =
-  //  defined.flatMap { state =>
-  //    if (!state) Var(0)
-  //    else foldLeft(0) { case (acc, cur) => acc + 1 }
-  //  }
-
-  // Workaround
-  def size: ReadChannel[Int] = {
-    var count = 0
-    val res = forkUniState(t => {
-      count += 1
-      Result.Next(count)
-    }, Some(count)).asInstanceOf[ChildChannel[Int, Int]]
-    defined.attach(d => if (!d) {
-      count = 0
-      res := 0
-    })
-    res
-  }
-
-  def clear() {
-    val prevDefined = cached.isDefined
-    cached = None
-    if (prevDefined) defined.produce()
-  }
-
-  def set(value: Option[T]) {
-    if (value.isDefined) this := value.get
-    else clear()
-  }
-
-  def partialUpdate(f: PartialFunction[T, T]) {
-    cached.foreach(value => set(f.lift(value)))
-  }
-
-  /** @note This method may only be called if the value is defined. */
-  def get: T = cached.get
-
-  def getOrElse(default: => T): T = cached.getOrElse(default)
-  def orElse(default: => ReadChannel[T]): ReadChannel[T] =
-    defined.flatMap { value =>
-      if (value) Var(cached.get)
-      else default
+  def size: ReadChannel[Int] =
+    foldLeft(0) {
+      case (acc, Some(_)) => acc + 1
+      case (acc, None)    => 0
     }
 
-  def values: ReadChannel[Option[T]] =
-    defined
-      .partialMap { case false => Option.empty[T] }
-      .merge(map(Some(_)))
+  def clear() { produce(None) }
 
-  def toOption: Option[T] = cached
+  def partialUpdate(f: PartialFunction[T, T]) {
+    v.foreach(value => produce(f.lift(value)))
+  }
 
-  private def str = cached.map(_.toString).getOrElse("<undefined>")
+  def get: Option[T] = v
+
+  def orElse(default: => ReadChannel[T]): ReadChannel[T] =
+    flatMap {
+      case None        => default
+      case Some(value) => Var(value)
+    }
+
+  private def str = get.map(_.toString).getOrElse("<undefined>")
   override def toString = s"Opt($str)"
+}
+
+object Opt {
+  def apply[T](): Opt[T] = new Opt()
+  def apply[T](value: T): Opt[T] = new Opt(Some(value))
 }
