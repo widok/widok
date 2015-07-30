@@ -1,11 +1,13 @@
 package org.widok
 
+import scala.collection.mutable
+
 import org.scalajs.dom
 import org.scalajs.dom.ext.KeyCode
 
-import org.widok.bindings._
+import pl.metastack.metarx._
 
-import scala.collection.mutable
+import org.widok.bindings._
 
 object Widget {
   object List {

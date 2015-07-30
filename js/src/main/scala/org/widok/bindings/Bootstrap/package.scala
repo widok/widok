@@ -2,6 +2,8 @@ package org.widok.bindings
 
 import org.scalajs.dom
 
+import pl.metastack.metarx._
+
 import org.widok._
 
 /**

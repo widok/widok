@@ -1,8 +1,10 @@
 package org.widok.validation
 
 import minitest._
-import org.widok.validation.Validations.{SameValidation, RequiredValidation, MinLengthValidation, PatternValidation}
-import org.widok.{StateChannel, Var}
+
+import pl.metastack.metarx._
+
+import org.widok.validation.Validations._
 
 case class Fixture(ch1: StateChannel[String], ch2: StateChannel[String], validator: Validator)
 

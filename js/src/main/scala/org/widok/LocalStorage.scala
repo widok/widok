@@ -1,6 +1,7 @@
 package org.widok
 
 import org.scalajs.dom._
+
 import scala.collection.immutable.HashMap
 
 /**

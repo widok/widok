@@ -3,6 +3,8 @@ package org.widok.bindings.Bootstrap
 import org.scalajs.dom
 import org.scalajs.dom.ext.KeyCode
 
+import pl.metastack.metarx._
+
 import org.widok._
 import org.widok.html._
 

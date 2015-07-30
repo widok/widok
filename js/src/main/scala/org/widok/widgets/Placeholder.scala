@@ -1,6 +1,7 @@
 package org.widok.widgets
 
 import org.scalajs.dom
+
 import org.widok.bindings.HTML
 
 /**

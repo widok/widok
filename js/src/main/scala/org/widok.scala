@@ -1,11 +1,15 @@
 package org
 
-import org.scalajs.dom
 import scala.scalajs.js
-import org.widok.bindings.HTML
-
 import scala.annotation.elidable
+
 import elidable._
+
+import org.scalajs.dom
+
+import pl.metastack.metarx._
+
+import org.widok.bindings.HTML
 
 package object widok {
   @elidable(INFO) def log(values: Any*) {
@@ -61,18 +65,6 @@ package object widok {
 
   implicit def InstantiatedRouteToString(route: InstantiatedRoute): String =
     route.uri()
-
-  implicit def FunctionToWriteChannel[T](f: T => Unit): WriteChannel[T] = {
-    val ch = Channel[T]()
-    ch.attach(f)
-    ch
-  }
-
-  implicit class PimpedOpt[T](opt: Opt[T]) {
-    def :=(t: T) {
-      opt := Some(t)
-    }
-  }
 
   /** Short aliases for HTML tags
     * See also http://stackoverflow.com/questions/21831497/type-aliasing-a-case-class-in-scala-2-10

@@ -2,6 +2,8 @@ package org.widok.bindings.Bootstrap
 
 import org.scalajs.dom
 
+import pl.metastack.metarx._
+
 import org.widok._
 
 case class ModalBuilder(contents: Modal.ContentElement*)

@@ -10,7 +10,7 @@ import com.typesafe.sbt.web.Import._
 
 object Build extends sbt.Build {
   val buildOrganisation = "io.github.widok"
-  val buildScalaVersion = "2.11.6"
+  val buildScalaVersion = "2.11.7"
   val buildScalaOptions = Seq(
     "-unchecked",
     "-deprecation",
@@ -157,6 +157,7 @@ object Build extends sbt.Build {
 
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scalajs-dom" % "0.8.1",
+        "pl.metastack" %%% "metarx" % "0.1.0-SNAPSHOT",
         "org.monifu" %%% "minitest" % "0.12" % "test",
         "org.webjars" % "font-awesome" % "4.3.0-1",
         "org.webjars" % "bootstrap" % "3.3.2"
@@ -167,6 +168,7 @@ object Build extends sbt.Build {
     )
     .jvmSettings(
       libraryDependencies ++= Seq(
+        "pl.metastack" %% "metarx" % "0.1.0-SNAPSHOT",
         "org.monifu" %% "minitest" % "0.12" % "test"
       )
     )

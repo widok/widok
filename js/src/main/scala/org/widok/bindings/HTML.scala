@@ -1,9 +1,10 @@
 package org.widok.bindings
 
-import org.widok._
 import org.scalajs.dom
 
-import scala.collection.mutable
+import pl.metastack.metarx._
+
+import org.widok._
 
 object HTML {
   trait Cursor

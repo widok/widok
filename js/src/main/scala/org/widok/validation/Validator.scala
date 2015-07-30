@@ -1,6 +1,6 @@
 package org.widok.validation
 
-import org.widok.{Buffer, Dict, ReadChannel}
+import pl.metastack.metarx._
 
 case class Validator(validationSources: (ReadChannel[_], Seq[Validation[_]])*) {
   val validations = Dict[ReadChannel[_], Seq[String]]()

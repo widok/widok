@@ -1,8 +1,8 @@
 package org.widok
 
-import org.scalajs.dom
-
 import scala.concurrent.Future
+
+import org.scalajs.dom
 
 trait Page {
   val document = Document

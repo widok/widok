@@ -3,9 +3,11 @@ package org.widok
 import scala.util.{Success, Failure}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.scalajs.dom
-
 import scala.scalajs.js.URIUtils
+
+import pl.metastack.metarx._
+
+import org.scalajs.dom
 
 case class Route(path: String, page: () => Page) extends Ordered[Route] {
   val routeParts = path.split('/')
