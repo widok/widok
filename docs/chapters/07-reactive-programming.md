@@ -94,3 +94,29 @@ def view() = Inline(
 )
 ```
 
+## Example: Wizard
+A wizard with multiple steps can be easily implemented with ``Var``:
+
+```scala
+val step = Var(1)
+
+def step1(): Widget[_] = button("Next").onClick(_ => step.update(_ + 1))
+def step2(): Widget[_] = ???
+def step3(): Widget[_] = ???
+
+def body() = Inline(
+  step1().show(step.is(1))
+, step2().show(step.is(2))
+, step3().show(step.is(3))
+)
+```
+
+At any time the widgets of every step are in the DOM. If this is not desired, you can load them lazily:
+
+```scala
+step.is(1).map {
+  case true => step1()
+  case false => span()
+}
+```
+
