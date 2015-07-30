@@ -99,7 +99,7 @@ object BufferTest extends SimpleTestSuite {
     x.prepend(5)
     assertEquals(y.get, Seq(5, 1, 2, 3))
 
-    ch := Some(9)
+    ch := 9
     assertEquals(y.get, Seq(5, 9, 1, 2, 3))
   }
 

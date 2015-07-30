@@ -60,9 +60,9 @@ object ChannelTest extends SimpleTestSuite {
     var sum = 0
     ch2.attach(sum += _)
 
-    ch := Some(1)
-    ch := Some(1)
-    ch := Some(2)
+    ch := 1
+    ch := 1
+    ch := 2
 
     assertEquals(sum, 3)
   }
@@ -73,9 +73,9 @@ object ChannelTest extends SimpleTestSuite {
 
     var sum = 0
 
-    ch := Some(1)
-    ch := Some(1)
-    ch := Some(2)
+    ch := 1
+    ch := 1
+    ch := 2
 
     ch2.attach(sum += _)
     assertEquals(sum, 2)
@@ -431,7 +431,7 @@ object ChannelTest extends SimpleTestSuite {
     ch2.attach(sum += _)
 
     map := 1
-    ch := Some(0)
+    ch := 0
 
     map := 5
     assertEquals(sum, 5)
@@ -446,8 +446,8 @@ object ChannelTest extends SimpleTestSuite {
     ch.values.attach(sum += _)
     map.attach(sum += _)
 
-    ch := Some(0)
-    ch := Some(0)
+    ch := 0
+    ch := 0
 
     assertEquals(sum, 84)
   }

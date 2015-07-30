@@ -28,10 +28,10 @@ object OptTest extends SimpleTestSuite {
 
     x := "a"
 
-    ch := Some(1)
+    ch := 1
     x := "b"
 
-    ch := Some(2)
+    ch := 2
     x := "c"
 
     assertEquals(elems, mutable.ArrayBuffer("a0", "b1", "c2"))
@@ -54,8 +54,8 @@ object OptTest extends SimpleTestSuite {
     size.attach(elems += _)
 
     ch.clear()
-    ch := Some("b")
-    ch := Some("c")
+    ch := "b"
+    ch := "c"
 
     assertEquals(elems, mutable.ArrayBuffer(1, 0, 1, 2))
   }
@@ -66,9 +66,9 @@ object OptTest extends SimpleTestSuite {
     val ch = Opt[Int]()
     ch.attach(elems += _)
 
-    ch := Some(1)
+    ch := 1
     ch.clear()
-    ch := Some(2)
+    ch := 2
 
     assertEquals(elems, mutable.ArrayBuffer(None, Some(1), None, Some(2)))
   }
