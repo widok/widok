@@ -289,7 +289,7 @@ package object Bootstrap {
         HTML.Container.Inline().css("icon-bar")
       ).css("navbar-toggle", "collapsed")
         .attribute("type", "button")
-        .onClick(_ => collapseClosed := !collapseClosed.get)
+        .onClick(_ => collapseClosed.update(!_))
 
     def Header(contents: View*) =
       HTML.Container.Generic(contents: _*)
@@ -319,7 +319,7 @@ package object Bootstrap {
           .attribute("role", "menu")
       ).css("dropdown")
         .cssState(open, "open")
-        .onClick(_ => open := !open.get)
+        .onClick(_ => open.update(!_))
     }
 
     def Elements(contents: Bootstrap.Item*) =
