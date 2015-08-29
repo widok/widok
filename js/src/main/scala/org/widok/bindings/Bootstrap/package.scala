@@ -301,7 +301,7 @@ package object Bootstrap {
         .css("collapse", "navbar-collapse")
 
     def Branch(contentsCaption: Widget[_]*)
-              (contents: Bootstrap.Item*): Bootstrap.Item = {
+              (contents: Widget.List.Item[_]*): Bootstrap.Item = {
       val open = Var(false)
 
       Bootstrap.Item(
