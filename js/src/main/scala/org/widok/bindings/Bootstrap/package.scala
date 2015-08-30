@@ -326,7 +326,7 @@ package object Bootstrap {
         .onClick(_ => open := !open.get)
     }
 
-    def Elements(contents: Bootstrap.Item*) =
+    def Elements(contents: Widget.List.Item[_]*) =
       HTML.List.Unordered(contents: _*)
         .css("nav", "navbar-nav")
 
