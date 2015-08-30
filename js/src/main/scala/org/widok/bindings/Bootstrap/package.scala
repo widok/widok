@@ -280,6 +280,8 @@ package object Bootstrap {
       }
     }
 
+    private val collapseClosed = Var(true)
+
     def Toggle() =
       HTML.Button(
         HTML.Container.Inline().css("icon-bar"),
@@ -287,6 +289,7 @@ package object Bootstrap {
         HTML.Container.Inline().css("icon-bar")
       ).css("navbar-toggle", "collapsed")
         .attribute("type", "button")
+        .onClick(_ => collapseClosed.update(!_))
 
     def Header(contents: View*) =
       HTML.Container.Generic(contents: _*)
@@ -298,7 +301,8 @@ package object Bootstrap {
 
     def Collapse(contents: View*) =
       HTML.Container.Generic(contents: _*)
-        .css("collapse", "navbar-collapse")
+        .css("navbar-collapse")
+        .cssState(collapseClosed, "collapse")
 
     def Branch(contentsCaption: Widget[_]*)
               (contents: Widget.List.Item[_]*): Bootstrap.Item = {
@@ -315,7 +319,7 @@ package object Bootstrap {
           .attribute("role", "menu")
       ).css("dropdown")
         .cssState(open, "open")
-        .onClick(_ => open := !open.get)
+        .onClick(_ => open.update(!_))
     }
 
     def Elements(contents: Bootstrap.Item*) =
