@@ -280,13 +280,19 @@ package object Bootstrap {
       }
     }
 
-    def Toggle() =
+    /**
+     *
+     * @param stateClosed Declare and pass a "val stateClosed = Var(true)" to this and "Collapse"
+     * @return
+     */
+    def Toggle(stateClosed: Var[Boolean]) =
       HTML.Button(
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar")
       ).css("navbar-toggle", "collapsed")
         .attribute("type", "button")
+        .onClick(_ => stateClosed.update(!_))
 
     def Header(contents: View*) =
       HTML.Container.Generic(contents: _*)
@@ -296,9 +302,11 @@ package object Bootstrap {
       HTML.Anchor(contents: _*)
         .css("navbar-brand")
 
-    def Collapse(contents: View*) =
+    def Collapse(stateClosed: ReadChannel[Boolean])(contents: View*) =
       HTML.Container.Generic(contents: _*)
-        .css("collapse", "navbar-collapse")
+        .css("navbar-collapse")
+        .cssState(stateClosed, "collapse")
+
 
     def Branch(contentsCaption: Widget[_]*)
               (contents: Widget.List.Item[_]*): Bootstrap.Item = {
