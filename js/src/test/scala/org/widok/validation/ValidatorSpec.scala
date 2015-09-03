@@ -84,5 +84,22 @@ object ValidatorSpec extends SimpleTestSuite {
       assertEquals(c.get, Seq("Required value", "Value must match pattern .{3,6}"))
     }
   }
+
+  test("should clear combined errors when source-channels are valid") {
+    new DefaultFixture {
+      val c = validator.combinedErrors(ch1, ch2)
+
+      ch1 := ""
+      validator.validate()
+      assertEquals(c.get, Seq("Required value", "Value must match pattern .{3,6}"))
+
+      ch1 := "testar"
+      assertEquals(c.get, Seq("Value must match pattern .{3,6}"))
+
+      ch2 := ""
+      assertEquals(c.get, Seq())
+
+    }
+  }
 }
 

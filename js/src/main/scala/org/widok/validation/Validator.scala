@@ -18,9 +18,9 @@ case class Validator(validationSources: (ReadChannel[_], Seq[Validation[_]])*) {
       .map(_ -> Seq[String]())
       .toMap[ReadChannel[_], Seq[String]]
 
-    channels.map(errors.value(_).values).foreach { channel =>
+    channels.map(errors.value(_)).foreach { channel =>
       channel.attach { optCh =>
-        messagesByChannel += (channel -> optCh)
+        messagesByChannel += (channel -> optCh.getOrElse(Seq.empty))
         result.set(messagesByChannel.values.flatten.toSeq.distinct) // set all unique errors
       }
     }
