@@ -77,8 +77,22 @@ object HTML {
     val rendered = DOM.createElement("br")
   }
 
-  case class Button(contents: View*) extends Widget[Button] {
-    val rendered = DOM.createElement("button", contents)
+  sealed trait ButtonType { val tpe: String }
+  object ButtonType {
+    case object Button extends ButtonType { val tpe = "button" }
+    case object Submit extends ButtonType { val tpe = "submit" }
+    case object Reset extends ButtonType { val tpe = "reset" }
+  }
+
+  trait ButtonBase[T] extends Widget[T] { self: T =>
+    def element: dom.html.Element
+    override val rendered = element
+
+    def tpe(value: ButtonType) = attribute("type", value.tpe)
+  }
+
+  case class Button(contents: View*) extends ButtonBase[Button] {
+    val element = DOM.createElement("button", contents)
   }
 
   case class Section(contents: View*) extends Widget[Section] {

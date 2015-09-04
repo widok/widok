@@ -1,6 +1,7 @@
 package org.widok.bindings
 
 import org.scalajs.dom
+import org.widok.bindings.HTML.ButtonType
 
 import pl.metastack.metarx._
 
@@ -129,10 +130,7 @@ package object Bootstrap {
     }
   }
 
-  trait ButtonBase[T] extends Widget[T] { self: T =>
-    def element: dom.html.Element
-
-    val rendered = element
+  trait ButtonBase[T] extends HTML.ButtonBase[T] { self: T =>
     css("btn", "btn-default")
 
     def size(value: Size) = css(s"btn-${value.cssSuffix}")
@@ -145,14 +143,14 @@ package object Bootstrap {
   }
 
   case class Button(contents: View*) extends ButtonBase[Button] {
-    def element = DOM.createElement("button", contents)
+    override def element = HTML.Button(contents: _*).element
   }
 
   case class AnchorButton(contents: View*)
     extends ButtonBase[AnchorButton]
     with HTML.AnchorBase[AnchorButton]
   {
-    def element = DOM.createElement("a", contents)
+    override def element = HTML.Anchor(contents: _*).rendered
   }
 
   sealed trait Size { val cssSuffix: String }
@@ -293,12 +291,12 @@ package object Bootstrap {
      * @return
      */
     def Toggle(stateClosed: Var[Boolean]) =
-      HTML.Button(
+      Button(
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar"),
         HTML.Container.Inline().css("icon-bar")
       ).css("navbar-toggle", "collapsed")
-        .attribute("type", "button")
+        .tpe(ButtonType.Button)
         .onClick(_ => stateClosed.update(!_))
 
     def Header(contents: View*) =
