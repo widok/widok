@@ -86,6 +86,7 @@ case class Router(unorderedRoutes: Set[Route],
                   fallback: Option[Route] = None)
 {
   val currentPage = Opt[Page]()
+  val currentRoute = Opt[InstantiatedRoute]()
 
   /** Checks whether no two elements in `unorderedRoutes` are symmetric. */
   assume((for {
@@ -125,6 +126,7 @@ case class Router(unorderedRoutes: Set[Route],
         PageContainer.replace(r)
         nextPage.ready(PageContainer.node)
         currentPage := Some(nextPage)
+        currentRoute := route
 
       case Failure(t) => error(s"Failed to load page: $t")
     }
