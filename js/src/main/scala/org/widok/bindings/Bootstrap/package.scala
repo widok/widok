@@ -35,10 +35,17 @@ package object Bootstrap {
     case object Search extends Role { val value = "search" }
   }
 
-  def HorizontalForm(contents: View*) =
+  def VerticalForm(contents: View*) =
     HTML.Form(contents: _*)
-      .css("form-horizontal")
       .attribute("role", "form")
+
+  def HorizontalForm(contents: View*) =
+    VerticalForm(contents: _*)
+      .css("form-horizontal")
+
+  def InlineForm(contents: View*) =
+    VerticalForm(contents: _*)
+      .css("form-inline")
 
   case class FormGroup(contents: View*) extends Widget[FormGroup] {
     val rendered = DOM.createElement("div", contents)
