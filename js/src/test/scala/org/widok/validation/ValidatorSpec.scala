@@ -13,14 +13,14 @@ object ValidatorSpec extends SimpleTestSuite {
   class DefaultFixture {
     val ch1 = Var("valid")
     val ch2 = Var("invalid")
-    val combined = ch1.combine(ch2).cache("", "")
+    val zipped = ch1.zip(ch2).cache(("", ""))
 
     val patternValidation: PatternValidation = PatternValidation(".{3,6}")
 
     val validator = Validator(
       ch1 -> Seq(patternValidation, RequiredValidation()),
       ch2 -> Seq(patternValidation),
-      combined -> Seq(SameValidation())
+      zipped -> Seq(SameValidation())
     )
   }
 
