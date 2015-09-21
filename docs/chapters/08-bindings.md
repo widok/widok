@@ -368,3 +368,8 @@ This translates to:
 <span class="fa fa-user"></span>
 ```
 
+## External projects
+
+### Scalajs React wrapper
+
+There is [a wrapper](https://github.com/mkotsbak/widok-scalajs-react-wrapper) for using [Facebook React](https://facebook.github.io/react/) components (written with [scalajs-react](https://github.com/japgolly/scalajs-react)) in Widok projects. Because it adds a dependency on scalajs-react and Facebook React, it needs to be in a separate project.
