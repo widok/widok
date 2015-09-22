@@ -14,6 +14,38 @@ object HTML {
     case object Move extends Cursor { override def toString = "move" }
   }
 
+  sealed trait Floating
+  object Floating {
+    /** Default. */
+    case object None extends Floating { override def toString = "none"}
+    case object Left extends Floating { override def toString = "left"}
+    case object Right extends Floating { override def toString = "right"}
+    case object Initial extends Floating { override def toString = "initial"}
+    case object Inherit extends Floating { override def toString = "inherit"}
+  }
+
+  sealed trait Clear
+  object Clear {
+    case object None extends Clear { override def toString = "none"}
+    case object Left extends Clear { override def toString = "left"}
+    case object Right extends Clear { override def toString = "right"}
+    case object Initial extends Clear { override def toString = "initial"}
+    case object Inherit extends Clear { override def toString = "inherit"}
+
+    /** No floating elements allowed on either the left or the right side */
+    case object Both extends Clear { override def toString = "both"}
+  }
+
+  sealed trait Overflow
+  object Overflow {
+    case object Visible extends Overflow { override def toString = "visible"}
+    case object Hidden extends Overflow { override def toString = "hidden"}
+    case object Scroll extends Overflow { override def toString = "scroll"}
+    case object Auto extends Overflow { override def toString = "auto"}
+    case object Initial extends Overflow { override def toString = "initial"}
+    case object Inherit extends Overflow { override def toString = "inherit"}
+  }
+
   object Heading {
     case class Level1(contents: View*) extends Widget[Level1] {
       val rendered = DOM.createElement("h1", contents)
