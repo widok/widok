@@ -265,6 +265,9 @@ case class CSSStyle(style: dom.css.StyleDeclaration) {
   lazy val cursor: Opt[HTML.Cursor] = DOMChannel.variable(v => style.cursor = v.toString)
   lazy val height: Opt[Length] = DOMChannel.variable(v => style.height = v.toString)
   lazy val width: Opt[Length] = DOMChannel.variable(v => style.width = v.toString)
+  lazy val float: Opt[HTML.Floating] = DOMChannel.variable(v => style.cssFloat = v.toString)
+  lazy val clear: Opt[HTML.Clear] = DOMChannel.variable(v => style.clear = v.toString)
+  lazy val overflow: Opt[HTML.Overflow] = DOMChannel.variable(v => style.overflow = v.toString)
 }
 
 trait Node extends View {
@@ -445,6 +448,24 @@ trait Widget[T] extends Node { self: T =>
   def width(width: Length): T = { style.width := Some(width); self }
   def width(width: ReadChannel[Length]): T = {
     style.width.subscribe(width.map(Some(_)))
+    self
+  }
+
+  def overflow(value: HTML.Overflow): T = { style.overflow := Some(value); self }
+  def overflow(value: ReadChannel[HTML.Overflow]): T = {
+    style.overflow << value.map(Some(_))
+    self
+  }
+
+  def float(value: HTML.Floating): T = { style.float:= Some(value); self }
+  def float(value: ReadChannel[HTML.Floating]): T = {
+    style.float << value.map(Some(_))
+    self
+  }
+
+  def clear(value: HTML.Clear): T = { style.clear := Some(value); self }
+  def clear(value: ReadChannel[HTML.Clear]): T = {
+    style.clear << value.map(Some(_))
     self
   }
 
