@@ -124,7 +124,7 @@ object HTML {
   }
 
   case class Button(contents: View*) extends ButtonBase[Button] {
-    val element = DOM.createElement("button", contents)
+    def element = DOM.createElement("button", contents)
   }
 
   case class Section(contents: View*) extends Widget[Section] {
