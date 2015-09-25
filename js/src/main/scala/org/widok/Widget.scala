@@ -313,12 +313,12 @@ trait Node extends View {
   lazy val submit = DOMChannel.event(rendered.onsubmit = _)
 
   lazy val className = {
-    val set = BufSet[String]()
-    set.toSeq.attach { tags =>
+    val buf = Buffer[String]()
+    buf.toSeq.attach { tags =>
       assert(tags.forall(!_.contains(" ")), s"A tag in '$tags' contains spaces")
       rendered.className = tags.mkString(" ")
     }
-    set
+    buf
   }
 
   lazy val style = CSSStyle(rendered.style)
@@ -388,18 +388,18 @@ trait Widget[T] extends Node { self: T =>
   def id(value: ReadChannel[String]): T = { nodeId.subscribe(value.map(Some(_))); self }
 
   def css(cssTags: String*): T = {
-    cssTags.filterNot(className.contains$).foreach(className.insert)
+    cssTags.filterNot(className.get.contains).foreach(className.append)
     self
   }
 
-  def css(tags: ReadChannel[Set[String]]): T = {
+  def css(tags: ReadChannel[Seq[String]]): T = {
     tags.attach(className.set)
     self
   }
 
   def cssState(state: Boolean, cssTags: String*): T = {
-    if (state) cssTags.filterNot(className.contains$).foreach(className.insert)
-    else cssTags.filter(className.contains$).foreach(className.remove)
+    if (state) cssTags.filterNot(className.get.contains).foreach(className.append)
+    else cssTags.filter(className.get.contains).foreach(className.remove)
     self
   }
 

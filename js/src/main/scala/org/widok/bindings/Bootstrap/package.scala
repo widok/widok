@@ -254,7 +254,7 @@ package object Bootstrap {
       Var((NavigationBar.Position.Top, true))
     val rendered = HTML.Navigation(contents: _*).css(
       chPosition.map { case (position, fixed) =>
-        Set("navbar", "navbar-default", position.cssTag(fixed))
+        Seq("navbar", "navbar-default", position.cssTag(fixed))
       }
     ).attribute("role", "navigation").rendered
 
@@ -548,7 +548,7 @@ package object Bootstrap {
     css("progress")
 
     def style(value: ReadChannel[Style]) = {
-      pb.css(value.map(x => Set("progress-bar", "progress-bar-" + x.cssSuffix)))
+      pb.css(value.map(x => Seq("progress-bar", "progress-bar-" + x.cssSuffix)))
       this
     }
 
