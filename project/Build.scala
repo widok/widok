@@ -31,6 +31,10 @@ object Build extends sbt.Build {
       else acc + cur
     }
 
+  def escapeName(name: String): String =
+    if (name.head.isDigit) "`" + name + "`"
+    else name
+
   def generateFontAwesome(sourceGen: File, webJars: File): Seq[File] = {
     val file = sourceGen / "org" / "widok" / "bindings" / "FontAwesome" / "Icons.scala"
 
@@ -39,7 +43,7 @@ object Build extends sbt.Build {
       .filter(_.startsWith(".#"))
       .map { line =>
         val icon = between(line, "}-", ":").get
-        val obj = objectName(icon)
+        val obj = escapeName(objectName(icon))
 
         s"""
         def $obj() = new Icon { def icon = "$icon" }
