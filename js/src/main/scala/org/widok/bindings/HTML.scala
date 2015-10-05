@@ -1,6 +1,7 @@
 package org.widok.bindings
 
 import org.scalajs.dom
+import org.scalajs.dom.raw.{HTMLAudioElement, HTMLVideoElement, HTMLMediaElement, HTMLSourceElement}
 
 import pl.metastack.metarx._
 
@@ -384,5 +385,41 @@ object HTML {
     case class Inline(contents: View*) extends Widget.Container[Inline] {
       val rendered = DOM.createElement("span", contents)
     }
+
+  }
+
+  case class Source() extends Widget[Source] {
+    val rendered = DOM.createElement("source").asInstanceOf[HTMLSourceElement]
+
+    def src(s: String) = { rendered.src = s; this }
+    def src(s: ReadChannel[String]) = { attribute("src", s); this }
+
+    def media(m: String) = { rendered.media = m; this }
+    def media(m: ReadChannel[String]) = { attribute("media", m); this }
+
+    def tpe(t: String) = { rendered.`type` = t; this }
+    def tpe(t: ReadChannel[String]) = { attribute("type", t); this }
+  }
+
+  trait MediaBase[T] extends Widget[T] {
+    self: T =>
+    override val rendered: HTMLMediaElement
+
+    def autoplay(a: Boolean) = { rendered.autoplay = a; self }
+    def controls(c: Boolean) = { rendered.controls = c; self }
+    def loop(l: Boolean) = { rendered.loop = l; self }
+    def muted(m: Boolean) = { rendered.muted = m; self }
+  }
+
+  case class Video(sources: Source*) extends MediaBase[Video] {
+    override val rendered = DOM.createElement("video", sources).asInstanceOf[HTMLVideoElement]
+
+    def videoWidth(w: Int) = { rendered.videoWidth = w; this }
+    def videoHeight(h: Int) = { rendered.videoHeight = h; this }
+    def poster(url: String) = { rendered.poster = url; this }
+  }
+
+  case class Audio(sources: Source*) extends MediaBase[Audio] {
+    override val rendered = DOM.createElement("audio", sources).asInstanceOf[HTMLAudioElement]
   }
 }
