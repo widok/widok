@@ -124,5 +124,9 @@ package object widok {
     val td = bindings.HTML.Table.Column
 
     val cursor = bindings.HTML.Cursor
+
+    val source = bindings.HTML.Source
+    val video = bindings.HTML.Video
+    val audio = bindings.HTML.Audio
   }
 }
