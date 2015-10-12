@@ -126,7 +126,7 @@ object Build extends sbt.Build {
     .settings(sonatypeSettings: _*)
     .settings(
       name := "widok",
-      version := "0.2.4",
+      version := "0.3.0-SNAPSHOT",
 
       pomExtra :=
         <url>http://widok.github.io/</url>
