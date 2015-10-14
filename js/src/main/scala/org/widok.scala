@@ -46,6 +46,8 @@ package object widok {
 
   implicit def WidgetChannelToWidget[T <: Widget[_]](value: ReadChannel[T]):
     PlaceholderWidget[T] = PlaceholderWidget(value)
+  implicit def ImplicitWidgetChannelToWidget[U, T <: Widget[_]](value: U)(implicit ev: U => ReadChannel[T]):
+    PlaceholderWidget[T] = WidgetChannelToWidget(value)
 
   implicit def OptWidgetChannelToWidget[T <: Option[Widget[_]]]
     (value: ReadChannel[T]): PlaceholderOptWidget[T] =
