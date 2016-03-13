@@ -301,9 +301,9 @@ trait Node extends View {
   lazy val keyDown = DOMChannel.keyboardEvent(rendered.onkeydown = _)
   lazy val keyPress = DOMChannel.keyboardEvent(rendered.onkeypress = _)
 
-  lazy val touchStart = DOMChannel.touchEvent(rendered, "ontouchstart")
-  lazy val touchMove = DOMChannel.touchEvent(rendered, "ontouchmove")
-  lazy val touchEnd = DOMChannel.touchEvent(rendered, "ontouchend")
+  lazy val touchStart = DOMChannel.touchEvent(rendered, "touchstart")
+  lazy val touchMove = DOMChannel.touchEvent(rendered, "touchmove")
+  lazy val touchEnd = DOMChannel.touchEvent(rendered, "touchend")
 
   lazy val change = DOMChannel.event(rendered.onchange = _)
   lazy val blur = DOMChannel.event(rendered.onblur = _)
