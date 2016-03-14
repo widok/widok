@@ -223,7 +223,7 @@ case class Inline(contents: Widget[_]*) extends View {
 
 case class PlaceholderWidget[T <: Widget[_]](value: ReadChannel[T]) extends View {
   def render(parent: dom.Node, offset: dom.Node) {
-    var node = DOM.createElement(null)
+    var node = DOM.createNullElement()
     DOM.insertAfter(parent, offset, node)
 
     value.attach { cur =>
@@ -235,7 +235,7 @@ case class PlaceholderWidget[T <: Widget[_]](value: ReadChannel[T]) extends View
 
 case class PlaceholderOptWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) extends View {
   def render(parent: dom.Node, offset: dom.Node) {
-    var node = DOM.createElement(null)
+    var node = DOM.createNullElement()
     DOM.insertAfter(parent, offset, node)
 
     value.attach { (t: Option[Widget[_]]) =>
@@ -244,7 +244,7 @@ case class PlaceholderOptWidget[T <: Option[Widget[_]]](value: ReadChannel[T]) e
           parent.replaceChild(widget.rendered, node)
           node = widget.rendered
         case None =>
-          val empty = DOM.createElement(null)
+          val empty = DOM.createNullElement()
           parent.replaceChild(empty, node)
           node = empty
       }
