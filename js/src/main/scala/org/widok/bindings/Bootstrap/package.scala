@@ -1,10 +1,9 @@
 package org.widok.bindings
 
 import org.scalajs.dom
+import org.scalajs.dom.html.Element
 import org.widok.bindings.HTML.ButtonType
-
 import pl.metastack.metarx._
-
 import org.widok._
 
 /**
@@ -89,6 +88,10 @@ package object Bootstrap {
     css("label")
 
     def style(value: Style) = css(s"label-${value.cssSuffix}")
+  }
+
+  case class Code(contents: View*) extends Widget[Code] {
+    val rendered: Element = DOM.createElement("pre",contents)
   }
 
   implicit class WidgetWithStyle[T](widget: Widget[T]) {
