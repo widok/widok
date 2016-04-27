@@ -91,6 +91,10 @@ package object Bootstrap {
     def style(value: Style) = css(s"label-${value.cssSuffix}")
   }
 
+  case class Code(contents: View*) extends Widget[Code] {
+    val rendered = DOM.createElement("pre", contents)
+  }
+
   implicit class WidgetWithStyle[T](widget: Widget[T]) {
     def label(value: Style) = widget.css("label", s"label-${value.cssSuffix}")
     def textStyle(value: TextStyle) = widget.css(value.cssTag)
