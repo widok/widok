@@ -1,9 +1,11 @@
 package org.widok.bindings
 
 import org.scalajs.dom
-import org.scalajs.dom.html.Element
+
 import org.widok.bindings.HTML.ButtonType
+
 import pl.metastack.metarx._
+
 import org.widok._
 
 /**
