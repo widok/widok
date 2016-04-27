@@ -84,6 +84,10 @@ package object Bootstrap {
     case object Danger extends Style { val cssSuffix = "danger" }
   }
 
+  case class Code(contents: View*) extends Widget[Code] { 
+    val rendered = DOM.createElement("pre", contents) 
+  }
+
   case class Label(contents: View*) extends Widget[Label] {
     val rendered = DOM.createElement("span", contents)
     css("label")
