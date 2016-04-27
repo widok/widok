@@ -9,8 +9,8 @@ import pl.metastack.metarx._
 import org.widok._
 
 /**
- * Native widgets for Bootstrap 3 components
- */
+  * Native widgets for Bootstrap 3 components
+  */
 package object Bootstrap {
   sealed trait TextStyle { val cssTag: String }
   object TextStyle {
@@ -38,16 +38,13 @@ package object Bootstrap {
   }
 
   def VerticalForm(contents: View*) =
-    HTML.Form(contents: _*)
-      .attribute("role", "form")
+    HTML.Form(contents:_*).attribute("role", "form")
 
   def HorizontalForm(contents: View*) =
-    VerticalForm(contents: _*)
-      .css("form-horizontal")
+    VerticalForm(contents:_*).css("form-horizontal")
 
   def InlineForm(contents: View*) =
-    VerticalForm(contents: _*)
-      .css("form-inline")
+    VerticalForm(contents:_*).css("form-inline")
 
   case class FormGroup(contents: View*) extends Widget[FormGroup] {
     val rendered = DOM.createElement("div", contents)
@@ -63,16 +60,16 @@ package object Bootstrap {
   }
 
   object InputGroup {
-    def Addon(contents: View*) = HTML.Container.Inline(contents: _*)
-      .css("input-group-addon")
+    def Addon(contents: View*) =
+      HTML.Container.Inline(contents:_*).css("input-group-addon")
   }
 
   def ControlLabel(contents: View*) =
-    HTML.Label(contents: _*)
-      .css("control-label")
+    HTML.Label(contents:_*).css("control-label")
 
   sealed trait Style { val cssSuffix: String }
   object Style {
+
     /** Not supported by tables and alerts. */
     case object Default extends Style { val cssSuffix = "default" }
 
@@ -93,7 +90,7 @@ package object Bootstrap {
   }
 
   case class Code(contents: View*) extends Widget[Code] {
-    val rendered: Element = DOM.createElement("pre",contents)
+    val rendered = DOM.createElement("pre", contents)
   }
 
   implicit class WidgetWithStyle[T](widget: Widget[T]) {
@@ -103,11 +100,12 @@ package object Bootstrap {
 
   // TODO Improve design.
   def Fix(contents: View*) =
-    HTML.Container.Generic(
-      HTML.Container.Inline("Fix")
-        .css("label", "label-warning"),
-      HTML.Container.Inline(contents: _*)
-    ).css("alert", "alert-danger")
+    HTML.Container
+      .Generic(
+          HTML.Container.Inline("Fix").css("label", "label-warning"),
+          HTML.Container.Inline(contents:_*)
+      )
+      .css("alert", "alert-danger")
 
   trait Input[T] extends Widget[T] { self: T =>
     def size(value: Size) = css(s"input-${value.cssSuffix}")
@@ -118,19 +116,23 @@ package object Bootstrap {
       css("form-control")
     }
 
-    case class Textarea() extends HTML.Input.TextareaBase[Textarea] with Input[Textarea] {
+    case class Textarea()
+        extends HTML.Input.TextareaBase[Textarea] with Input[Textarea] {
       css("form-control")
     }
 
-    case class Password() extends HTML.Input.PasswordBase[Password] with Input[Password] {
+    case class Password()
+        extends HTML.Input.PasswordBase[Password] with Input[Password] {
       css("form-control")
     }
 
-    case class Select() extends HTML.Input.SelectBase[Select] with Input[Select] {
+    case class Select()
+        extends HTML.Input.SelectBase[Select] with Input[Select] {
       css("form-control")
     }
 
-    case class Number() extends HTML.Input.NumberBase[Number] with Input[Number] {
+    case class Number()
+        extends HTML.Input.NumberBase[Number] with Input[Number] {
       css("form-control")
     }
   }
@@ -148,14 +150,12 @@ package object Bootstrap {
   }
 
   case class Button(contents: View*) extends ButtonBase[Button] {
-    override def element = HTML.Button(contents: _*).element
+    override def element = HTML.Button(contents:_*).element
   }
 
   case class AnchorButton(contents: View*)
-    extends ButtonBase[AnchorButton]
-    with HTML.AnchorBase[AnchorButton]
-  {
-    override def element = HTML.Anchor(contents: _*).rendered
+      extends ButtonBase[AnchorButton] with HTML.AnchorBase[AnchorButton] {
+    override def element = HTML.Anchor(contents:_*).rendered
   }
 
   sealed trait Size { val cssSuffix: String }
@@ -186,9 +186,11 @@ package object Bootstrap {
 
   object Checkbox {
     def apply(cb: HTML.Input.Checkbox, caption: View) =
-      HTML.Container.Generic(
-        HTML.Label(cb, caption)
-      ).css("checkbox")
+      HTML.Container
+        .Generic(
+            HTML.Label(cb, caption)
+        )
+        .css("checkbox")
 
     def Inline(cb: HTML.Input.Checkbox, caption: View) =
       HTML.Label(cb, caption).css("checkbox-inline")
@@ -196,33 +198,29 @@ package object Bootstrap {
 
   object Radio {
     def apply(radio: HTML.Input.Radio, caption: View) =
-      HTML.Container.Generic(
-        HTML.Label(radio, caption)
-      ).css("radio")
+      HTML.Container
+        .Generic(
+            HTML.Label(radio, caption)
+        )
+        .css("radio")
 
     def Inline(radio: HTML.Input.Radio, caption: View) =
       HTML.Label(radio, caption).css("radio-inline")
   }
 
   def Footer(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("footer")
+    HTML.Container.Generic(contents:_*).css("footer")
 
   def Container(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("container")
+    HTML.Container.Generic(contents:_*).css("container")
 
   def PageHeader(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("page-header")
+    HTML.Container.Generic(contents:_*).css("page-header")
 
-  def Lead(contents: View*) =
-    HTML.Container.Generic(contents: _*)
-      .css("lead")
+  def Lead(contents: View*) = HTML.Container.Generic(contents:_*).css("lead")
 
   def PullRight(contents: View*) =
-    HTML.Container.Inline(contents: _*)
-      .css("pull-right")
+    HTML.Container.Inline(contents:_*).css("pull-right")
 
   object Navigation {
     case class Tab(name: String)
@@ -235,16 +233,18 @@ package object Bootstrap {
         Bootstrap.Item(anchor).active(currentTab.map(_ == tab))
       }
 
-      Bootstrap.Navigation.Tabs(renderedTabs: _*)
+      Bootstrap.Navigation.Tabs(renderedTabs:_*)
     }
 
     def Tabs(contents: Bootstrap.Item*) =
-      HTML.List.Unordered(contents: _*)
+      HTML.List
+        .Unordered(contents:_*)
         .css("nav", "nav-tabs")
         .attribute("role", "tablist")
 
     def Pills(contents: Bootstrap.Item*) =
-      HTML.List.Unordered(contents: _*)
+      HTML.List
+        .Unordered(contents:_*)
         .css("nav", "nav-pills")
         .attribute("role", "tablist")
   }
@@ -255,13 +255,18 @@ package object Bootstrap {
   }
 
   case class NavigationBar(contents: View*) extends Widget[NavigationBar] {
-    val chPosition: Var[(NavigationBar.Position, Boolean)] =
-      Var((NavigationBar.Position.Top, true))
-    val rendered = HTML.Navigation(contents: _*).css(
-      chPosition.map { case (position, fixed) =>
-        Seq("navbar", "navbar-default", position.cssTag(fixed))
-      }
-    ).attribute("role", "navigation").rendered
+    val chPosition: Var[(NavigationBar.Position, Boolean)] = Var(
+        (NavigationBar.Position.Top, true))
+    val rendered = HTML
+      .Navigation(contents:_*)
+      .css(
+          chPosition.map {
+            case (position, fixed) =>
+              Seq("navbar", "navbar-default", position.cssTag(fixed))
+          }
+      )
+      .attribute("role", "navigation")
+      .rendered
 
     def position(position: NavigationBar.Position, fixed: Boolean = true) = {
       chPosition := ((position, fixed))
@@ -291,74 +296,70 @@ package object Bootstrap {
     }
 
     /**
-     *
-     * @param stateClosed Declare and pass a "val stateClosed = Var(true)" to this and "Collapse"
-     * @return
-     */
+      *
+      * @param stateClosed Declare and pass a "val stateClosed = Var(true)" to this and "Collapse"
+      * @return
+      */
     def Toggle(stateClosed: Var[Boolean]) =
       Button(
-        HTML.Container.Inline().css("icon-bar"),
-        HTML.Container.Inline().css("icon-bar"),
-        HTML.Container.Inline().css("icon-bar")
-      ).css("navbar-toggle", "collapsed")
+          HTML.Container.Inline().css("icon-bar"),
+          HTML.Container.Inline().css("icon-bar"),
+          HTML.Container.Inline().css("icon-bar")
+      )
+        .css("navbar-toggle", "collapsed")
         .tpe(ButtonType.Button)
         .onClick(_ => stateClosed.update(!_))
 
     def Header(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("navbar-header")
+      HTML.Container.Generic(contents:_*).css("navbar-header")
 
-    def Brand(contents: View*) =
-      HTML.Anchor(contents: _*)
-        .css("navbar-brand")
+    def Brand(contents: View*) = HTML.Anchor(contents:_*).css("navbar-brand")
 
     def Collapse(stateClosed: ReadChannel[Boolean])(contents: View*) =
-      HTML.Container.Generic(contents: _*)
+      HTML.Container
+        .Generic(contents:_*)
         .css("navbar-collapse")
         .cssState(stateClosed, "collapse")
 
-
-    def Branch(contentsCaption: Widget[_]*)
-              (contents: Widget.List.Item[_]*): Bootstrap.Item = {
+    def Branch(contentsCaption: Widget[_]*)(
+        contents: Widget.List.Item[_]*): Bootstrap.Item = {
       val open = Var(false)
 
-      Bootstrap.Item(
-        HTML.Anchor(
-          HTML.Container.Inline(contentsCaption: _*),
-          HTML.Container.Inline().css("caret")
-        ).css("dropdown-toggle")
-
-        , HTML.List.Unordered(contents: _*)
-          .css("dropdown-menu")
-          .attribute("role", "menu")
-      ).css("dropdown")
+      Bootstrap
+        .Item(
+            HTML
+              .Anchor(
+                  HTML.Container.Inline(contentsCaption:_*),
+                  HTML.Container.Inline().css("caret")
+              )
+              .css("dropdown-toggle"),
+            HTML.List
+              .Unordered(contents:_*)
+              .css("dropdown-menu")
+              .attribute("role", "menu")
+          )
+        .css("dropdown")
         .cssState(open, "open")
         .onClick(_ => open := !open.get)
     }
 
     def Elements(contents: Widget.List.Item[_]*) =
-      HTML.List.Unordered(contents: _*)
-        .css("nav", "navbar-nav")
+      HTML.List.Unordered(contents:_*).css("nav", "navbar-nav")
 
     def Form(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("navbar-form")
+      HTML.Container.Generic(contents:_*).css("navbar-form")
 
     def Left(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("navbar-left")
+      HTML.Container.Generic(contents:_*).css("navbar-left")
 
     def Right(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("navbar-right")
+      HTML.Container.Generic(contents:_*).css("navbar-right")
 
     def Text(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("navbar-text")
+      HTML.Container.Generic(contents:_*).css("navbar-text")
 
     def Navigation(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("nav", "navbar-nav")
+      HTML.Container.Generic(contents:_*).css("nav", "navbar-nav")
   }
 
   case class Alert(contents: View*) extends Widget[Alert] {
@@ -384,49 +385,44 @@ package object Bootstrap {
 
   object Panel {
     def Body(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("panel-body")
+      HTML.Container.Generic(contents:_*).css("panel-body")
 
     def Heading(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("panel-heading")
+      HTML.Container.Generic(contents:_*).css("panel-heading")
 
     def Title1(contents: View*) =
-      HTML.Heading.Level1(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level1(contents:_*).css("panel-title")
 
     def Title2(contents: View*) =
-      HTML.Heading.Level2(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level2(contents:_*).css("panel-title")
 
     def Title3(contents: View*) =
-      HTML.Heading.Level3(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level3(contents:_*).css("panel-title")
 
     def Title4(contents: View*) =
-      HTML.Heading.Level4(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level4(contents:_*).css("panel-title")
 
     def Title5(contents: View*) =
-      HTML.Heading.Level5(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level5(contents:_*).css("panel-title")
 
     def Title6(contents: View*) =
-      HTML.Heading.Level6(contents: _*)
-        .css("panel-title")
+      HTML.Heading.Level6(contents:_*).css("panel-title")
 
     def Footer(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("panel-footer")
+      HTML.Container.Generic(contents:_*).css("panel-footer")
   }
 
-  case class Pagination(contents: Pagination.Item*) extends Widget.List[Pagination] {
-    val rendered =
-      HTML.Navigation(
-        HTML.List.Unordered(
-          contents: _*
-        ).css("pagination")
-      ).rendered
+  case class Pagination(contents: Pagination.Item*)
+      extends Widget.List[Pagination] {
+    val rendered = HTML
+      .Navigation(
+          HTML.List
+            .Unordered(
+                contents:_*
+            )
+            .css("pagination")
+        )
+      .rendered
   }
 
   object Pagination {
@@ -439,16 +435,15 @@ package object Bootstrap {
     }
   }
 
-  case class ListGroup(contents: Widget.List.Item[_]*) extends Widget.List[ListGroup] {
-    val rendered = HTML.Container.Generic(contents: _*)
-      .css("list-group")
-      .rendered
+  case class ListGroup(contents: Widget.List.Item[_]*)
+      extends Widget.List[ListGroup] {
+    val rendered =
+      HTML.Container.Generic(contents:_*).css("list-group").rendered
   }
 
   object ListGroup {
     case class Item(contents: View*) extends Widget.List.Item[Item] {
-      val widget = HTML.Container.Inline(contents: _*)
-        .css("list-group-item")
+      val widget = HTML.Container.Inline(contents:_*).css("list-group-item")
       val rendered = widget.rendered
 
       def active(state: Boolean) = cssState(state, "active")
@@ -458,32 +453,25 @@ package object Bootstrap {
     }
 
     def ItemHeading1(contents: View*) =
-      HTML.Heading.Level1(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level1(contents:_*).css("list-group-item-heading")
 
     def ItemHeading2(contents: View*) =
-      HTML.Heading.Level2(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level2(contents:_*).css("list-group-item-heading")
 
     def ItemHeading3(contents: View*) =
-      HTML.Heading.Level3(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level3(contents:_*).css("list-group-item-heading")
 
     def ItemHeading4(contents: View*) =
-      HTML.Heading.Level4(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level4(contents:_*).css("list-group-item-heading")
 
     def ItemHeading5(contents: View*) =
-      HTML.Heading.Level5(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level5(contents:_*).css("list-group-item-heading")
 
     def ItemHeading6(contents: View*) =
-      HTML.Heading.Level6(contents: _*)
-        .css("list-group-item-heading")
+      HTML.Heading.Level6(contents:_*).css("list-group-item-heading")
 
     def ItemText(contents: View*) =
-      HTML.Paragraph(contents: _*)
-        .css("list-group-item-text")
+      HTML.Paragraph(contents:_*).css("list-group-item-text")
   }
 
   object Grid {
@@ -496,9 +484,12 @@ package object Bootstrap {
       val rendered = DOM.createElement("div", contents)
 
       def column(size: Size, level: Int) = css(s"col-${size.cssSuffix}-$level")
-      def offset(size: Size, level: Int) = css(s"col-${size.cssSuffix}-offset-$level")
-      def pull(size: Size, level: Int) = css(s"col-${size.cssSuffix}-pull-$level")
-      def push(size: Size, level: Int) = css(s"col-${size.cssSuffix}-push-$level")
+      def offset(size: Size, level: Int) =
+        css(s"col-${size.cssSuffix}-offset-$level")
+      def pull(size: Size, level: Int) =
+        css(s"col-${size.cssSuffix}-pull-$level")
+      def push(size: Size, level: Int) =
+        css(s"col-${size.cssSuffix}-push-$level")
     }
   }
 
@@ -510,22 +501,22 @@ package object Bootstrap {
   }
 
   object Modal {
-    def Backdrop() =
-      HTML.Container.Generic().css("modal-backdrop", "in")
+    def Backdrop() = HTML.Container.Generic().css("modal-backdrop", "in")
 
     def Close(dismiss: () => Any) =
-      HTML.Button(HTML.Container.Inline("×"))
-        .css("close").onClick { _ => dismiss(); () }
+      HTML.Button(HTML.Container.Inline("×")).css("close").onClick { _ =>
+        dismiss(); ()
+      }
 
     def Title(contents: View*) =
-      HTML.Heading.Level4(contents: _*).css("modal-title")
+      HTML.Heading.Level4(contents:_*).css("modal-title")
 
     def Dialog(contents: View*) =
-      HTML.Container.Generic(contents: _*).css("modal-dialog")
+      HTML.Container.Generic(contents:_*).css("modal-dialog")
 
     trait ContentElement extends Widget[ContentElement]
     def Content(contents: ContentElement*) =
-      HTML.Container.Generic(contents: _*).css("modal-content")
+      HTML.Container.Generic(contents:_*).css("modal-content")
 
     case class Header(contents: View*) extends ContentElement {
       val rendered = DOM.createElement("div", contents)
@@ -544,16 +535,19 @@ package object Bootstrap {
   }
 
   case class ProgressBar(contents: View*) extends Widget[ProgressBar] {
-    val pb = HTML.Container.Generic(
-      contents: _*
-    ).css("progress-bar")
-     .attribute("role", "progressbar")
+    val pb = HTML.Container
+      .Generic(
+          contents:_*
+      )
+      .css("progress-bar")
+      .attribute("role", "progressbar")
 
     val rendered = DOM.createElement("div", Seq(pb))
     css("progress")
 
     def style(value: ReadChannel[Style]) = {
-      pb.css(value.map(x => Seq("progress-bar", "progress-bar-" + x.cssSuffix)))
+      pb.css(
+          value.map(x => Seq("progress-bar", "progress-bar-" + x.cssSuffix)))
       this
     }
 
@@ -570,12 +564,10 @@ package object Bootstrap {
 
   object Media {
     def Left(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("media-left")
+      HTML.Container.Generic(contents:_*).css("media-left")
 
     def List(contents: Bootstrap.Media.Item*) =
-      HTML.List.Unordered(contents: _*)
-        .css("media-left")
+      HTML.List.Unordered(contents:_*).css("media-left")
 
     case class Item(contents: View*) extends Widget.List.Item[Item] {
       val rendered = DOM.createElement("li", contents)
@@ -583,22 +575,18 @@ package object Bootstrap {
     }
 
     def Body(contents: View*) =
-      HTML.Container.Generic(contents: _*)
-        .css("media-body")
+      HTML.Container.Generic(contents:_*).css("media-body")
 
-    def Object(source: String) =
-      HTML.Image(source)
-        .css("media-object")
+    def Object(source: String) = HTML.Image(source).css("media-object")
 
     def Heading(contents: View*) =
-      HTML.Heading.Level4(contents: _*)
-        .css("media-heading")
+      HTML.Heading.Level4(contents:_*).css("media-heading")
   }
 
   sealed trait Shape { val cssTag: String }
   object Shape {
-    case object Rounded   extends Shape { val cssTag = "img-rounded"   }
-    case object Circle    extends Shape { val cssTag = "img-circle"    }
+    case object Rounded extends Shape { val cssTag = "img-rounded" }
+    case object Circle extends Shape { val cssTag = "img-circle" }
     case object Thumbnail extends Shape { val cssTag = "img-thumbnail" }
   }
 
@@ -610,7 +598,8 @@ package object Bootstrap {
     def shape(value: Shape) = css(value.cssTag)
   }
 
-  case class Breadcrumb(contents: Bootstrap.Item*) extends Widget.List[Breadcrumb] {
+  case class Breadcrumb(contents: Bootstrap.Item*)
+      extends Widget.List[Breadcrumb] {
     val rendered = DOM.createElement("ol", contents)
     css("breadcrumb")
   }
@@ -627,8 +616,7 @@ package object Bootstrap {
 
   object Table {
     def Responsive(table: Table) =
-      HTML.Container.Generic(table)
-        .css("table-responsive")
+      HTML.Container.Generic(table).css("table-responsive")
 
     case class Row(contents: View*) extends Widget.List.Item[Row] {
       val rendered = DOM.createElement("tr", contents)
@@ -652,22 +640,24 @@ package object Bootstrap {
     val invalid = Dict[ReadChannel[_], String]()
     val valid = invalid.isEmpty.cache(true)
 
-    validations.foreach { case Validation(ch, f) =>
-      ch.attach { input =>
-        f(input) match {
-          case Some(err) => invalid.insertOrUpdate(ch, err)
-          case None => invalid.removeIfExists(ch)
+    validations.foreach {
+      case Validation(ch, f) =>
+        ch.attach { input =>
+          f(input) match {
+            case Some(err) => invalid.insertOrUpdate(ch, err)
+            case None => invalid.removeIfExists(ch)
+          }
         }
-      }
     }
 
-    val validators = validations
-      .foldLeft(Map.empty[ReadChannel[_], ReadChannel[Option[String]]])
-    { case (acc, Validation(ch, _)) =>
-      acc + (ch -> dirty.flatMap(
-        if (_) invalid.value(ch)
-        else Var(None)
-      ))
+    val validators = validations.foldLeft(
+        Map.empty[ReadChannel[_], ReadChannel[Option[String]]]) {
+      case (acc, Validation(ch, _)) =>
+        acc +
+        (ch -> dirty.flatMap(
+                if (_) invalid.value(ch)
+                else Var(None)
+            ))
     }
 
     val maySubmit = dirty.flatMap {
@@ -683,12 +673,16 @@ package object Bootstrap {
       x.cssState(validators(field).map(_.nonEmpty), "has-error")
 
     def errors(field: ReadChannel[_]) =
-      HTML.Container.Inline(
-        validators(field).map(_.getOrElse(""))
-      ).cssState(validators(field).map(_.nonEmpty), "help-block", "with-errors")
+      HTML.Container
+        .Inline(
+            validators(field).map(_.getOrElse(""))
+        )
+        .cssState(
+            validators(field).map(_.nonEmpty), "help-block", "with-errors")
   }
 
   implicit class ValidateWidget[T](widget: Widget[T]) {
-    def validate(field: ReadChannel[_])(implicit v: Validator) = v.validate(widget, field)
+    def validate(field: ReadChannel[_])(implicit v: Validator) =
+      v.validate(widget, field)
   }
 }
