@@ -4,10 +4,17 @@ import org.scalajs.dom
 import org.scalajs.dom.ext.PimpedNodeList
 
 object DOM {
+  case class Namespace(uri: String)
+
+  object Namespace {
+    implicit val xhtml = Namespace("http://www.w3.org/1999/xhtml")
+    val svg = Namespace("http://www.w3.org/2000/svg")
+  }
+
   def createElement(tagName: String,
-                    contents: Seq[View] = Seq.empty): dom.html.Element =
+                    contents: Seq[View] = Seq.empty)(implicit ns: Namespace): dom.html.Element =
   {
-    val elem = dom.document.createElement(tagName)
+    val elem = dom.document.createElementNS(ns.uri, tagName)
     contents.foreach(_.render(elem, elem.lastChild))
     // TODO remove cast
     elem.asInstanceOf[dom.html.Element]

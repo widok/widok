@@ -99,6 +99,11 @@ object HTML {
   case class Raw(html: String) extends Widget[Raw] {
     val rendered = DOM.createElement("span")
     rendered.innerHTML = html
+
+    def bind(innerHtml: ReadChannel[String]): Raw = {
+      innerHtml.attach(rendered.innerHTML = _)
+      this
+    }
   }
 
   case class Image(source: String) extends Widget[Image] {
