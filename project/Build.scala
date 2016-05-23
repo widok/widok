@@ -161,7 +161,7 @@ object Build extends sbt.Build {
 
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scalajs-dom" % "0.9.0",
-        "pl.metastack" %%% "metarx" % "0.1.6",
+        "pl.metastack" %%% "metarx" % "0.1.7",
         "org.monifu" %%% "minitest" % "0.14" % "test",
         "org.webjars" % "font-awesome" % "4.6.1",
         "org.webjars" % "bootstrap" % "3.3.6"
@@ -172,7 +172,7 @@ object Build extends sbt.Build {
     )
     .jvmSettings(
       libraryDependencies ++= Seq(
-        "pl.metastack" %% "metarx" % "0.1.6",
+        "pl.metastack" %% "metarx" % "0.1.7",
         "org.monifu" %% "minitest" % "0.14" % "test"
       )
     )
