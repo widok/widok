@@ -7,8 +7,8 @@ case class Validator(validationSources: (ReadChannel[_], Seq[Validation[_]])*) {
   val valid = validations.forall(_.isEmpty).cache(true)
   val errors = validations.filter(_.nonEmpty).buffer
 
-  def valid(ch: ReadChannel[_]) = errors.value(ch).isEmpty
-  def invalid(ch: ReadChannel[_]) = errors.value(ch).isDefined
+  def valid(ch: ReadChannel[_]): ReadChannel[Boolean] = errors.value(ch).map(_.isEmpty)
+  def invalid(ch: ReadChannel[_]): ReadChannel[Boolean] = errors.value(ch).map(_.nonEmpty)
 
   // combines the validation results from several channels
   def combinedErrors(channels: ReadChannel[_]*): Buffer[String] = {
@@ -18,7 +18,7 @@ case class Validator(validationSources: (ReadChannel[_], Seq[Validation[_]])*) {
       .map(_ -> Seq[String]())
       .toMap[ReadChannel[_], Seq[String]]
 
-    channels.map(errors.value(_)).foreach { channel =>
+    channels.map(errors.value).foreach { channel =>
       channel.attach { optCh =>
         messagesByChannel += (channel -> optCh.getOrElse(Seq.empty))
         result.set(messagesByChannel.values.flatten.toSeq.distinct) // set all unique errors
