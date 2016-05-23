@@ -131,4 +131,8 @@ package object widok {
     val video = bindings.HTML.Video
     val audio = bindings.HTML.Audio
   }
+
+  object svg {
+    val svg = bindings.SVG.Svg
+  }
 }
