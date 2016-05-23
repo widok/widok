@@ -1,12 +1,9 @@
 package org.widok
 
 import scala.collection.mutable
-
 import org.scalajs.dom
 import org.scalajs.dom.ext.KeyCode
-
 import pl.metastack.metarx._
-
 import org.widok.bindings._
 
 object Widget {
@@ -418,7 +415,7 @@ trait Widget[T] extends Node { self: T =>
     self
   }
 
-  def attributeOpt(key: String, value: PartialChannel[String]): T = {
+  def attributeOpt(key: String, value: ReadPartialChannel[String]): T = {
     value.attach {
       case None    => attributes.removeIfExists(key)
       case Some(v) => attributes.insertOrUpdate(key, v)

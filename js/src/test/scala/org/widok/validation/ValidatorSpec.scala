@@ -63,15 +63,19 @@ object ValidatorSpec extends SimpleTestSuite {
 
   test("should return validation state") {
     new DefaultFixture {
-      val invalid1 = validator.invalid(ch1).cache(true)
-      val valid1 = validator.valid(ch1).cache(true)
-      val invalid2 = validator.invalid(ch2).cache(true)
-      val valid2 = validator.valid(ch2).cache(true)
+      val valid1 = validator.valid(ch1).cache
+      val valid2 = validator.valid(ch2).cache
+
+      val invalid1 = validator.invalid(ch1).cache
+      val invalid2 = validator.invalid(ch2).cache
+
       validator.validate()
-      assert(!invalid1.get)
-      assert(invalid2.get)
-      assert(valid1.get)
-      assert(!valid2.get)
+
+      assert(valid1.get.get)
+      assert(!valid2.get.get)
+
+      assert(!invalid1.get.get)
+      assert(invalid2.get.get)
     }
   }
 

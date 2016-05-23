@@ -70,7 +70,7 @@ case class Typeahead[A](
 
   private def prev() {
     if (results.get.nonEmpty) {
-      if (active.isEmpty$) active := results.get.head
+      if (active.get.isEmpty) active := results.get.head
       else {
         val before = results.beforeOption$(active.get.get)
         if (before.isEmpty) active := results.get.last
@@ -81,7 +81,7 @@ case class Typeahead[A](
 
   private def next() {
     if (results.get.nonEmpty) {
-      if (active.isEmpty$) active := results.get.head
+      if (active.get.isEmpty) active := results.get.head
       else {
         val after = results.afterOption$(active.get.get)
         if (after.isEmpty) active := results.get.head
