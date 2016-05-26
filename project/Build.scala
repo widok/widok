@@ -116,10 +116,7 @@ object Build extends sbt.Build {
 
   lazy val root = project.in(file(".")).
     aggregate(js, jvm).
-    settings(
-      publish := {},
-      publishLocal := {}
-    )
+    settings(publishArtifact := false)
 
   lazy val widok = crossProject.in(file("."))
     .enablePlugins(SbtWeb)
