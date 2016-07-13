@@ -28,6 +28,7 @@ object ValidatorSpec extends SimpleTestSuite {
     new DefaultFixture {
       assert(validator.valid.get)
     }
+    ()
   }
 
   test("should validate on input") {
@@ -35,6 +36,7 @@ object ValidatorSpec extends SimpleTestSuite {
       ch1 := "invalid"
       assertEquals(validator.errors.value$(ch1), Seq("Value must match pattern .{3,6}"))
     }
+    ()
   }
 
   test("should clear validation errors when corrected") {
@@ -44,6 +46,7 @@ object ValidatorSpec extends SimpleTestSuite {
       ch1 := "valid"
       assertEquals(validator.errors.keys$.contains(ch1), false)
     }
+    ()
   }
 
   test("should validate all fields when requested") {
@@ -52,6 +55,7 @@ object ValidatorSpec extends SimpleTestSuite {
       assertEquals(validator.errors.keys$.contains(ch1), false)
       assertEquals(validator.errors.value$(ch2), Seq("Value must match pattern .{3,6}"))
     }
+    ()
   }
 
   test("should report multiple validation errors for a single field") {
@@ -77,6 +81,7 @@ object ValidatorSpec extends SimpleTestSuite {
       assert(!invalid1.get.get)
       assert(invalid2.get.get)
     }
+    ()
   }
 
   test("should return combined errors") {
@@ -87,6 +92,7 @@ object ValidatorSpec extends SimpleTestSuite {
       validator.validate()
       assertEquals(c.get, Seq("Required value", "Value must match pattern .{3,6}"))
     }
+    ()
   }
 
   test("should clear combined errors when source-channels are valid") {
@@ -102,8 +108,7 @@ object ValidatorSpec extends SimpleTestSuite {
 
       ch2 := ""
       assertEquals(c.get, Seq())
-
     }
+    ()
   }
 }
-

@@ -157,10 +157,10 @@ object Build extends sbt.Build {
       sourceGenerators in Compile <+= codeGenerationTask,
 
       libraryDependencies ++= Seq(
-        "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+        "org.scala-js" %%% "scalajs-dom" % "0.9.1",
         "pl.metastack" %%% "metarx" % "0.1.7",
-        "org.monifu" %%% "minitest" % "0.14" % "test",
-        "org.webjars" % "font-awesome" % "4.6.1",
+        "io.monix" %%% "minitest" % "0.22" % "test",
+        "org.webjars" % "font-awesome" % "4.6.3",
         "org.webjars" % "bootstrap" % "3.3.6"
       ),
 
@@ -170,7 +170,7 @@ object Build extends sbt.Build {
     .jvmSettings(
       libraryDependencies ++= Seq(
         "pl.metastack" %% "metarx" % "0.1.7",
-        "org.monifu" %% "minitest" % "0.14" % "test"
+        "io.monix" %% "minitest" % "0.22" % "test"
       )
     )
 
