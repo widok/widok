@@ -149,9 +149,25 @@ object HTML {
     val rendered = DOM.createElement("nav", contents)
   }
 
+  sealed trait Target { def html: String }
+  object Target {
+    case object Blank extends Target { override def html = "_blank" }
+    case object Self extends Target { override def html = "_self" }
+    case object Parent extends Target { override def html = "_parent" }
+    case object Top extends Target { override def html = "_top" }
+    case class FrameName(value: String) extends Target {
+      override def html = value
+    }
+  }
+
   trait AnchorBase[T] extends Widget[T] { self: T =>
     def url(value: String) = {
       rendered.setAttribute("href", value)
+      self
+    }
+
+    def target(value: Target) = {
+      rendered.setAttribute("target", value.html)
       self
     }
   }
